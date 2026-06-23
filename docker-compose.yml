@@ -1,0 +1,21 @@
+version: "3.9"
+
+services:
+  backend:
+    build:
+      context: ./apps/backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    env_file:
+      - ./apps/backend/.env
+    volumes:
+      - ./apps/backend:/app
+    restart: unless-stopped
+
+  # Supabase is managed externally (cloud or supabase CLI local)
+  # Run: supabase start
+
+networks:
+  default:
+    name: nekofi_network

@@ -1,0 +1,24 @@
+{
+  "name": "nekofi",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Nekofi — AI-Powered Budget Tracker",
+  "workspaces": [
+    "apps/mobile",
+    "packages/shared"
+  ],
+  "scripts": {
+    "mobile": "pnpm --filter mobile start",
+    "mobile:ios": "pnpm --filter mobile ios",
+    "mobile:android": "pnpm --filter mobile android",
+    "lint": "pnpm --recursive run lint",
+    "type-check": "pnpm --recursive run type-check"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
