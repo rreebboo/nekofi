@@ -13,9 +13,9 @@ from src.core.config import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup / shutdown lifecycle."""
-    print(f"🐱 Nekofi Backend starting — env: {settings.APP_ENV}")
+    print(f"Nekofi Backend starting -- env: {settings.APP_ENV}")
     yield
-    print("🐱 Nekofi Backend shutting down")
+    print("Nekofi Backend shutting down")
 
 
 app = FastAPI(

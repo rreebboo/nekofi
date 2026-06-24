@@ -59,8 +59,9 @@
         "origin": false
       },
       "eas": {
-        "projectId": "your-eas-project-id"
+        "projectId": "db0cbc0c-b20f-4147-a545-157606f87e3a"
       }
-    }
+    },
+    "owner": "rreebboos-organization"
   }
 }
