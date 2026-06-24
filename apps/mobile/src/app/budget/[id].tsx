@@ -1,12 +1,14 @@
 import { View, Text } from 'react-native';
 import { useLocalSearchParams } from 'expo-router';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 export default function BudgetDetailScreen() {
   const { id } = useLocalSearchParams();
+  const colors = useThemeColors();
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Budget Detail: {id}</Text>
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background }}>
+      <Text style={{ color: colors.text, fontFamily: 'Inter-SemiBold' }}>Budget Detail: {id}</Text>
     </View>
   );
 }

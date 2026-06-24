@@ -2,25 +2,30 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import type { Budget } from '@/types/budget';
 import { BudgetCard } from './BudgetCard';
-import { Colors } from '@/constants/Colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import Animated, { FadeInDown } from 'react-native-reanimated';
 
 interface Props {
   budgets: Budget[];
 }
 
 export function BudgetProgressCard({ budgets }: Props) {
+  const colors = useThemeColors();
   if (budgets.length === 0) return null;
 
   return (
-    <View>
-      <Text style={styles.title}>Budget Progress</Text>
-      {budgets.slice(0, 3).map((b) => (
-        <BudgetCard key={b.id} budget={b} />
+    <View style={styles.container}>
+      <Text style={[styles.title, { color: colors.text }]}>Budget Progress</Text>
+      {budgets.slice(0, 3).map((b, index) => (
+        <Animated.View key={b.id} entering={FadeInDown.delay(index * 100).springify()}>
+          <BudgetCard budget={b} />
+        </Animated.View>
       ))}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  title: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: Colors.text, marginBottom: 12 },
+  container: { marginTop: 12 },
+  title: { fontFamily: 'Inter-SemiBold', fontSize: 16, marginBottom: 16 },
 });

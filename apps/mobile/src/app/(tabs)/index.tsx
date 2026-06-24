@@ -9,7 +9,9 @@ import { SpendingChart } from '@/components/charts/SpendingChart';
 import { RecentTransactions } from '@/components/cards/RecentTransactions';
 import { AIInsightCard } from '@/components/cards/AIInsightCard';
 import { BudgetProgressCard } from '@/components/cards/BudgetProgressCard';
-import { Colors } from '@/constants/Colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
+import { HomeCarousel } from '@/components/ui/HomeCarousel';
+import * as Haptics from 'expo-haptics';
 
 /**
  * Dashboard — main home screen with summary cards and charts.
@@ -19,9 +21,11 @@ export default function DashboardScreen() {
   const { budgets, fetchBudgets } = useBudgetStore();
   const { transactions, fetchTransactions, loading } = useTransactionStore();
   const [refreshing, setRefreshing] = React.useState(false);
+  const colors = useThemeColors();
 
   const onRefresh = async () => {
     setRefreshing(true);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await Promise.all([fetchBudgets(), fetchTransactions()]);
     setRefreshing(false);
   };
@@ -39,41 +43,52 @@ export default function DashboardScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <ScrollView
         showsVerticalScrollIndicator={false}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={Colors.primary} />}
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         contentContainerStyle={styles.scroll}
       >
         {/* Header */}
         <View style={styles.header}>
-          <Text style={styles.greeting}>{greeting()},</Text>
-          <Text style={styles.name}>{user?.name ?? 'User'} 🐱</Text>
+          <Text style={[styles.greeting, { color: colors.textMuted }]}>{greeting()},</Text>
+          <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'User'} 🐱</Text>
         </View>
 
-        {/* Balance Overview */}
-        <BalanceCard />
+        {/* Credit Card Carousel Section */}
+        <View style={styles.carouselWrapper}>
+          <BalanceCard />
+        </View>
 
-        {/* AI Insight */}
-        <AIInsightCard />
+        <View style={styles.contentPad}>
+          {/* Main Sections */}
+          <AIInsightCard />
+          <BudgetProgressCard budgets={budgets} />
+          {/* Spending Chart */}
+          <SpendingChart transactions={transactions} />
 
-        {/* Spending Chart */}
-        <SpendingChart transactions={transactions} />
-
-        {/* Budget Progress */}
-        <BudgetProgressCard budgets={budgets} />
-
-        {/* Recent Transactions */}
-        <RecentTransactions transactions={transactions.slice(0, 5)} />
+          {/* Recent Transactions */}
+          <RecentTransactions transactions={transactions.slice(0, 5)} />
+          
+          {/* Spacer for Floating Nav Bar */}
+          <View style={{ height: 100 }} />
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.background },
-  scroll: { paddingHorizontal: 20, paddingBottom: 32, gap: 20 },
-  header: { paddingTop: 16 },
-  greeting: { fontFamily: 'Inter-Regular', fontSize: 16, color: Colors.textMuted },
-  name: { fontFamily: 'Inter-Bold', fontSize: 28, color: Colors.text },
+  container: { flex: 1 },
+  scroll: { paddingBottom: 32 },
+  header: { paddingTop: 16, paddingBottom: 8, paddingHorizontal: 20 },
+  greeting: { fontFamily: 'Inter-Medium', fontSize: 14, marginBottom: 4 },
+  name: { fontFamily: 'Inter-Bold', fontSize: 28, letterSpacing: -0.5 },
+  carouselWrapper: {
+    marginVertical: 8,
+  },
+  contentPad: {
+    paddingHorizontal: 20,
+    gap: 16,
+  },
 });

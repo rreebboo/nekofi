@@ -1,50 +1,75 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 import type { Transaction } from '@/types/transaction';
-import { Colors } from '@/constants/Colors';
 import { formatCurrency, formatDate } from '@/utils/formatters';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface Props {
   transaction: Transaction;
   onPress?: () => void;
 }
 
+const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
+
 /**
  * Single transaction row card.
  */
 export function TransactionItem({ transaction, onPress }: Props) {
+  const colors = useThemeColors();
   const isIncome = transaction.type === 'income';
-  const amountColor = isIncome ? Colors.income : Colors.expense;
+  const amountColor = isIncome ? colors.income : colors.text; // Use text color for expenses to be more neutral/modern like image? Wait, the design has expenses as white text usually. Let's stick to neutral for expense, or the theme expense color. I will use the theme expense color but slightly muted, or just text color to look cleaner. Let's use standard amount colors for clarity.
   const amountPrefix = isIncome ? '+' : '-';
+  
+  const scale = useSharedValue(1);
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+  }));
+
+  // Icon based on category (fallback)
+  const getIcon = () => {
+    switch (transaction.category.toLowerCase()) {
+      case 'house rent': return 'home-outline';
+      case 'internet bill': return 'globe-outline';
+      case 'groceries': return 'cart-outline';
+      case 'taxes': return 'document-text-outline';
+      default: return isIncome ? 'arrow-down-outline' : 'arrow-up-outline';
+    }
+  };
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
-      <View style={styles.iconContainer}>
+    <AnimatedPressable 
+      style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.borderAlt }, animatedStyle]} 
+      onPress={onPress}
+      onPressIn={() => (scale.value = withSpring(0.98))}
+      onPressOut={() => (scale.value = withSpring(1))}
+    >
+      <View style={[styles.iconContainer, { backgroundColor: isIncome ? `${colors.income}15` : `${colors.expense}15` }]}>
         <Ionicons
-          name={isIncome ? 'arrow-down-circle' : 'arrow-up-circle'}
-          size={28}
-          color={amountColor}
+          name={getIcon()}
+          size={22}
+          color={isIncome ? colors.income : colors.expense}
         />
       </View>
 
       <View style={styles.info}>
-        <Text style={styles.description} numberOfLines={1}>{transaction.description}</Text>
-        <Text style={styles.category}>{transaction.category} · {formatDate(transaction.date)}</Text>
+        <Text style={[styles.description, { color: colors.text }]} numberOfLines={1}>{transaction.description}</Text>
+        <Text style={[styles.category, { color: colors.textMuted }]}>{transaction.category} · {formatDate(transaction.date)}</Text>
       </View>
 
-      <Text style={[styles.amount, { color: amountColor }]}>
+      <Text style={[styles.amount, { color: colors.text }]}>
         {amountPrefix}{formatCurrency(transaction.amount, transaction.currency)}
       </Text>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.surface, borderRadius: 14, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: Colors.border },
-  iconContainer: { marginRight: 12 },
+  container: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1 },
+  iconContainer: { marginRight: 14, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
   info: { flex: 1 },
-  description: { fontFamily: 'Inter-SemiBold', fontSize: 14, color: Colors.text, marginBottom: 2 },
-  category: { fontFamily: 'Inter-Regular', fontSize: 12, color: Colors.textMuted },
-  amount: { fontFamily: 'Inter-SemiBold', fontSize: 15 },
+  description: { fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 4 },
+  category: { fontFamily: 'Inter-Medium', fontSize: 12 },
+  amount: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
 });

@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { Colors } from '@/constants/Colors';
+import { useThemeColors } from '@/hooks/useThemeColors';
 
 interface Props {
   label: string;
@@ -9,16 +9,24 @@ interface Props {
 }
 
 export function FilterChip({ label, active, onPress }: Props) {
+  const colors = useThemeColors();
+
   return (
-    <TouchableOpacity style={[styles.chip, active && styles.chipActive]} onPress={onPress}>
-      <Text style={[styles.label, active && styles.labelActive]}>{label}</Text>
+    <TouchableOpacity 
+      style={[
+        styles.chip, 
+        { backgroundColor: colors.surface, borderColor: colors.borderAlt },
+        active && { backgroundColor: colors.primary, borderColor: colors.primary }
+      ]} 
+      onPress={onPress}
+    >
+      <Text style={[styles.label, { color: colors.textMuted }, active && styles.labelActive]}>{label}</Text>
     </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: Colors.surface, borderWidth: 1, borderColor: Colors.border },
-  chipActive: { backgroundColor: Colors.primary, borderColor: Colors.primary },
-  label: { fontFamily: 'Inter-Medium', fontSize: 13, color: Colors.textMuted },
+  chip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1 },
+  label: { fontFamily: 'Inter-Medium', fontSize: 13 },
   labelActive: { color: '#fff' },
 });

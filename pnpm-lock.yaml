@@ -35,6 +35,9 @@ importers:
       expo:
         specifier: ~51.0.0
         version: 51.0.39(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react-native@0.74.2(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)
+      expo-blur:
+        specifier: ~13.0.3
+        version: 13.0.3(expo@51.0.39(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react-native@0.74.2(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0))
       expo-camera:
         specifier: ~15.0.12
         version: 15.0.16(expo@51.0.39(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react-native@0.74.2(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0))
@@ -2377,6 +2380,11 @@ packages:
 
   expo-asset@10.0.10:
     resolution: {integrity: sha512-0qoTIihB79k+wGus9wy0JMKq7DdenziVx3iUkGvMAy2azscSgWH6bd2gJ9CGnhC6JRd3qTMFBL0ou/fx7WZl7A==}
+    peerDependencies:
+      expo: '*'
+
+  expo-blur@13.0.3:
+    resolution: {integrity: sha512-z5W9ZGlG6ZiRLuoJZG1AHRvjK8j+2+nc/mtvEtyAa8T/8iTNpUnX4eC8xXDoTL/H4y2pc3cHvytDjCXJG26pcQ==}
     peerDependencies:
       expo: '*'
 
@@ -8136,6 +8144,10 @@ snapshots:
       md5-file: 3.2.3
     transitivePeerDependencies:
       - supports-color
+
+  expo-blur@13.0.3(expo@51.0.39(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react-native@0.74.2(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)):
+    dependencies:
+      expo: 51.0.39(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react-native@0.74.2(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)
 
   expo-camera@15.0.16(expo@51.0.39(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(react-native@0.74.2(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)):
     dependencies:
