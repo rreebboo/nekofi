@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Platform, Pressable } from 'react-native';
+import { View, StyleSheet, Platform, Pressable, useColorScheme } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,7 +27,7 @@ function TabIcon({ route, isFocused, colors }: { route: any, isFocused: boolean,
 
   if (route.name === 'add') {
     return (
-      <View style={[styles.addBtnContainer, { shadowColor: colors.primary }]}>
+      <View style={[styles.addBtnContainer, { shadowColor: '#000' }]}>
         <View style={[styles.addBtn, { backgroundColor: colors.primary }]}>
             <Ionicons name="add" size={32} color="#FFF" />
         </View>
@@ -100,7 +100,8 @@ function TabItem({ route, isFocused, options, navigation, colors, index, tabWidt
 
 export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const colors = useThemeColors();
-  const isDark = colors.background === '#000000';
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
   
   const [tabBarWidth, setTabBarWidth] = useState(0);
   const tabWidth = tabBarWidth > 0 ? tabBarWidth / state.routes.length : 0;
@@ -225,17 +226,17 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      <View style={[styles.shadowView, { shadowColor: isDark ? '#000' : colors.primary }]} />
+      <View style={[styles.shadowView, { shadowColor: isDark ? '#000' : 'rgba(0,0,0,0.3)' }]} />
       
       <BlurView 
-        intensity={Platform.OS === 'ios' ? 25 : 40} 
+        intensity={Platform.OS === 'ios' ? 20 : 35} 
         tint={isDark ? 'dark' : 'light'} 
         experimentalBlurMethod="dimezisBlurView"
         style={[
           styles.blurBackground,
           {
-            backgroundColor: isDark ? 'rgba(0,0,0,0.15)' : 'rgba(255,255,255,0.15)',
-            borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.4)',
+            backgroundColor: isDark ? 'rgba(20, 24, 30, 0.45)' : 'rgba(255, 255, 255, 0.4)',
+            borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.5)',
           }
         ]}
       />

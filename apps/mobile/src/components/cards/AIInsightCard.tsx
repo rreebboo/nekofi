@@ -37,7 +37,7 @@ export function AIInsightCard() {
   return (
     <Animated.View entering={FadeInDown.delay(100).springify()}>
       <AnimatedPressable 
-        style={[styles.card, { backgroundColor: colors.surface, borderColor: `${colors.primary}30` }, animatedStyle]} 
+        style={[styles.card, { backgroundColor: colors.surface, borderColor: `${colors.primary}30`, shadowColor: '#000' }, animatedStyle]} 
         onPress={() => router.push('/ai/chat')} 
         onPressIn={() => (scale.value = withSpring(0.98))}
         onPressOut={() => (scale.value = withSpring(1))}
@@ -59,7 +59,7 @@ export function AIInsightCard() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, padding: 16, borderWidth: 1, shadowColor: '#A052E6', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 },
+  card: { borderRadius: 16, padding: 16, borderWidth: 1, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 },
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   headerText: { flex: 1, fontFamily: 'Inter-SemiBold', fontSize: 13 },
   insight: { fontFamily: 'Inter-Regular', fontSize: 14, lineHeight: 22 },

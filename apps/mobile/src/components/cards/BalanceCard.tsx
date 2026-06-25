@@ -110,8 +110,8 @@ export function BalanceCard() {
   const balance = totalIncome - totalExpense;
 
   const mockCards = useMemo<CardData[]>(() => [
-    { id: '1', number: '4364', brand: 'logo-apple', color: colors.cardPurple, gradientEnd: '#8B3DCE', balance: balance, exp: '08/28', textColor: '#fff' },
-    { id: '2', number: '7216', brand: 'eye', color: colors.cardYellow, gradientEnd: '#E3C148', balance: 12500, exp: '12/29', textColor: '#000' }
+    { id: '1', number: '4364', brand: 'logo-apple', color: colors.cardPrimary, gradientEnd: '#0F1115', balance: balance, exp: '08/28', textColor: '#fff' },
+    { id: '2', number: '7216', brand: 'eye', color: colors.cardSecondary, gradientEnd: '#0F1115', balance: 12500, exp: '12/29', textColor: '#fff' }
   ], [balance, colors]);
 
   const activeIndex = useSharedValue(0);
@@ -245,7 +245,7 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 24,
     justifyContent: 'space-between',
-    shadowColor: '#A052E6',
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.3,
     shadowRadius: 12,

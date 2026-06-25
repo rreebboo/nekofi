@@ -2,84 +2,84 @@
  * Nekofi Design Tokens — Light & Dark themes
  */
 
-export const tintColorLight = '#A052E6';
-export const tintColorDark = '#A052E6';
+export const tintColorLight = '#7DA82F'; // Matte Yellow-Green
+export const tintColorDark = '#91C435';  // Flat Yellow-Green for dark mode
 
 export const Colors = {
   light: {
     // Brand
-    primary: '#A052E6',
-    primaryLight: '#B87DF0',
-    secondary: '#FFC72C',
-    accent: '#6BFFDB',
+    primary: '#7DA82F',     // Matte Yellow-Green
+    primaryLight: '#A3D14D',
+    secondary: '#D4AC28',   // Solid Gold
+    accent: '#207AAB',      // Flat Blue
 
     // Backgrounds
-    background: '#F5F5F5',
+    background: '#F8F9FA',  // Clean crisp light gray
     surface: '#FFFFFF',
-    surfaceAlt: '#EBEBEB',
-    cardYellow: '#FFD56B',
-    cardPurple: '#A052E6',
+    surfaceAlt: '#F1F3F5',
+    cardSecondary: '#D4AC28',
+    cardPrimary: '#7DA82F',
 
     // Text
-    text: '#121212',
-    textMuted: '#6B6B80',
-    textDim: '#A0A0B0',
+    text: '#111827',        // Crisp dark text
+    textMuted: '#6B7280',
+    textDim: '#9CA3AF',
 
     // Borders
-    border: '#E0E0E0',
-    borderAlt: '#EEEEEE',
+    border: '#E5E7EB',
+    borderAlt: '#F3F4F6',
 
     // Semantic
-    success: '#34C759',
-    warning: '#FFCC00',
-    error: '#FF3B30',
-    info: '#007AFF',
+    success: '#20A175',
+    warning: '#D68C1C',
+    error: '#D94141',
+    info: '#2E77D6',
 
     // Finance-specific
-    income: '#34C759',
-    expense: '#FF3B30',
-    transfer: '#007AFF',
+    income: '#20A175',
+    expense: '#D94141',
+    transfer: '#2E77D6',
 
     tint: tintColorLight,
-    tabIconDefault: '#888888',
+    tabIconDefault: '#9CA3AF',
     tabIconSelected: tintColorLight,
   },
   dark: {
     // Brand
-    primary: '#A052E6',
-    primaryLight: '#B87DF0',
-    secondary: '#FFC72C',
-    accent: '#6BFFDB',
+    primary: '#91C435',     // Matte Yellow-Green
+    primaryLight: '#B9E864',
+    secondary: '#D4AC28',
+    accent: '#2B9BCC',
 
     // Backgrounds
-    background: '#000000',
-    surface: '#121212',
-    surfaceAlt: '#2A2A2A',
-    cardYellow: '#FFD56B',
-    cardPurple: '#A052E6',
+    background: '#0B0C10',  // Deep clean black
+    surface: '#1A1D24',     // Clean dark surface
+    surfaceAlt: '#242830',
+    cardSecondary: '#B89218',
+    cardPrimary: '#91C435',
 
     // Text
-    text: '#FFFFFF',
-    textMuted: '#A0A0B0',
-    textDim: '#6B6B80',
+    text: '#F9FAFB',
+    textMuted: '#9CA3AF',
+    textDim: '#6B7280',
 
     // Borders
-    border: '#2A2A2A',
-    borderAlt: '#1A1A1A',
+    border: '#374151',
+    borderAlt: '#1F2937',
 
     // Semantic
-    success: '#30D158',
-    warning: '#FFD60A',
-    error: '#FF453A',
-    info: '#0A84FF',
+    success: '#2CB888',
+    warning: '#E8A32A',
+    error: '#E85A5A',
+    info: '#4F94EB',
 
     // Finance-specific
-    income: '#30D158',
-    expense: '#FF453A',
-    transfer: '#0A84FF',
+    income: '#2CB888',
+    expense: '#E85A5A',
+    transfer: '#4F94EB',
 
     tint: tintColorDark,
-    tabIconDefault: '#6B6B80',
+    tabIconDefault: '#6B7280',
     tabIconSelected: tintColorDark,
   }
 };
