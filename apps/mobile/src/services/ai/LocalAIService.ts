@@ -41,11 +41,17 @@ class LocalAIService {
       store.setModelPath(modelPath);
 
       // Initialize llama.rn context
-      this.llamaContext = await initLlama({
-        model: modelPath,
-        use_mlock: true,
-        n_ctx: 1024, // Keep context smaller to save RAM
-      });
+      try {
+        this.llamaContext = await initLlama({
+          model: modelPath,
+          use_mlock: false, // mlock can cause 'Failed to load model' on Android
+          n_ctx: 1024, // Keep context smaller to save RAM
+        });
+      } catch (initError) {
+        console.warn('Model initialization failed. Deleting potentially corrupted model file:', initError);
+        await FileSystem.deleteAsync(modelPath, { idempotent: true });
+        throw initError;
+      }
 
       store.setIsReady(true);
     } catch (error) {

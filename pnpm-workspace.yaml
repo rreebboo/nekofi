@@ -3,4 +3,5 @@ packages:
   - "packages/shared"
 allowBuilds:
   llama.rn: true
+  unrs-resolver: true
 nodeLinker: hoisted
