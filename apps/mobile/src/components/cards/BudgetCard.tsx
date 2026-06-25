@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, Pressable } from 'react-native';
 import type { Budget } from '@/types/budget';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { formatCurrency } from '@/utils/formatters';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing, useEffect } from 'react-native-reanimated';
+import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
 
 interface Props {
   budget: Budget;
