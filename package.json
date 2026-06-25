@@ -12,7 +12,9 @@
     "mobile:ios": "pnpm --filter mobile ios",
     "mobile:android": "pnpm --filter mobile android",
     "lint": "pnpm --recursive run lint",
-    "type-check": "pnpm --recursive run type-check"
+    "type-check": "pnpm --recursive run type-check",
+    "android": "expo run:android",
+    "ios": "expo run:ios"
   },
   "devDependencies": {
     "typescript": "^5.4.0"

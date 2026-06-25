@@ -2,26 +2,32 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { apiClient } from '@/services/api/client';
+import { aiService } from '@/services/ai/LocalAIService';
+import { useAIStore } from '@/store/useAIStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, FadeInDown } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 /**
- * AI insight card — shown on dashboard, fetches a quick tip from Gemini.
+ * AI insight card — shown on dashboard, fetches a quick tip from local LLM.
  */
 export function AIInsightCard() {
   const [insight, setInsight] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  // Connect to global AI state
+  const { isDownloading, downloadProgress, isReady } = useAIStore();
+  
   const colors = useThemeColors();
   const scale = useSharedValue(1);
 
   useEffect(() => {
     (async () => {
       try {
-        const res = await apiClient.get('/ai/daily-insight');
-        setInsight(res.data.insight);
+        // This will trigger the download if not already downloaded
+        const res = await aiService.generateInsight();
+        setInsight(res);
       } catch {
         setInsight('Track your spending consistently to unlock AI-powered insights.');
       } finally {
@@ -45,10 +51,18 @@ export function AIInsightCard() {
         <View style={styles.header}>
           <Ionicons name="sparkles" size={18} color={colors.primary} />
           <Text style={[styles.headerText, { color: colors.primary }]}>Nekofi AI Insight</Text>
+          {isReady && <Ionicons name="checkmark-circle" size={14} color={colors.primary} />}
           <Ionicons name="arrow-forward" size={14} color={colors.textMuted} />
         </View>
 
-        {loading ? (
+        {isDownloading ? (
+          <View style={styles.progressContainer}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[styles.insight, { color: colors.text }]}>
+              Downloading AI Model ({(downloadProgress * 100).toFixed(0)}%)
+            </Text>
+          </View>
+        ) : loading ? (
           <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 8 }} />
         ) : (
           <Text style={[styles.insight, { color: colors.text }]}>{insight}</Text>
@@ -63,4 +77,5 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
   headerText: { flex: 1, fontFamily: 'Inter-SemiBold', fontSize: 13 },
   insight: { fontFamily: 'Inter-Regular', fontSize: 14, lineHeight: 22 },
+  progressContainer: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
 });
