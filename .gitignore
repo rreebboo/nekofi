@@ -21,3 +21,6 @@ Thumbs.db
 coverage/
 .nyc_output/
 .turbo/
+
+# AI native artifact binaries (downloaded by llama.rn)
+apps/mobile/android/app/src/main/assets/ggml-hexagon/
