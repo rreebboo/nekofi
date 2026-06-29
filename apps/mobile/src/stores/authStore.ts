@@ -19,14 +19,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   loading: true,
 
   initialize: async () => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session) {
-      set({ session, user: mapUser(session.user) });
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (session) {
+        set({ session, user: mapUser(session.user) });
+      }
+    } catch (error) {
+      console.warn('Error getting session:', error);
+    } finally {
+      set({ loading: false });
     }
-    set({ loading: false });
 
-    supabase.auth.onAuthStateChange((_event, session) => {
-      set({ session, user: session ? mapUser(session.user) : null });
+    supabase.auth.onAuthStateChange((event, session) => {
+      // Only log out on explicit sign out
+      if (event === 'SIGNED_OUT') {
+        set({ session: null, user: null });
+      } else if (session) {
+        set({ session, user: mapUser(session.user) });
+      }
     });
   },
 
