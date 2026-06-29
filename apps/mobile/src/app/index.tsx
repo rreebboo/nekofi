@@ -1,4 +1,5 @@
-import { Redirect } from 'expo-router';
+import { useEffect } from 'react';
+import { router, useRootNavigationState } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 
 import { View, ActivityIndicator } from 'react-native';
@@ -8,14 +9,22 @@ import { View, ActivityIndicator } from 'react-native';
  */
 export default function Index() {
   const { session, loading } = useAuthStore();
+  const rootNavigationState = useRootNavigationState();
   
-  if (loading) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-      </View>
-    );
-  }
+  useEffect(() => {
+    // Only attempt to redirect if auth has finished loading and the router state is fully mounted
+    if (!loading && rootNavigationState?.key) {
+      if (session) {
+        router.replace('/(tabs)');
+      } else {
+        router.replace('/(auth)/welcome');
+      }
+    }
+  }, [loading, session, rootNavigationState?.key]);
   
-  return <Redirect href={session ? '/(tabs)' : '/(auth)/welcome'} />;
+  return (
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <ActivityIndicator size="large" />
+    </View>
+  );
 }

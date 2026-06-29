@@ -1,4 +1,5 @@
-import { Stack, Redirect } from 'expo-router';
+import { useEffect } from 'react';
+import { Stack, router } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 
 /**
@@ -6,7 +7,14 @@ import { useAuthStore } from '@/stores/authStore';
  */
 export default function AuthLayout() {
   const { session } = useAuthStore();
-  if (session) return <Redirect href="/(tabs)" />;
+  
+  useEffect(() => {
+    if (session) {
+      router.replace('/(tabs)');
+    }
+  }, [session]);
+
+  if (session) return null;
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
