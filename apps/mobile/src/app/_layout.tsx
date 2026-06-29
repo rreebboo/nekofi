@@ -53,6 +53,8 @@ export default function RootLayout() {
         <Stack.Screen name="transaction/[id]" />
         <Stack.Screen name="budget/[id]" />
         <Stack.Screen name="ai/chat" />
+        <Stack.Screen name="account/add" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="account/list" options={{ presentation: 'modal' }} />
       </Stack>
     </GestureHandlerRootView>
   );

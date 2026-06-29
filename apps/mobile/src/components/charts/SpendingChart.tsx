@@ -8,6 +8,11 @@ import Animated, { FadeInUp } from 'react-native-reanimated';
 
 const { width } = Dimensions.get('window');
 
+const hexToRgb = (hex: string) => {
+  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+  return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '125, 168, 47';
+};
+
 interface Props {
   transactions: Transaction[];
 }
@@ -47,7 +52,7 @@ export function SpendingChart({ transactions }: Props) {
           backgroundGradientFrom: colors.surface,
           backgroundGradientTo: colors.surface,
           decimalPlaces: 0,
-          color: (opacity = 1) => `rgba(160, 82, 230, ${opacity})`, // primary
+          color: (opacity = 1) => `rgba(${hexToRgb(colors.primary)}, ${opacity})`,
           labelColor: () => colors.textMuted,
           propsForDots: { r: '4', strokeWidth: '2', stroke: colors.primary },
           propsForBackgroundLines: { stroke: colors.border, strokeDasharray: '4' },

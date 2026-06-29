@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Dimensions, Pressable, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { 
@@ -12,16 +12,17 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { useTransactionStore } from '@/stores/transactionStore';
+import { useAccountStore } from '@/stores/accountStore';
 import { formatCurrency } from '@/utils/formatters';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 40;
 const CARD_HEIGHT = CARD_WIDTH * 0.63; // Perfect Golden Ratio for Credit Cards
-const Y_OFFSET = CARD_HEIGHT * 0.14; // Mathematically calculated to expose 52px for the logo
-const FRONT_Y = Y_OFFSET;
-const PEEK_Y = -Y_OFFSET;
-const DECK_HEIGHT = CARD_HEIGHT + (Y_OFFSET * 2);
+const Y_OFFSET = CARD_HEIGHT * 0.14; 
+const FRONT_Y = 20;
+const DECK_HEIGHT = CARD_HEIGHT + 60;
 
 const SWIPE_VELOCITY = 500;
 const SWIPE_DISTANCE = width * 0.3;
@@ -35,19 +36,37 @@ interface CardData {
   balance: number;
   exp: string;
   textColor: string;
+  name: string;
 }
+
+type CardState = {
+  x: Animated.SharedValue<number>;
+  y: Animated.SharedValue<number>;
+  s: Animated.SharedValue<number>;
+  z: Animated.SharedValue<number>;
+};
+
+const getRestingY = (depth: number, numCards: number) => {
+  'worklet';
+  if (numCards === 1) return 0;
+  if (depth === 0) return FRONT_Y;
+  if (numCards === 2) return -50;
+  return FRONT_Y - (depth * 14);
+};
+
+const getRestingS = (depth: number, numCards: number) => {
+  'worklet';
+  if (depth === 0) return 1;
+  if (numCards <= 2) return 0.92;
+  return 1 - (depth * 0.05);
+};
 
 function CreditCardItem({ 
   item, 
-  state 
+  state,
 }: { 
   item: CardData, 
-  state: {
-    x: Animated.SharedValue<number>;
-    y: Animated.SharedValue<number>;
-    s: Animated.SharedValue<number>;
-    z: Animated.SharedValue<number>;
-  }
+  state: CardState,
 }) {
   
   const animatedStyle = useAnimatedStyle(() => {
@@ -88,12 +107,8 @@ function CreditCardItem({
 
         <View style={styles.footerRow}>
           <View>
-            <Text style={[styles.nameLabel, { color: item.textColor, opacity: 0.6 }]}>Name</Text>
-            <Text style={[styles.nameValue, { color: item.textColor }]}>Nekofi User</Text>
-          </View>
-          <View style={[styles.addButton, { backgroundColor: item.textColor === '#fff' ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.1)' }]}>
-            <Ionicons name="add" size={16} color={item.textColor} />
-            <Text style={[styles.addText, { color: item.textColor }]}>Add Card</Text>
+            <Text style={[styles.nameLabel, { color: item.textColor, opacity: 0.6 }]}>Account</Text>
+            <Text style={[styles.nameValue, { color: item.textColor }]}>{item.name}</Text>
           </View>
         </View>
       </LinearGradient>
@@ -102,104 +117,153 @@ function CreditCardItem({
 }
 
 export function BalanceCard() {
+  const router = useRouter();
   const { transactions } = useTransactionStore();
+  const { accounts, fetchAccounts } = useAccountStore();
   const colors = useThemeColors();
+
+  React.useEffect(() => {
+    fetchAccounts();
+  }, []);
 
   const totalIncome = transactions.filter((t) => t.type === 'income').reduce((s, t) => s + t.amount, 0);
   const totalExpense = transactions.filter((t) => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-  const balance = totalIncome - totalExpense;
-
-  const mockCards = useMemo<CardData[]>(() => [
-    { id: '1', number: '4364', brand: 'logo-apple', color: colors.cardPrimary, gradientEnd: '#0F1115', balance: balance, exp: '08/28', textColor: '#fff' },
-    { id: '2', number: '7216', brand: 'eye', color: colors.cardSecondary, gradientEnd: '#0F1115', balance: 12500, exp: '12/29', textColor: '#fff' }
-  ], [balance, colors]);
+  
+  const displayCards = useMemo<CardData[]>(() => {
+    return accounts.slice(0, 5).map(acc => ({
+      id: acc.id,
+      number: acc.numberMasked || '••••',
+      brand: acc.brandIcon,
+      color: acc.color,
+      gradientEnd: '#0F1115',
+      balance: acc.balance,
+      exp: 'Active',
+      textColor: acc.textColor,
+      name: acc.name
+    }));
+  }, [accounts]);
 
   const activeIndex = useSharedValue(0);
+  const cardsState = [
+    { x: useSharedValue(0), y: useSharedValue(20), s: useSharedValue(1), z: useSharedValue(100) },
+    { x: useSharedValue(0), y: useSharedValue(6), s: useSharedValue(0.95), z: useSharedValue(90) },
+    { x: useSharedValue(0), y: useSharedValue(-8), s: useSharedValue(0.90), z: useSharedValue(80) },
+    { x: useSharedValue(0), y: useSharedValue(-22), s: useSharedValue(0.85), z: useSharedValue(70) },
+    { x: useSharedValue(0), y: useSharedValue(-36), s: useSharedValue(0.80), z: useSharedValue(60) },
+  ];
 
-  // Independent physics state for Card 0 (Front)
-  const x0 = useSharedValue(0);
-  const y0 = useSharedValue(FRONT_Y);
-  const s0 = useSharedValue(1);
-  const z0 = useSharedValue(100);
+  const numCards = displayCards.length;
 
-  // Independent physics state for Card 1 (Back)
-  const x1 = useSharedValue(0);
-  const y1 = useSharedValue(PEEK_Y);
-  const s1 = useSharedValue(0.92);
-  const z1 = useSharedValue(50);
-
-  const cardsState = useMemo(() => [
-    { x: x0, y: y0, s: s0, z: z0 },
-    { x: x1, y: y1, s: s1, z: z1 }
-  ], []);
+  React.useEffect(() => {
+    for (let i = 0; i < numCards; i++) {
+      const depth = (i - activeIndex.value + numCards) % numCards;
+      cardsState[i].y.value = withSpring(getRestingY(depth, numCards), { damping: 16, stiffness: 150 });
+      cardsState[i].s.value = withSpring(getRestingS(depth, numCards), { damping: 16, stiffness: 150 });
+      cardsState[i].z.value = depth === 0 ? 100 : 100 - depth * 10;
+    }
+  }, [numCards]);
 
   const panGesture = Gesture.Pan()
     .activeOffsetX([-10, 10]) 
     .onUpdate((e) => {
+      if (numCards <= 1) return;
       const active = activeIndex.value;
-      const inactive = (activeIndex.value + 1) % 2;
+      const inactive = (activeIndex.value + 1) % numCards;
 
-      // Move the active card
       cardsState[active].x.value = e.translationX;
 
-      // Interpolate the inactive card to come forward
       const progress = Math.min(Math.abs(e.translationX) / (width * 0.5), 1);
-      cardsState[inactive].s.value = 0.92 + progress * 0.08;
-      cardsState[inactive].y.value = PEEK_Y + progress * (FRONT_Y - PEEK_Y);
+      
+      const targetY = getRestingY(0, numCards);
+      const targetS = getRestingS(0, numCards);
+      const startY = getRestingY(1, numCards);
+      const startS = getRestingS(1, numCards);
+
+      cardsState[inactive].s.value = startS + progress * (targetS - startS);
+      cardsState[inactive].y.value = startY + progress * (targetY - startY);
     })
     .onEnd((e) => {
+      if (numCards <= 1) return;
       const active = activeIndex.value;
-      const inactive = (activeIndex.value + 1) % 2;
+      const inactive = (activeIndex.value + 1) % numCards;
 
-      // Swiped far enough or fast enough to swap
       if (Math.abs(e.translationX) > width * 0.25 || Math.abs(e.velocityX) > 400) {
         const direction = Math.sign(e.translationX || e.velocityX || 1);
         const targetX = direction * width * 1.2;
 
-        // 1. Ensure the new front card fully ascends to the top instantly
-        cardsState[inactive].s.value = withTiming(1, { duration: 200 });
-        cardsState[inactive].y.value = withTiming(FRONT_Y, { duration: 200 });
+        cardsState[inactive].s.value = withTiming(getRestingS(0, numCards), { duration: 200 });
+        cardsState[inactive].y.value = withTiming(getRestingY(0, numCards), { duration: 200 });
 
-        // 2. Throw the active card off screen
         cardsState[active].x.value = withTiming(targetX, { duration: 200 }, (finished) => {
           if (finished) {
-            // 3. Once it is off screen, drop it to the back layer
-            cardsState[active].z.value = 50;
-            
-            // 4. Animate it sliding back into the center of the deck from off-screen!
-            cardsState[active].s.value = withTiming(0.92, { duration: 300 });
-            cardsState[active].y.value = withTiming(PEEK_Y, { duration: 300 });
-            cardsState[active].x.value = withSpring(0, { damping: 14, stiffness: 90 });
-            
-            // 5. Officially swap the active tracker
-            cardsState[inactive].z.value = 100;
             activeIndex.value = inactive;
+            
+            for (let i = 0; i < numCards; i++) {
+              const depth = (i - inactive + numCards) % numCards;
+              cardsState[i].z.value = depth === 0 ? 100 : 100 - depth * 10;
+              
+              if (i === active) {
+                cardsState[i].s.value = withTiming(getRestingS(depth, numCards), { duration: 300 });
+                cardsState[i].y.value = withTiming(getRestingY(depth, numCards), { duration: 300 });
+                cardsState[i].x.value = withSpring(0, { damping: 14, stiffness: 90 });
+              } else if (i !== inactive) {
+                cardsState[i].s.value = withTiming(getRestingS(depth, numCards), { duration: 300 });
+                cardsState[i].y.value = withTiming(getRestingY(depth, numCards), { duration: 300 });
+              }
+            }
           }
         });
       } else {
-        // Snap back if swipe was aborted
-        cardsState[active].x.value = withSpring(0, { damping: 16, stiffness: 150, mass: 0.8 });
-        cardsState[inactive].s.value = withSpring(0.92, { damping: 16, stiffness: 150, mass: 0.8 });
-        cardsState[inactive].y.value = withSpring(PEEK_Y, { damping: 16, stiffness: 150, mass: 0.8 });
+        cardsState[active].x.value = withSpring(0, { damping: 16, stiffness: 150 });
+        cardsState[inactive].s.value = withSpring(getRestingS(1, numCards), { damping: 16, stiffness: 150 });
+        cardsState[inactive].y.value = withSpring(getRestingY(1, numCards), { damping: 16, stiffness: 150 });
       }
     });
 
   return (
     <View style={styles.container}>
+      {/* Section Header */}
+      <View style={[styles.sectionHeader, { paddingHorizontal: 20 }]}>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Accounts</Text>
+        <View style={styles.headerActions}>
+          <Pressable 
+            style={[styles.premiumAddBtn, { backgroundColor: colors.primary }]}
+            onPress={() => router.push('/account/add' as any)}
+          >
+            <Ionicons name="add" size={16} color="#FFF" />
+            <Text style={styles.premiumAddText}>Add</Text>
+          </Pressable>
+          <Pressable 
+            style={[styles.viewAllBtn, { backgroundColor: colors.surfaceAlt }]}
+            onPress={() => router.push('/account/list' as any)}
+          >
+            <Text style={[styles.viewAllText, { color: colors.text }]}>See all</Text>
+          </Pressable>
+        </View>
+      </View>
+
       {/* Wallet Deck Stack */}
-      <GestureDetector gesture={panGesture}>
-        <View style={styles.deckContainer}>
-          {mockCards.map((card, index) => {
-            return (
+      {displayCards.length > 0 ? (
+        <GestureDetector gesture={displayCards.length > 1 ? panGesture : Gesture.Pan()}>
+          <View style={styles.deckContainer}>
+            {displayCards.map((card, index) => (
               <CreditCardItem 
                 key={card.id} 
                 item={card} 
                 state={cardsState[index]}
               />
-            );
-          })}
+            ))}
+          </View>
+        </GestureDetector>
+      ) : (
+        <View style={[styles.emptyState, { borderColor: colors.border, backgroundColor: colors.surface }]}>
+          <View style={[styles.emptyIconWrapper, { backgroundColor: `${colors.primary}15` }]}>
+            <Ionicons name="card-outline" size={32} color={colors.primary} />
+          </View>
+          <Text style={[styles.emptyTitle, { color: colors.text }]}>No accounts linked</Text>
+          <Text style={[styles.emptySub, { color: colors.textMuted }]}>Add a card or wallet to track balances</Text>
         </View>
-      </GestureDetector>
+      )}
 
       {/* Financial Summary Below Card */}
       <View style={[styles.summaryWrapper, { paddingHorizontal: 20 }]}>
@@ -230,6 +294,50 @@ export function BalanceCard() {
 
 const styles = StyleSheet.create({
   container: { marginTop: 8, marginBottom: 16 },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  sectionTitle: { fontFamily: 'Inter-SemiBold', fontSize: 18 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  premiumAddBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    gap: 4,
+  },
+  premiumAddText: { fontFamily: 'Inter-Medium', fontSize: 13, color: '#FFF' },
+  viewAllBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  viewAllText: { fontFamily: 'Inter-Medium', fontSize: 13 },
+  emptyState: {
+    marginHorizontal: 20,
+    marginVertical: 16,
+    height: CARD_HEIGHT,
+    borderRadius: 24,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 24,
+  },
+  emptyIconWrapper: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyTitle: { fontFamily: 'Inter-SemiBold', fontSize: 16, marginBottom: 8 },
+  emptySub: { fontFamily: 'Inter-Regular', fontSize: 13, textAlign: 'center' },
   deckContainer: {
     height: DECK_HEIGHT,
     justifyContent: 'center',
