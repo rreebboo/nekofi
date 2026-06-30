@@ -110,7 +110,7 @@ export const useAccountStore = create<AccountState>()(
         set((state) => ({
           accounts: state.accounts.map(a => a.id === id ? { ...a, syncStatus: 'pending_delete' } : a)
         }));
-        processSyncQueue();
+        syncEmitter.emit();
       }
     }),
     {
