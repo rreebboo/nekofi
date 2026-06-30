@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '@/stores/authStore';
-import { useThemeColors } from '@/hooks/useThemeColors';
+import { useThemeColors, useResolvedTheme } from '@/hooks/useThemeColors';
 import { SyncConflictModal } from '@/components/SyncConflictModal';
 import { initSyncEngine } from '@/services/syncEngine';
 
@@ -22,7 +22,7 @@ SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const { initialize } = useAuthStore();
-  const colorScheme = useColorScheme();
+  const colorScheme = useResolvedTheme();
   const colors = useThemeColors();
   
   const [fontsLoaded, fontError] = useFonts({
@@ -59,6 +59,7 @@ export default function RootLayout() {
         <Stack.Screen name="ai/chat" />
         <Stack.Screen name="account/add" options={{ presentation: 'modal' }} />
         <Stack.Screen name="account/list" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="settings/appearance" options={{ presentation: 'modal' }} />
       </Stack>
       <SyncConflictModal />
     </GestureHandlerRootView>

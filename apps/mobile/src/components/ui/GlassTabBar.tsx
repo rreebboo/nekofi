@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, StyleSheet, Platform, Pressable, useColorScheme } from 'react-native';
+import { View, StyleSheet, Platform, Pressable } from 'react-native';
 import { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { BlurView } from 'expo-blur';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,7 +12,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { useThemeColors } from '@/hooks/useThemeColors';
+import { useThemeColors, useResolvedTheme } from '@/hooks/useThemeColors';
 import * as Haptics from 'expo-haptics';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -100,8 +100,8 @@ function TabItem({ route, isFocused, options, navigation, colors, index, tabWidt
 
 export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const colors = useThemeColors();
-  const colorScheme = useColorScheme();
-  const isDark = colorScheme === 'dark';
+  const resolvedTheme = useResolvedTheme();
+  const isDark = resolvedTheme === 'dark';
   
   const [tabBarWidth, setTabBarWidth] = useState(0);
   const tabWidth = tabBarWidth > 0 ? tabBarWidth / state.routes.length : 0;
