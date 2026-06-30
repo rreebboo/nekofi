@@ -1,3 +1,4 @@
+import 'react-native-get-random-values';
 import { useEffect } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
@@ -14,6 +15,8 @@ import * as SplashScreen from 'expo-splash-screen';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { SyncConflictModal } from '@/components/SyncConflictModal';
+import { initSyncEngine } from '@/services/syncEngine';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -32,6 +35,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     initialize();
+    initSyncEngine();
   }, []);
 
   useEffect(() => {
@@ -56,6 +60,7 @@ export default function RootLayout() {
         <Stack.Screen name="account/add" options={{ presentation: 'modal' }} />
         <Stack.Screen name="account/list" options={{ presentation: 'modal' }} />
       </Stack>
+      <SyncConflictModal />
     </GestureHandlerRootView>
   );
 }

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvo
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { checkAndHandleSyncConflict } from '@/services/syncService';
 
 /**
  * Sign-in screen with email/password and Supabase Auth.
@@ -21,7 +22,13 @@ export default function SignInScreen() {
     }
     setLoading(true);
     try {
+      const wasGuest = useAuthStore.getState().isGuest;
       await signIn(email, password);
+      
+      if (wasGuest) {
+        await checkAndHandleSyncConflict();
+      }
+
       router.replace('/(tabs)');
     } catch (err: any) {
       Alert.alert('Sign In Failed', err.message);

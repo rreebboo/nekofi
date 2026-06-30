@@ -34,40 +34,66 @@ export default function ProfileScreen() {
       <ScrollView showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
 
-        {/* Avatar */}
-        <View style={styles.avatarSection}>
-          <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-            <Text style={styles.avatarText}>{(user?.name ?? 'U').charAt(0).toUpperCase()}</Text>
-          </View>
-          <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'User'}</Text>
-          <Text style={[styles.email, { color: colors.textMuted }]}>{user?.email ?? ''}</Text>
-        </View>
+        {!user ? (
+          <View style={styles.guestSection}>
+            <View style={[styles.avatar, { backgroundColor: colors.surface, borderColor: colors.borderAlt, borderWidth: 1 }]}>
+              <Ionicons name="person-outline" size={36} color={colors.textMuted} />
+            </View>
+            <Text style={[styles.name, { color: colors.text, marginTop: 12 }]}>Guest Mode</Text>
+            <Text style={[styles.email, { color: colors.textMuted, textAlign: 'center', marginHorizontal: 20, marginTop: 4 }]}>
+              You are currently using the app as a guest. Sign in to sync your data across devices.
+            </Text>
 
-        {/* Menu */}
-        <View style={[styles.menu, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
-          {menuItems.map((item, idx) => (
-            <TouchableOpacity key={idx} style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={item.onPress}>
-              <Ionicons name={item.icon as any} size={20} color={colors.textMuted} />
-              <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
-              <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+            <View style={styles.guestActions}>
+              <TouchableOpacity style={[styles.guestBtnPrimary, { backgroundColor: colors.primary }]} onPress={() => router.push('/(auth)/sign-up')}>
+                <Text style={styles.guestBtnPrimaryText}>Create Account</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.guestBtnSecondary, { borderColor: colors.borderAlt, borderWidth: 1 }]} onPress={() => router.push('/(auth)/sign-in')}>
+                <Text style={[styles.guestBtnSecondaryText, { color: colors.text }]}>Sign In</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={{ marginTop: 8 }} onPress={() => router.replace('/(tabs)')}>
+                <Text style={[styles.guestBtnLink, { color: colors.textMuted }]}>Continue as Guest</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : (
+          <>
+            {/* Avatar */}
+            <View style={styles.avatarSection}>
+              <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                <Text style={styles.avatarText}>{(user?.name ?? 'U').charAt(0).toUpperCase()}</Text>
+              </View>
+              <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'User'}</Text>
+              <Text style={[styles.email, { color: colors.textMuted }]}>{user?.email ?? ''}</Text>
+            </View>
+
+            {/* Menu */}
+            <View style={[styles.menu, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
+              {menuItems.map((item, idx) => (
+                <TouchableOpacity key={idx} style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={item.onPress}>
+                  <Ionicons name={item.icon as any} size={20} color={colors.textMuted} />
+                  <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
+                  <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* AI Chat shortcut */}
+            <TouchableOpacity style={[styles.aiCard, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]} onPress={() => router.push('/ai/chat')}>
+              <Ionicons name="sparkles" size={22} color={colors.primary} />
+              <View style={{ flex: 1, marginLeft: 12 }}>
+                <Text style={[styles.aiCardTitle, { color: colors.text }]}>Ask Nekofi AI</Text>
+                <Text style={[styles.aiCardSubtitle, { color: colors.textMuted }]}>Get personalized financial insights</Text>
+              </View>
+              <Ionicons name="arrow-forward" size={18} color={colors.primary} />
             </TouchableOpacity>
-          ))}
-        </View>
 
-        {/* AI Chat shortcut */}
-        <TouchableOpacity style={[styles.aiCard, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]} onPress={() => router.push('/ai/chat')}>
-          <Ionicons name="sparkles" size={22} color={colors.primary} />
-          <View style={{ flex: 1, marginLeft: 12 }}>
-            <Text style={[styles.aiCardTitle, { color: colors.text }]}>Ask Nekofi AI</Text>
-            <Text style={[styles.aiCardSubtitle, { color: colors.textMuted }]}>Get personalized financial insights</Text>
-          </View>
-          <Ionicons name="arrow-forward" size={18} color={colors.primary} />
-        </TouchableOpacity>
-
-        <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
-          <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
-          <Text style={styles.signOutText}>Sign Out</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+              <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
+              <Text style={styles.signOutText}>Sign Out</Text>
+            </TouchableOpacity>
+          </>
+        )}
         
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -82,7 +108,7 @@ const styles = StyleSheet.create({
   avatar: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center' },
   avatarText: { fontFamily: 'Inter-Bold', fontSize: 36, color: '#fff' },
   name: { fontFamily: 'Inter-SemiBold', fontSize: 20 },
-  email: { fontFamily: 'Inter-Regular', fontSize: 14 },
+  email: { fontFamily: 'Inter-Regular', fontSize: 14, lineHeight: 22 },
   menu: { marginHorizontal: 20, borderRadius: 20, borderWidth: 1, overflow: 'hidden', marginBottom: 20 },
   menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 16, borderBottomWidth: 1, gap: 14 },
   menuLabel: { flex: 1, fontFamily: 'Inter-Medium', fontSize: 15 },
@@ -91,4 +117,11 @@ const styles = StyleSheet.create({
   aiCardSubtitle: { fontFamily: 'Inter-Regular', fontSize: 12 },
   signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, gap: 8, paddingVertical: 16, backgroundColor: '#FF6B6B20', borderRadius: 16, marginBottom: 40 },
   signOutText: { fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FF6B6B' },
+  guestSection: { alignItems: 'center', paddingBottom: 32, gap: 8 },
+  guestActions: { width: '100%', paddingHorizontal: 20, marginTop: 24, gap: 12 },
+  guestBtnPrimary: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
+  guestBtnPrimaryText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
+  guestBtnSecondary: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
+  guestBtnSecondaryText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  guestBtnLink: { fontFamily: 'Inter-Medium', fontSize: 14, textAlign: 'center', padding: 8 },
 });

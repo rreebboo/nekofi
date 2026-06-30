@@ -4,11 +4,19 @@ import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
+import { useAuthStore } from '@/stores/authStore';
+
 /**
  * Welcome / onboarding screen.
  */
 export default function WelcomeScreen() {
   const colors = useThemeColors();
+  const continueAsGuest = useAuthStore((state) => state.continueAsGuest);
+
+  const handleGuest = () => {
+    continueAsGuest();
+    router.replace('/(tabs)');
+  };
 
   return (
     <LinearGradient colors={[colors.background, colors.surface]} style={styles.container}>
@@ -25,6 +33,10 @@ export default function WelcomeScreen() {
 
         <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.push('/(auth)/sign-in')}>
           <Text style={[styles.secondaryBtnText, { color: colors.textMuted }]}>I already have an account</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity style={styles.secondaryBtn} onPress={handleGuest}>
+          <Text style={[styles.secondaryBtnText, { color: colors.textMuted }]}>Continue as Guest</Text>
         </TouchableOpacity>
       </View>
     </LinearGradient>

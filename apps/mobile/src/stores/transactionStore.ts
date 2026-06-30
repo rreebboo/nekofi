@@ -1,6 +1,11 @@
 import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/services/supabase/client';
 import type { Transaction, CreateTransactionDto } from '@/types/transaction';
+import { syncEmitter } from '@/services/syncEmitter';
+import type { SyncStatus } from '@/types/account';
 
 interface TransactionState {
   transactions: Transaction[];
@@ -9,9 +14,13 @@ interface TransactionState {
   fetchTransactions: (params?: { limit?: number; offset?: number }) => Promise<void>;
   createTransaction: (dto: CreateTransactionDto) => Promise<Transaction>;
   deleteTransaction: (id: string) => Promise<void>;
+  setTransactions: (transactions: Transaction[]) => void;
+  clearTransactions: () => void;
+  updateSyncStatus: (id: string, status: SyncStatus) => void;
+  removeLocal: (id: string) => void;
 }
 
-const mapToCamel = (item: any): Transaction => ({
+export const mapToCamelTx = (item: any): Transaction => ({
   id: item.id,
   userId: item.user_id,
   type: item.type,
@@ -24,68 +33,98 @@ const mapToCamel = (item: any): Transaction => ({
   budgetId: item.budget_id,
   createdAt: item.created_at,
   updatedAt: item.updated_at,
+  syncStatus: 'synced',
 });
 
-export const useTransactionStore = create<TransactionState>((set, get) => ({
-  transactions: [],
-  loading: false,
-  error: null,
+export const useTransactionStore = create<TransactionState>()(
+  persist(
+    (set, get) => ({
+      transactions: [],
+      loading: false,
+      error: null,
 
-  fetchTransactions: async (params = {}) => {
-    set({ loading: true, error: null });
-    try {
-      let query = supabase
-        .from('transactions')
-        .select('*')
-        .order('date', { ascending: false });
-        
-      if (params.limit) {
-        query = query.limit(params.limit);
-      }
+      setTransactions: (transactions) => set({ transactions }),
+      clearTransactions: () => set({ transactions: [] }),
 
-      const { data, error } = await query;
-      if (error) throw error;
+      updateSyncStatus: (id, status) => set((state) => ({
+        transactions: state.transactions.map(t => t.id === id ? { ...t, syncStatus: status } : t)
+      })),
       
-      set({ transactions: data.map(mapToCamel) });
-    } catch (err: any) {
-      set({ error: err.message });
-    } finally {
-      set({ loading: false });
+      removeLocal: (id) => set((state) => ({
+        transactions: state.transactions.filter(t => t.id !== id)
+      })),
+
+      fetchTransactions: async (params = {}) => {
+        set({ loading: true, error: null });
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            let query = supabase
+              .from('transactions')
+              .select('*')
+              .order('date', { ascending: false });
+              
+            if (params.limit) {
+              query = query.limit(params.limit);
+            }
+
+            const { data, error } = await query;
+            if (error) throw error;
+            
+            if (data) {
+              const serverTxs = data.map(mapToCamelTx);
+              set((state) => {
+                const pending = state.transactions.filter(t => t.syncStatus && t.syncStatus !== 'synced');
+                const pendingIds = pending.map(p => p.id);
+                const filteredServer = serverTxs.filter(st => !pendingIds.includes(st.id));
+                // Keep the pending ones sorted correctly would require re-sorting, but for now just prepend them
+                const merged = [...pending, ...filteredServer].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                return { transactions: merged };
+              });
+            }
+          }
+        } catch (err: any) {
+          console.warn('Error fetching transactions:', err.message);
+        } finally {
+          set({ loading: false });
+        }
+      },
+
+      createTransaction: async (dto) => {
+        const { data: userData } = await supabase.auth.getUser();
+
+        const localId = uuidv4();
+        const newTx: Transaction = {
+          id: localId,
+          userId: userData.user?.id || 'guest',
+          type: dto.type,
+          amount: dto.amount,
+          currency: dto.currency,
+          category: dto.category,
+          description: dto.description,
+          date: dto.date,
+          receiptUrl: dto.receiptUrl,
+          budgetId: dto.budgetId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          syncStatus: 'pending_insert',
+        };
+
+        set((state) => ({ transactions: [newTx, ...state.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) }));
+        syncEmitter.emit();
+        return newTx;
+      },
+
+      deleteTransaction: async (id) => {
+        set((state) => ({ 
+          transactions: state.transactions.map((t) => t.id === id ? { ...t, syncStatus: 'pending_delete' } : t)
+        }));
+        syncEmitter.emit();
+      },
+    }),
+    {
+      name: 'transaction-storage',
+      storage: createJSONStorage(() => AsyncStorage),
     }
-  },
-
-  createTransaction: async (dto) => {
-    const { data: userData } = await supabase.auth.getUser();
-    if (!userData.user) throw new Error('Not authenticated');
-
-    const payload = {
-      user_id: userData.user.id,
-      type: dto.type,
-      amount: dto.amount,
-      currency: dto.currency,
-      category: dto.category,
-      description: dto.description,
-      date: dto.date,
-      receipt_url: dto.receiptUrl,
-      budget_id: dto.budgetId,
-    };
-
-    const { data, error } = await supabase
-      .from('transactions')
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) throw error;
-    
-    const tx = mapToCamel(data);
-    set((state) => ({ transactions: [tx, ...state.transactions] }));
-    return tx;
-  },
-
-  deleteTransaction: async (id) => {
-    const { error } = await supabase.from('transactions').delete().eq('id', id);
-    if (error) throw error;
-    set((state) => ({ transactions: state.transactions.filter((t) => t.id !== id) }));
-  },
-}));
+  )
+);

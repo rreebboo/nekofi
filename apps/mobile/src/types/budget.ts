@@ -1,3 +1,5 @@
+import type { SyncStatus } from './account';
+
 export interface Budget {
   id: string;
   userId: string;
@@ -13,6 +15,7 @@ export interface Budget {
   emoji: string;
   createdAt: string;
   updatedAt: string;
+  syncStatus?: SyncStatus;
 }
 
 export interface CreateBudgetDto {

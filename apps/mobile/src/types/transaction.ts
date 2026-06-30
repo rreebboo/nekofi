@@ -1,3 +1,5 @@
+import type { SyncStatus } from './account';
+
 export type TransactionType = 'income' | 'expense' | 'transfer';
 
 export interface Transaction {
@@ -13,6 +15,7 @@ export interface Transaction {
   budgetId?: string;
   createdAt: string;
   updatedAt: string;
+  syncStatus?: SyncStatus;
 }
 
 export interface CreateTransactionDto {
