@@ -144,6 +144,20 @@ export function BalanceCard() {
   }, [accounts]);
 
   const activeIndex = useSharedValue(0);
+  const emptyScale = useSharedValue(1);
+
+  const handleEmptyPressIn = () => {
+    emptyScale.value = withSpring(0.96, { damping: 20, stiffness: 300 });
+  };
+  
+  const handleEmptyPressOut = () => {
+    emptyScale.value = withSpring(1, { damping: 20, stiffness: 300 });
+  };
+
+  const animatedEmptyStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: emptyScale.value }],
+  }));
+
   const cardsState = [
     { x: useSharedValue(0), y: useSharedValue(20), s: useSharedValue(1), z: useSharedValue(100) },
     { x: useSharedValue(0), y: useSharedValue(6), s: useSharedValue(0.95), z: useSharedValue(90) },
@@ -225,21 +239,23 @@ export function BalanceCard() {
       {/* Section Header */}
       <View style={[styles.sectionHeader, { paddingHorizontal: 20 }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Accounts</Text>
-        <View style={styles.headerActions}>
-          <Pressable 
-            style={[styles.premiumAddBtn, { backgroundColor: colors.primary }]}
-            onPress={() => router.push('/account/add' as any)}
-          >
-            <Ionicons name="add" size={16} color="#FFF" />
-            <Text style={styles.premiumAddText}>Add</Text>
-          </Pressable>
-          <Pressable 
-            style={[styles.viewAllBtn, { backgroundColor: colors.surfaceAlt }]}
-            onPress={() => router.push('/account/list' as any)}
-          >
-            <Text style={[styles.viewAllText, { color: colors.text }]}>See all</Text>
-          </Pressable>
-        </View>
+        {displayCards.length > 0 && (
+          <View style={styles.headerActions}>
+            <Pressable 
+              style={[styles.premiumAddBtn, { backgroundColor: colors.primary }]}
+              onPress={() => router.push('/account/add' as any)}
+            >
+              <Ionicons name="add" size={16} color="#FFF" />
+              <Text style={styles.premiumAddText}>Add</Text>
+            </Pressable>
+            <Pressable 
+              style={[styles.viewAllBtn, { backgroundColor: colors.surfaceAlt }]}
+              onPress={() => router.push('/account/list' as any)}
+            >
+              <Text style={[styles.viewAllText, { color: colors.text }]}>See all</Text>
+            </Pressable>
+          </View>
+        )}
       </View>
 
       {/* Wallet Deck Stack */}
@@ -256,13 +272,30 @@ export function BalanceCard() {
           </View>
         </GestureDetector>
       ) : (
-        <View style={[styles.emptyState, { borderColor: colors.border, backgroundColor: colors.surface }]}>
-          <View style={[styles.emptyIconWrapper, { backgroundColor: `${colors.primary}15` }]}>
-            <Ionicons name="card-outline" size={32} color={colors.primary} />
-          </View>
-          <Text style={[styles.emptyTitle, { color: colors.text }]}>No accounts linked</Text>
-          <Text style={[styles.emptySub, { color: colors.textMuted }]}>Add a card or wallet to track balances</Text>
-        </View>
+        <Animated.View style={[animatedEmptyStyle, { marginVertical: 16 }]}>
+          <Pressable 
+            onPressIn={handleEmptyPressIn}
+            onPressOut={handleEmptyPressOut}
+            onPress={() => router.push('/account/add' as any)}
+          >
+            <LinearGradient
+              colors={[colors.surface, colors.background]}
+              style={[styles.frontCard, { width: CARD_WIDTH, height: CARD_HEIGHT, borderWidth: 1, borderColor: colors.border, alignSelf: 'center', justifyContent: 'center' }]}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              <View style={{ position: 'absolute', top: 24, left: 24 }}>
+                <Ionicons name="card-outline" size={20} color={colors.textMuted} style={{ opacity: 0.6 }} />
+              </View>
+
+              <View style={{ alignItems: 'center' }}>
+                <Ionicons name="add" size={56} color={colors.primary} style={{ opacity: 0.8 }} />
+                <Text style={{ marginTop: 8, fontFamily: 'Inter-SemiBold', color: colors.text, fontSize: 16 }}>Link Card or E-Wallet</Text>
+                <Text style={{ marginTop: 4, fontFamily: 'Inter-Regular', color: colors.textMuted, fontSize: 13 }}>Connect accounts to track balances</Text>
+              </View>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
       )}
 
       {/* Financial Summary Below Card */}
@@ -317,27 +350,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
   },
   viewAllText: { fontFamily: 'Inter-Medium', fontSize: 13 },
-  emptyState: {
-    marginHorizontal: 20,
-    marginVertical: 16,
-    height: CARD_HEIGHT,
-    borderRadius: 24,
-    borderWidth: 2,
-    borderStyle: 'dashed',
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 24,
-  },
-  emptyIconWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  emptyTitle: { fontFamily: 'Inter-SemiBold', fontSize: 16, marginBottom: 8 },
-  emptySub: { fontFamily: 'Inter-Regular', fontSize: 13, textAlign: 'center' },
   deckContainer: {
     height: DECK_HEIGHT,
     justifyContent: 'center',
