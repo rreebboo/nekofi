@@ -26,7 +26,14 @@ export default function SignUpScreen() {
     }
     setLoading(true);
     try {
+      const wasGuest = useAuthStore.getState().isGuest;
       await signUp(email, password, name);
+      
+      if (wasGuest) {
+        const { checkAndHandleSyncConflict } = require('@/services/syncService');
+        await checkAndHandleSyncConflict();
+      }
+
       Alert.alert('Success', 'Check your email to verify your account!');
       router.replace('/(auth)/sign-in');
     } catch (err: any) {
