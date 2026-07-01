@@ -1,12 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
-import type { Budget } from '@/types/budget';
+import type { BudgetGroup } from '@/types/budget';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { formatCurrency } from '@/utils/formatters';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
 
 interface Props {
-  budget: Budget;
+  budget: BudgetGroup;
   onPress?: () => void;
 }
 
@@ -17,8 +17,9 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
  */
 export function BudgetCard({ budget, onPress }: Props) {
   const colors = useThemeColors();
-  const percent = Math.min((budget.spent / budget.amount) * 100, 100);
-  const isOver = budget.spent > budget.amount;
+  const percent = Math.min((budget.totalSpent / budget.totalAmount) * 100, 100);
+  const isOver = budget.totalSpent > budget.totalAmount;
+  const currency = budget.categories[0]?.currency || 'PHP';
 
   const scale = useSharedValue(1);
   const progressWidth = useSharedValue(0);
@@ -52,9 +53,9 @@ export function BudgetCard({ budget, onPress }: Props) {
         </View>
         <View>
           <Text style={[styles.amount, { color: isOver ? colors.error : colors.text }]}>
-            {formatCurrency(budget.spent, budget.currency)}
+            {formatCurrency(budget.totalSpent, currency)}
           </Text>
-          <Text style={[styles.limit, { color: colors.textMuted }]}>/ {formatCurrency(budget.amount, budget.currency)}</Text>
+          <Text style={[styles.limit, { color: colors.textMuted }]}>/ {formatCurrency(budget.totalAmount, currency)}</Text>
         </View>
       </View>
 
@@ -66,8 +67,8 @@ export function BudgetCard({ budget, onPress }: Props) {
 
       <Text style={[styles.remaining, { color: colors.textMuted }]}>
         {isOver
-          ? `${formatCurrency(budget.spent - budget.amount, budget.currency)} over budget`
-          : `${formatCurrency(budget.amount - budget.spent, budget.currency)} remaining`}
+          ? `${formatCurrency(budget.totalSpent - budget.totalAmount, currency)} over budget`
+          : `${formatCurrency(budget.totalAmount - budget.totalSpent, currency)} remaining`}
       </Text>
     </AnimatedPressable>
   );

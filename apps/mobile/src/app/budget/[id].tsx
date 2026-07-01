@@ -3,34 +3,44 @@ import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'rea
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { useBudgetStore } from '@/stores/budgetStore';
+import { useBudgetStore, computeBudgetGroups } from '@/stores/budgetStore';
 import { useTransactionStore } from '@/stores/transactionStore';
 import { TransactionItem } from '@/components/cards/TransactionItem';
 import { BudgetSpendingChart } from '@/components/charts/BudgetSpendingChart';
 import { formatCurrency } from '@/utils/formatters';
+import { EXPENSE_CATEGORIES } from '@/constants/categories';
 
 export default function BudgetDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const colors = useThemeColors();
   
-  const budget = useBudgetStore((state) => state.budgets.find((b) => b.id === id));
-  const deleteBudget = useBudgetStore((state) => state.deleteBudget);
+  const name = decodeURIComponent(id as string);
+  const budgets = useBudgetStore((state) => state.budgets);
+  const budgetGroup = useMemo(() => computeBudgetGroups(budgets).find(bg => bg.name === name), [budgets, name]);
+  
+  const deleteBudgetGroup = useBudgetStore((state) => state.deleteBudgetGroup);
   const transactions = useTransactionStore((state) => state.transactions);
 
   const budgetTransactions = useMemo(() => {
-    if (!budget) return [];
-    if (budget.category === 'general') {
-      return transactions.filter(t => t.type === 'expense');
-    }
-    return transactions.filter(t => t.type === 'expense' && t.category === budget.category);
-  }, [transactions, budget]);
+    if (!budgetGroup) return [];
+    
+    const start = new Date(budgetGroup.startDate);
+    const end = budgetGroup.endDate ? new Date(budgetGroup.endDate) : new Date(8640000000000000);
+    
+    return transactions.filter(t => {
+      const tDate = new Date(t.date);
+      if (tDate < start || tDate > end) return false;
+      if (t.type !== 'expense') return false;
+      return budgetGroup.categories.some(cat => cat.category === t.category);
+    });
+  }, [transactions, budgetGroup]);
 
   const spent = useMemo(() => {
     return budgetTransactions.reduce((acc, t) => acc + t.amount, 0);
   }, [budgetTransactions]);
 
-  if (!budget) {
+  if (!budgetGroup) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={{ color: colors.textMuted }}>Budget not found</Text>
@@ -41,9 +51,10 @@ export default function BudgetDetailScreen() {
     );
   }
 
-  const remaining = Math.max(budget.amount - spent, 0);
-  const progressPercent = Math.min((spent / budget.amount) * 100, 100);
-  const isOverBudget = spent > budget.amount;
+  const remaining = Math.max(budgetGroup.totalAmount - spent, 0);
+  const progressPercent = Math.min((spent / budgetGroup.totalAmount) * 100, 100);
+  const isOverBudget = spent > budgetGroup.totalAmount;
+  const currency = budgetGroup.categories[0]?.currency || 'PHP';
 
   const handleDelete = () => {
     Alert.alert('Delete Budget', 'Are you sure you want to delete this budget?', [
@@ -52,7 +63,7 @@ export default function BudgetDetailScreen() {
         text: 'Delete', 
         style: 'destructive', 
         onPress: async () => {
-          await deleteBudget(budget.id);
+          await deleteBudgetGroup(budgetGroup.name);
           router.back();
         }
       }
@@ -71,16 +82,16 @@ export default function BudgetDetailScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView contentContainerStyle={styles.content}>
+      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
           <View style={styles.cardHeader}>
-            <View style={[styles.emojiContainer, { backgroundColor: `${colors.primary}15` }]}>
-              <Text style={styles.emoji}>{budget.emoji}</Text>
+            <View style={[styles.emojiContainer, { backgroundColor: `${budgetGroup.color}15` }]}>
+              <Text style={styles.emoji}>{budgetGroup.emoji}</Text>
             </View>
             <View style={styles.cardHeaderText}>
-              <Text style={[styles.budgetName, { color: colors.text }]}>{budget.name}</Text>
+              <Text style={[styles.budgetName, { color: colors.text }]}>{budgetGroup.name}</Text>
               <Text style={[styles.budgetCategory, { color: colors.textMuted }]}>
-                {budget.period.charAt(0).toUpperCase() + budget.period.slice(1)} • {new Date(budget.startDate).toLocaleDateString()}
+                {budgetGroup.period.charAt(0).toUpperCase() + budgetGroup.period.slice(1)} • {new Date(budgetGroup.startDate).toLocaleDateString()} {budgetGroup.endDate && `- ${new Date(budgetGroup.endDate).toLocaleDateString()}`}
               </Text>
             </View>
           </View>
@@ -88,12 +99,12 @@ export default function BudgetDetailScreen() {
           <View style={styles.amountsRow}>
             <View style={styles.amountCol}>
               <Text style={[styles.amountLabel, { color: colors.textMuted }]}>Spent</Text>
-              <Text style={[styles.amountValue, { color: colors.text }]}>{formatCurrency(spent, budget.currency)}</Text>
+              <Text style={[styles.amountValue, { color: colors.text }]}>{formatCurrency(spent, currency)}</Text>
             </View>
             <View style={[styles.amountCol, { alignItems: 'flex-end' }]}>
               <Text style={[styles.amountLabel, { color: colors.textMuted }]}>Remaining</Text>
               <Text style={[styles.amountValue, { color: isOverBudget ? colors.expense : colors.income }]}>
-                {formatCurrency(remaining, budget.currency)}
+                {formatCurrency(remaining, currency)}
               </Text>
             </View>
           </View>
@@ -104,19 +115,53 @@ export default function BudgetDetailScreen() {
                 style={[
                   styles.progressBarFill, 
                   { 
-                    backgroundColor: isOverBudget ? colors.expense : colors.primary,
+                    backgroundColor: isOverBudget ? colors.expense : budgetGroup.color,
                     width: `${progressPercent}%` 
                   }
                 ]} 
               />
             </View>
             <Text style={[styles.progressText, { color: colors.textMuted }]}>
-              {progressPercent.toFixed(1)}% of {formatCurrency(budget.amount, budget.currency)}
+              {progressPercent.toFixed(1)}% of {formatCurrency(budgetGroup.totalAmount, currency)}
             </Text>
           </View>
         </View>
 
-        <BudgetSpendingChart budget={budget} transactions={budgetTransactions} />
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>Category Limits</Text>
+        <View style={styles.categoriesList}>
+          {budgetGroup.categories.map((cat) => {
+            const catInfo = EXPENSE_CATEGORIES.find(e => e.id === cat.category);
+            const catTransactions = budgetTransactions.filter(t => t.category === cat.category);
+            const catSpent = catTransactions.reduce((acc, t) => acc + t.amount, 0);
+            const catProgress = Math.min((catSpent / cat.amount) * 100, 100);
+            const catOver = catSpent > cat.amount;
+
+            return (
+              <View key={cat.id} style={[styles.catItem, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
+                <View style={styles.catItemHeader}>
+                  <Text style={styles.catEmoji}>{catInfo?.emoji || '🏷️'}</Text>
+                  <Text style={[styles.catName, { color: colors.text }]}>{catInfo?.label || cat.category}</Text>
+                  <Text style={[styles.catAmount, { color: catOver ? colors.expense : colors.text }]}>
+                    {formatCurrency(catSpent, currency)} / {formatCurrency(cat.amount, currency)}
+                  </Text>
+                </View>
+                <View style={[styles.catProgressBarBg, { backgroundColor: colors.border }]}>
+                  <View 
+                    style={[
+                      styles.catProgressBarFill, 
+                      { 
+                        backgroundColor: catOver ? colors.expense : colors.primary,
+                        width: `${catProgress}%` 
+                      }
+                    ]} 
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        <BudgetSpendingChart budget={budgetGroup} transactions={budgetTransactions} />
 
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Transactions</Text>
         {budgetTransactions.length === 0 ? (
@@ -145,7 +190,6 @@ const styles = StyleSheet.create({
   },
   backBtn: { padding: 4 },
   title: { fontFamily: 'Inter-Bold', fontSize: 18 },
-  placeholder: { width: 32 },
   content: { padding: 20 },
   summaryCard: {
     padding: 20,
@@ -191,6 +235,14 @@ const styles = StyleSheet.create({
   },
   progressText: { fontFamily: 'Inter-Medium', fontSize: 12, textAlign: 'right' },
   sectionTitle: { fontFamily: 'Inter-Bold', fontSize: 18, marginBottom: 16 },
+  categoriesList: { marginBottom: 24, gap: 12 },
+  catItem: { padding: 16, borderRadius: 16, borderWidth: 1 },
+  catItemHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
+  catEmoji: { fontSize: 20, marginRight: 12 },
+  catName: { flex: 1, fontFamily: 'Inter-Medium', fontSize: 15 },
+  catAmount: { fontFamily: 'Inter-Bold', fontSize: 14 },
+  catProgressBarBg: { height: 6, borderRadius: 3, overflow: 'hidden' },
+  catProgressBarFill: { height: '100%', borderRadius: 3 },
   emptyState: { padding: 24, alignItems: 'center' },
   emptyText: { fontFamily: 'Inter-Medium', fontSize: 14 },
 });

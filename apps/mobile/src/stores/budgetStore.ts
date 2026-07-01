@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/services/supabase/client';
-import type { Budget, CreateBudgetDto } from '@/types/budget';
+import type { Budget, CreateBudgetDto, CreateBudgetGroupDto, BudgetGroup } from '@/types/budget';
 import { syncEmitter } from '@/services/syncEmitter';
 import type { SyncStatus } from '@/types/account';
 
@@ -13,8 +13,10 @@ interface BudgetState {
   error: string | null;
   fetchBudgets: () => Promise<void>;
   createBudget: (dto: CreateBudgetDto) => Promise<Budget>;
+  createBudgetGroup: (dto: CreateBudgetGroupDto) => Promise<Budget[]>;
   updateBudget: (id: string, dto: Partial<CreateBudgetDto>) => Promise<Budget>;
   deleteBudget: (id: string) => Promise<void>;
+  deleteBudgetGroup: (name: string) => Promise<void>;
   setBudgets: (budgets: Budget[]) => void;
   clearBudgets: () => void;
   updateSyncStatus: (id: string, status: SyncStatus) => void;
@@ -38,6 +40,34 @@ export const mapToCamel = (item: any): Budget => ({
   updatedAt: item.updated_at,
   syncStatus: 'synced',
 });
+
+export const computeBudgetGroups = (budgets: Budget[]): BudgetGroup[] => {
+  const groups: Record<string, BudgetGroup> = {};
+  
+  // Filter out pending deletes so they don't show up in groups
+  const activeBudgets = budgets.filter(b => b.syncStatus !== 'pending_delete');
+
+  activeBudgets.forEach(b => {
+    if (!groups[b.name]) {
+      groups[b.name] = {
+        name: b.name,
+        period: b.period,
+        startDate: b.startDate,
+        endDate: b.endDate,
+        color: b.color,
+        emoji: b.emoji,
+        totalAmount: 0,
+        totalSpent: 0,
+        categories: []
+      };
+    }
+    groups[b.name].totalAmount += b.amount;
+    groups[b.name].totalSpent += b.spent;
+    groups[b.name].categories.push(b);
+  });
+  
+  return Object.values(groups);
+};
 
 export const useBudgetStore = create<BudgetState>()(
   persist(
@@ -95,6 +125,7 @@ export const useBudgetStore = create<BudgetState>()(
           currency: dto.currency,
           period: dto.period,
           startDate: dto.startDate,
+          endDate: dto.endDate,
           color: dto.color,
           emoji: dto.emoji,
           createdAt: new Date().toISOString(),
@@ -105,6 +136,32 @@ export const useBudgetStore = create<BudgetState>()(
         set((state) => ({ budgets: [newBudget, ...state.budgets] }));
         syncEmitter.emit();
         return newBudget;
+      },
+
+      createBudgetGroup: async (dto) => {
+        const { data: userData } = await supabase.auth.getUser();
+        
+        const newBudgets: Budget[] = dto.categories.map(cat => ({
+          id: uuidv4(),
+          userId: userData.user?.id || 'guest',
+          name: dto.name,
+          category: cat.categoryId,
+          amount: cat.amount,
+          spent: 0,
+          currency: dto.currency,
+          period: dto.period,
+          startDate: dto.startDate,
+          endDate: dto.endDate,
+          color: dto.color,
+          emoji: dto.emoji,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          syncStatus: 'pending_insert',
+        }));
+
+        set((state) => ({ budgets: [...newBudgets, ...state.budgets] }));
+        syncEmitter.emit();
+        return newBudgets;
       },
 
       updateBudget: async (id, dto) => {
@@ -124,6 +181,13 @@ export const useBudgetStore = create<BudgetState>()(
       deleteBudget: async (id) => {
         set((state) => ({ 
           budgets: state.budgets.map((b) => b.id === id ? { ...b, syncStatus: 'pending_delete' } : b)
+        }));
+        syncEmitter.emit();
+      },
+
+      deleteBudgetGroup: async (name) => {
+        set((state) => ({ 
+          budgets: state.budgets.map((b) => b.name === name ? { ...b, syncStatus: 'pending_delete' } : b)
         }));
         syncEmitter.emit();
       },

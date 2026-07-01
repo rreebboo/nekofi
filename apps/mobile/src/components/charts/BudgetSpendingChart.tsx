@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { LineChart, BarChart } from 'react-native-chart-kit';
 import type { Transaction } from '@/types/transaction';
-import type { Budget } from '@/types/budget';
+import type { BudgetGroup } from '@/types/budget';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInUp } from 'react-native-reanimated';
 
@@ -14,7 +14,7 @@ const hexToRgb = (hex: string) => {
 };
 
 interface Props {
-  budget: Budget;
+  budget: BudgetGroup;
   transactions: Transaction[];
 }
 

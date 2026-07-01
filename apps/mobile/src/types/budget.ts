@@ -34,3 +34,29 @@ export interface BudgetWithProgress extends Budget {
   remaining: number;
   isOverBudget: boolean;
 }
+
+export interface BudgetGroup {
+  name: string;
+  period: 'weekly' | 'monthly' | 'yearly';
+  startDate: string;
+  endDate?: string;
+  color: string;
+  emoji: string;
+  totalAmount: number;
+  totalSpent: number;
+  categories: Budget[];
+}
+
+export interface CreateBudgetGroupDto {
+  name: string;
+  period: 'weekly' | 'monthly' | 'yearly';
+  startDate: string;
+  endDate?: string;
+  color: string;
+  emoji: string;
+  currency: string;
+  categories: {
+    categoryId: string;
+    amount: number;
+  }[];
+}
