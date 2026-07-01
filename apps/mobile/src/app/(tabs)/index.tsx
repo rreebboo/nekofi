@@ -19,8 +19,8 @@ import * as Haptics from 'expo-haptics';
 export default function DashboardScreen() {
   const { user } = useAuthStore();
   const { budgets, fetchBudgets } = useBudgetStore();
-  const budgetGroups = React.useMemo(() => computeBudgetGroups(budgets), [budgets]);
   const { transactions, fetchTransactions, loading } = useTransactionStore();
+  const budgetGroups = React.useMemo(() => computeBudgetGroups(budgets, transactions), [budgets, transactions]);
   const [refreshing, setRefreshing] = React.useState(false);
   const colors = useThemeColors();
 

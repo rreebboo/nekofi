@@ -4,6 +4,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { v4 as uuidv4 } from 'uuid';
 import { supabase } from '@/services/supabase/client';
 import type { Budget, CreateBudgetDto, CreateBudgetGroupDto, BudgetGroup } from '@/types/budget';
+import type { Transaction } from '@/types/transaction';
 import { syncEmitter } from '@/services/syncEmitter';
 import type { SyncStatus } from '@/types/account';
 
@@ -41,7 +42,7 @@ export const mapToCamel = (item: any): Budget => ({
   syncStatus: 'synced',
 });
 
-export const computeBudgetGroups = (budgets: Budget[]): BudgetGroup[] => {
+export const computeBudgetGroups = (budgets: Budget[], transactions?: Transaction[]): BudgetGroup[] => {
   const groups: Record<string, BudgetGroup> = {};
   
   // Filter out pending deletes so they don't show up in groups
@@ -62,11 +63,32 @@ export const computeBudgetGroups = (budgets: Budget[]): BudgetGroup[] => {
       };
     }
     groups[b.name].totalAmount += b.amount;
-    groups[b.name].totalSpent += b.spent;
     groups[b.name].categories.push(b);
   });
   
-  return Object.values(groups);
+  const result = Object.values(groups);
+
+  if (transactions) {
+    result.forEach(group => {
+      const start = new Date(group.startDate);
+      const end = group.endDate ? new Date(group.endDate) : new Date(8640000000000000);
+      
+      const groupTransactions = transactions.filter(t => {
+        const tDate = new Date(t.date);
+        if (tDate < start || tDate > end) return false;
+        if (t.type !== 'expense') return false;
+        return group.categories.some(cat => cat.category === t.category);
+      });
+
+      group.totalSpent = groupTransactions.reduce((acc, t) => acc + t.amount, 0);
+    });
+  } else {
+    activeBudgets.forEach(b => {
+      groups[b.name].totalSpent += b.spent;
+    });
+  }
+
+  return result;
 };
 
 export const useBudgetStore = create<BudgetState>()(

@@ -17,10 +17,10 @@ export default function BudgetDetailScreen() {
   
   const name = decodeURIComponent(id as string);
   const budgets = useBudgetStore((state) => state.budgets);
-  const budgetGroup = useMemo(() => computeBudgetGroups(budgets).find(bg => bg.name === name), [budgets, name]);
+  const transactions = useTransactionStore((state) => state.transactions);
+  const budgetGroup = useMemo(() => computeBudgetGroups(budgets, transactions).find(bg => bg.name === name), [budgets, transactions, name]);
   
   const deleteBudgetGroup = useBudgetStore((state) => state.deleteBudgetGroup);
-  const transactions = useTransactionStore((state) => state.transactions);
 
   const budgetTransactions = useMemo(() => {
     if (!budgetGroup) return [];

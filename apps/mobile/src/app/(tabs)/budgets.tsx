@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useBudgetStore, computeBudgetGroups } from '@/stores/budgetStore';
+import { useTransactionStore } from '@/stores/transactionStore';
 import { BudgetCard } from '@/components/cards/BudgetCard';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -13,10 +14,14 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
  */
 export default function BudgetsScreen() {
   const { budgets, fetchBudgets } = useBudgetStore();
-  const budgetGroups = computeBudgetGroups(budgets);
+  const { transactions, fetchTransactions } = useTransactionStore();
+  const budgetGroups = React.useMemo(() => computeBudgetGroups(budgets, transactions), [budgets, transactions]);
   const colors = useThemeColors();
 
-  useEffect(() => { fetchBudgets(); }, []);
+  useEffect(() => { 
+    fetchBudgets(); 
+    fetchTransactions();
+  }, []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
