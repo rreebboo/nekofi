@@ -21,7 +21,7 @@ export default function ProfileScreen() {
   };
 
   const menuItems = [
-    { icon: 'person-outline', label: 'Edit Profile', onPress: () => {} },
+    { icon: 'person-outline', label: 'Edit Profile', onPress: () => router.push('/settings/edit-profile' as any) },
     { icon: 'notifications-outline', label: 'Notifications', onPress: () => {} },
     { icon: 'color-palette-outline', label: 'Appearance', onPress: () => router.push('/settings/appearance' as any) },
     { icon: 'shield-checkmark-outline', label: 'Security', onPress: () => {} },
@@ -60,9 +60,13 @@ export default function ProfileScreen() {
           <>
             {/* Avatar */}
             <View style={styles.avatarSection}>
-              <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
-                <Text style={styles.avatarText}>{(user?.name ?? 'U').charAt(0).toUpperCase()}</Text>
-              </View>
+              {user?.avatarUrl ? (
+                <Image source={{ uri: user.avatarUrl }} style={styles.avatar} />
+              ) : (
+                <View style={[styles.avatar, { backgroundColor: colors.primary }]}>
+                  <Text style={styles.avatarText}>{(user?.name ?? 'U').charAt(0).toUpperCase()}</Text>
+                </View>
+              )}
               <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'User'}</Text>
               <Text style={[styles.email, { color: colors.textMuted }]}>{user?.email ?? ''}</Text>
             </View>

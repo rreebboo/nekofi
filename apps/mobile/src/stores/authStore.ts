@@ -17,6 +17,7 @@ interface AuthState {
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
   setSyncConflict: (value: boolean) => void;
+  updateUser: (updates: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -87,6 +88,13 @@ export const useAuthStore = create<AuthState>()(
 
       setSyncConflict: (value: boolean) => {
         set({ syncConflict: value });
+      },
+
+      updateUser: (updates) => {
+        const currentUser = get().user;
+        if (currentUser) {
+          set({ user: { ...currentUser, ...updates } });
+        }
       }
     }),
     {
