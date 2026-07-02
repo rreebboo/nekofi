@@ -3,7 +3,8 @@ import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useBudgetStore } from '@/stores/budgetStore';
+import { useBudgetStore, computeBudgetGroups } from '@/stores/budgetStore';
+import { useTransactionStore } from '@/stores/transactionStore';
 import { BudgetCard } from '@/components/cards/BudgetCard';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown } from 'react-native-reanimated';
@@ -13,9 +14,14 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
  */
 export default function BudgetsScreen() {
   const { budgets, fetchBudgets } = useBudgetStore();
+  const { transactions, fetchTransactions } = useTransactionStore();
+  const budgetGroups = React.useMemo(() => computeBudgetGroups(budgets, transactions), [budgets, transactions]);
   const colors = useThemeColors();
 
-  useEffect(() => { fetchBudgets(); }, []);
+  useEffect(() => { 
+    fetchBudgets(); 
+    fetchTransactions();
+  }, []);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -27,11 +33,11 @@ export default function BudgetsScreen() {
       </View>
 
       <FlatList
-        data={budgets}
-        keyExtractor={(b) => b.id}
+        data={budgetGroups}
+        keyExtractor={(b) => b.name}
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
-            <BudgetCard budget={item} onPress={() => router.push(`/budget/${item.id}`)} />
+            <BudgetCard budget={item} onPress={() => router.push(`/budget/${encodeURIComponent(item.name)}`)} />
           </Animated.View>
         )}
         contentContainerStyle={styles.list}

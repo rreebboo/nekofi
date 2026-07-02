@@ -2,7 +2,7 @@ import React from 'react';
 import { ScrollView, View, Text, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
-import { useBudgetStore } from '@/stores/budgetStore';
+import { useBudgetStore, computeBudgetGroups } from '@/stores/budgetStore';
 import { useTransactionStore } from '@/stores/transactionStore';
 import { BalanceCard } from '@/components/cards/BalanceCard';
 import { SpendingChart } from '@/components/charts/SpendingChart';
@@ -20,6 +20,7 @@ export default function DashboardScreen() {
   const { user } = useAuthStore();
   const { budgets, fetchBudgets } = useBudgetStore();
   const { transactions, fetchTransactions, loading } = useTransactionStore();
+  const budgetGroups = React.useMemo(() => computeBudgetGroups(budgets, transactions), [budgets, transactions]);
   const [refreshing, setRefreshing] = React.useState(false);
   const colors = useThemeColors();
 
@@ -63,7 +64,7 @@ export default function DashboardScreen() {
         <View style={styles.contentPad}>
           {/* Main Sections */}
           <AIInsightCard />
-          <BudgetProgressCard budgets={budgets} />
+          <BudgetProgressCard budgetGroups={budgetGroups} />
           {/* Spending Chart */}
           <SpendingChart transactions={transactions} />
 
