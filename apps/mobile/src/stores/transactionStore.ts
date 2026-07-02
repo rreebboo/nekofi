@@ -18,6 +18,7 @@ interface TransactionState {
   clearTransactions: () => void;
   updateSyncStatus: (id: string, status: SyncStatus) => void;
   removeLocal: (id: string) => void;
+  handleRealtimeChange: (payload: any) => void;
 }
 
 export const mapToCamelTx = (item: any): Transaction => ({
@@ -54,7 +55,34 @@ export const useTransactionStore = create<TransactionState>()(
         transactions: state.transactions.filter(t => t.id !== id)
       })),
 
+      handleRealtimeChange: (payload) => set((state) => {
+        const { eventType, new: newRecord, old: oldRecord } = payload;
+        let transactions = [...state.transactions];
+        
+        if (eventType === 'DELETE') {
+          return { transactions: transactions.filter(t => t.id !== oldRecord.id) };
+        }
+        
+        const camelRecord = mapToCamelTx(newRecord);
+        const index = transactions.findIndex(t => t.id === camelRecord.id);
+        
+        if (index >= 0) {
+          if (transactions[index].syncStatus && transactions[index].syncStatus !== 'synced') {
+            return state;
+          }
+          transactions[index] = camelRecord;
+        } else {
+          transactions.push(camelRecord);
+        }
+        
+        transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        return { transactions };
+      }),
+
       fetchTransactions: async (params = {}) => {
+        const { useAuthStore } = require('@/stores/authStore');
+        if (useAuthStore.getState().syncConflict) return;
+
         set({ loading: true, error: null });
         try {
           const { data: { session } } = await supabase.auth.getSession();

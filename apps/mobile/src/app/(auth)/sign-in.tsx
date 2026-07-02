@@ -12,8 +12,15 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signIn } = useAuthStore();
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+  const { signIn, syncConflict } = useAuthStore();
   const colors = useThemeColors();
+
+  React.useEffect(() => {
+    if (isResolvingConflict && !syncConflict) {
+      router.replace('/(tabs)');
+    }
+  }, [isResolvingConflict, syncConflict]);
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -23,14 +30,22 @@ export default function SignInScreen() {
     setLoading(true);
     try {
       const wasGuest = useAuthStore.getState().isGuest;
+      useAuthStore.getState().setIsCheckingConflict(true);
       await signIn(email, password);
       
+      let hasConflict = false;
       if (wasGuest) {
-        await checkAndHandleSyncConflict();
+        hasConflict = await checkAndHandleSyncConflict();
       }
+      useAuthStore.getState().setIsCheckingConflict(false);
 
-      router.replace('/(tabs)');
+      if (hasConflict) {
+        setIsResolvingConflict(true);
+      } else {
+        router.replace('/(tabs)');
+      }
     } catch (err: any) {
+      useAuthStore.getState().setIsCheckingConflict(false);
       Alert.alert('Sign In Failed', err.message);
     } finally {
       setLoading(false);

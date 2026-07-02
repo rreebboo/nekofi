@@ -12,8 +12,16 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const { signUp } = useAuthStore();
+  const [isResolvingConflict, setIsResolvingConflict] = useState(false);
+  const { signUp, syncConflict } = useAuthStore();
   const colors = useThemeColors();
+
+  React.useEffect(() => {
+    if (isResolvingConflict && !syncConflict) {
+      Alert.alert('Success', 'Check your email to verify your account!');
+      router.replace('/(auth)/sign-in');
+    }
+  }, [isResolvingConflict, syncConflict]);
 
   const handleSignUp = async () => {
     if (!name || !email || !password) {
@@ -27,16 +35,24 @@ export default function SignUpScreen() {
     setLoading(true);
     try {
       const wasGuest = useAuthStore.getState().isGuest;
+      useAuthStore.getState().setIsCheckingConflict(true);
       await signUp(email, password, name);
       
+      let hasConflict = false;
       if (wasGuest) {
         const { checkAndHandleSyncConflict } = require('@/services/syncService');
-        await checkAndHandleSyncConflict();
+        hasConflict = await checkAndHandleSyncConflict();
       }
+      useAuthStore.getState().setIsCheckingConflict(false);
 
-      Alert.alert('Success', 'Check your email to verify your account!');
-      router.replace('/(auth)/sign-in');
+      if (hasConflict) {
+        setIsResolvingConflict(true);
+      } else {
+        Alert.alert('Success', 'Check your email to verify your account!');
+        router.replace('/(auth)/sign-in');
+      }
     } catch (err: any) {
+      useAuthStore.getState().setIsCheckingConflict(false);
       Alert.alert('Sign Up Failed', err.message);
     } finally {
       setLoading(false);

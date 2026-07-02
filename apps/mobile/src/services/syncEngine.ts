@@ -9,6 +9,10 @@ let isProcessing = false;
 let pendingRun = false;
 
 export async function processSyncQueue() {
+  const { useAuthStore } = require('@/stores/authStore');
+  const authState = useAuthStore.getState();
+  if (authState.syncConflict || authState.isCheckingConflict) return;
+
   if (isProcessing) {
     pendingRun = true;
     return;
@@ -25,13 +29,21 @@ export async function processSyncQueue() {
       const { data: userData } = await supabase.auth.getUser();
       if (!userData.user) continue;
 
+      // Double-check conflict state inside the loop to prevent race conditions
+      // if the loop was hanging on NetInfo while the user signed in.
+      const loopAuthState = useAuthStore.getState();
+      if (loopAuthState.syncConflict || loopAuthState.isCheckingConflict) {
+        pendingRun = false;
+        continue;
+      }
+
       const userId = userData.user.id;
 
       // 1. Process Accounts
       const accountStore = useAccountStore.getState();
       const pendingAccounts = accountStore.accounts.filter(a => a.syncStatus === 'pending_insert');
       for (const a of pendingAccounts) {
-        const { error } = await supabase.from('accounts').insert({
+        const { error } = await supabase.from('accounts').upsert({
           id: a.id,
           user_id: userId,
           name: a.name,
@@ -83,7 +95,7 @@ export async function processSyncQueue() {
           color: b.color,
           emoji: b.emoji,
         };
-        const { error } = await supabase.from('budgets').insert(payload);
+        const { error } = await supabase.from('budgets').upsert(payload);
         if (!error) {
           budgetStore.updateSyncStatus(b.id, 'synced');
         } else {
@@ -123,7 +135,7 @@ export async function processSyncQueue() {
           payload.budget_id = t.budgetId;
         }
 
-        const { error } = await supabase.from('transactions').insert(payload);
+        const { error } = await supabase.from('transactions').upsert(payload);
         if (!error) {
           txStore.updateSyncStatus(t.id, 'synced');
         } else {

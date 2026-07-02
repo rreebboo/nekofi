@@ -11,12 +11,14 @@ interface AuthState {
   loading: boolean;
   isGuest: boolean;
   syncConflict: boolean;
+  isCheckingConflict: boolean;
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
   setSyncConflict: (value: boolean) => void;
+  setIsCheckingConflict: (value: boolean) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -27,6 +29,7 @@ export const useAuthStore = create<AuthState>()(
       loading: true,
       isGuest: false,
       syncConflict: false,
+      isCheckingConflict: false,
 
       initialize: async () => {
         try {
@@ -87,6 +90,10 @@ export const useAuthStore = create<AuthState>()(
 
       setSyncConflict: (value: boolean) => {
         set({ syncConflict: value });
+      },
+
+      setIsCheckingConflict: (value: boolean) => {
+        set({ isCheckingConflict: value });
       }
     }),
     {

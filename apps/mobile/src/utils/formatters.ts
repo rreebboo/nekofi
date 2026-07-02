@@ -3,13 +3,19 @@ import type { Transaction } from '@/types/transaction';
 /**
  * Format a number as currency string.
  */
-export function formatCurrency(amount: number, currency: string = 'PHP'): string {
-  return new Intl.NumberFormat('en-PH', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(amount);
+export function formatCurrency(amount: number, currency?: string | null): string {
+  const safeCurrency = currency && currency.trim() !== '' ? currency : 'PHP';
+  try {
+    return new Intl.NumberFormat('en-PH', {
+      style: 'currency',
+      currency: safeCurrency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  } catch (e) {
+    // Fallback if somehow the currency code is STILL malformed
+    return `${safeCurrency} ${amount.toFixed(2)}`;
+  }
 }
 
 /**

@@ -34,7 +34,7 @@ export function SyncConflictModal() {
                 style={[styles.button, { backgroundColor: colors.primary }]}
                 onPress={() => handleChoice('local')}
               >
-                <Text style={styles.buttonText}>Import Local Data</Text>
+                <Text style={styles.buttonText}>Keep Local Data</Text>
                 <Text style={[styles.subText, { color: 'rgba(255,255,255,0.7)' }]}>Overwrites cloud data</Text>
               </TouchableOpacity>
 
