@@ -17,6 +17,7 @@ interface AccountState {
   clearAccounts: () => void;
   updateSyncStatus: (id: string, status: SyncStatus) => void;
   removeLocal: (id: string) => void;
+  handleRealtimeChange: (payload: any) => void;
 }
 
 export const mapToCamelAccount = (item: any): Account => ({
@@ -52,7 +53,34 @@ export const useAccountStore = create<AccountState>()(
         accounts: state.accounts.filter(a => a.id !== id)
       })),
 
+      handleRealtimeChange: (payload) => set((state) => {
+        const { eventType, new: newRecord, old: oldRecord } = payload;
+        let accounts = [...state.accounts];
+        
+        if (eventType === 'DELETE') {
+          return { accounts: accounts.filter(a => a.id !== oldRecord.id) };
+        }
+        
+        const camelRecord = mapToCamelAccount(newRecord);
+        const index = accounts.findIndex(a => a.id === camelRecord.id);
+        
+        if (index >= 0) {
+          // If we have local pending changes, don't overwrite them immediately
+          if (accounts[index].syncStatus && accounts[index].syncStatus !== 'synced') {
+            return state;
+          }
+          accounts[index] = camelRecord;
+        } else {
+          accounts.push(camelRecord);
+        }
+        
+        return { accounts };
+      }),
+
       fetchAccounts: async () => {
+        const { useAuthStore } = require('@/stores/authStore');
+        if (useAuthStore.getState().syncConflict) return;
+
         set({ loading: true, error: null });
         try {
           const { data: { session } } = await supabase.auth.getSession();

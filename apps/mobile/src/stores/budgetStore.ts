@@ -22,6 +22,7 @@ interface BudgetState {
   clearBudgets: () => void;
   updateSyncStatus: (id: string, status: SyncStatus) => void;
   removeLocal: (id: string) => void;
+  handleRealtimeChange: (payload: any) => void;
 }
 
 export const mapToCamel = (item: any): Budget => ({
@@ -109,7 +110,33 @@ export const useBudgetStore = create<BudgetState>()(
         budgets: state.budgets.filter(b => b.id !== id)
       })),
 
+      handleRealtimeChange: (payload) => set((state) => {
+        const { eventType, new: newRecord, old: oldRecord } = payload;
+        let budgets = [...state.budgets];
+        
+        if (eventType === 'DELETE') {
+          return { budgets: budgets.filter(b => b.id !== oldRecord.id) };
+        }
+        
+        const camelRecord = mapToCamel(newRecord);
+        const index = budgets.findIndex(b => b.id === camelRecord.id);
+        
+        if (index >= 0) {
+          if (budgets[index].syncStatus && budgets[index].syncStatus !== 'synced') {
+            return state;
+          }
+          budgets[index] = camelRecord;
+        } else {
+          budgets.push(camelRecord);
+        }
+        
+        return { budgets };
+      }),
+
       fetchBudgets: async () => {
+        const { useAuthStore } = require('@/stores/authStore');
+        if (useAuthStore.getState().syncConflict) return;
+
         set({ loading: true, error: null });
         try {
           const { data: { session } } = await supabase.auth.getSession();

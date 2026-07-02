@@ -17,6 +17,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors, useResolvedTheme } from '@/hooks/useThemeColors';
 import { SyncConflictModal } from '@/components/SyncConflictModal';
 import { initSyncEngine } from '@/services/syncEngine';
+import { initRealtimeSync } from '@/services/realtimeService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,6 +37,7 @@ export default function RootLayout() {
   useEffect(() => {
     initialize();
     initSyncEngine();
+    initRealtimeSync();
   }, []);
 
   useEffect(() => {

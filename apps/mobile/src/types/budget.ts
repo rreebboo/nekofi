@@ -25,6 +25,7 @@ export interface CreateBudgetDto {
   currency: string;
   period: Budget['period'];
   startDate: string;
+  endDate?: string;
   color: string;
   emoji: string;
 }
