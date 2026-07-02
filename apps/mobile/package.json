@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "expo start",
-    "android": "expo run:android",
+    "android": "cross-env ANDROID_HOME=C:/Users/arshn/AppData/Local/Android/Sdk expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "eslint src --ext .ts,.tsx",
@@ -19,6 +19,7 @@
     "@supabase/supabase-js": "^2.43.4",
     "@types/uuid": "^10.0.0",
     "axios": "^1.7.2",
+    "base64-arraybuffer": "^1.0.2",
     "expo": "~51.0.0",
     "expo-blur": "~13.0.3",
     "expo-build-properties": "~0.12.5",
@@ -54,6 +55,7 @@
     "@babel/core": "^7.24.0",
     "@types/react": "~18.2.79",
     "@types/react-native": "~0.73.0",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.0",
     "eslint-config-expo": "~7.1.2",
     "typescript": "~5.3.3"
