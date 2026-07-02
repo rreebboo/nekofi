@@ -9,6 +9,7 @@ import { TransactionItem } from '@/components/cards/TransactionItem';
 import { BudgetSpendingChart } from '@/components/charts/BudgetSpendingChart';
 import { formatCurrency } from '@/utils/formatters';
 import { EXPENSE_CATEGORIES } from '@/constants/categories';
+import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
 
 export default function BudgetDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -55,6 +56,7 @@ export default function BudgetDetailScreen() {
   const progressPercent = Math.min((spent / budgetGroup.totalAmount) * 100, 100);
   const isOverBudget = spent > budgetGroup.totalAmount;
   const currency = budgetGroup.categories[0]?.currency || 'PHP';
+  const displayColor = budgetGroup.color || colors.primary;
 
   const handleDelete = () => {
     Alert.alert('Delete Budget', 'Are you sure you want to delete this budget?', [
@@ -72,50 +74,53 @@ export default function BudgetDetailScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      
+      {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <TouchableOpacity onPress={() => router.back()} style={styles.headerBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Budget Details</Text>
-        <TouchableOpacity onPress={handleDelete} style={styles.backBtn}>
+        <TouchableOpacity onPress={handleDelete} style={styles.headerBtn}>
           <Ionicons name="trash-outline" size={24} color={colors.expense} />
         </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
-          <View style={styles.cardHeader}>
-            <View style={[styles.emojiContainer, { backgroundColor: `${budgetGroup.color}15` }]}>
-              <Text style={styles.emoji}>{budgetGroup.emoji}</Text>
-            </View>
-            <View style={styles.cardHeaderText}>
-              <Text style={[styles.budgetName, { color: colors.text }]}>{budgetGroup.name}</Text>
-              <Text style={[styles.budgetCategory, { color: colors.textMuted }]}>
+        
+        {/* Theme-based Hero Card */}
+        <Animated.View entering={FadeInDown} layout={Layout.springify()} style={[styles.heroCard, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroTitleContainer}>
+              <Text style={[styles.heroBudgetName, { color: colors.text }]} numberOfLines={1}>{budgetGroup.name}</Text>
+              <Text style={[styles.heroBudgetPeriod, { color: colors.textMuted }]}>
                 {budgetGroup.period.charAt(0).toUpperCase() + budgetGroup.period.slice(1)} • {new Date(budgetGroup.startDate).toLocaleDateString()} {budgetGroup.endDate && `- ${new Date(budgetGroup.endDate).toLocaleDateString()}`}
               </Text>
             </View>
           </View>
 
-          <View style={styles.amountsRow}>
-            <View style={styles.amountCol}>
-              <Text style={[styles.amountLabel, { color: colors.textMuted }]}>Spent</Text>
-              <Text style={[styles.amountValue, { color: colors.text }]}>{formatCurrency(spent, currency)}</Text>
+          <View style={[styles.heroDivider, { backgroundColor: colors.borderAlt }]} />
+
+          <View style={styles.heroAmountsRow}>
+            <View style={styles.heroAmountCol}>
+              <Text style={[styles.heroAmountLabel, { color: colors.textMuted }]}>SPENT</Text>
+              <Text style={[styles.heroAmountValue, { color: colors.text }]}>{formatCurrency(spent, currency)}</Text>
             </View>
-            <View style={[styles.amountCol, { alignItems: 'flex-end' }]}>
-              <Text style={[styles.amountLabel, { color: colors.textMuted }]}>Remaining</Text>
-              <Text style={[styles.amountValue, { color: isOverBudget ? colors.expense : colors.income }]}>
+            <View style={[styles.heroAmountCol, { alignItems: 'flex-end' }]}>
+              <Text style={[styles.heroAmountLabel, { color: colors.textMuted }]}>REMAINING</Text>
+              <Text style={[styles.heroAmountValue, isOverBudget && { color: colors.error }, !isOverBudget && { color: colors.text }]}>
                 {formatCurrency(remaining, currency)}
               </Text>
             </View>
           </View>
 
           <View style={styles.progressContainer}>
-            <View style={[styles.progressBarBg, { backgroundColor: colors.border }]}>
+            <View style={[styles.progressBarBg, { backgroundColor: colors.borderAlt }]}>
               <View 
                 style={[
                   styles.progressBarFill, 
                   { 
-                    backgroundColor: isOverBudget ? colors.expense : budgetGroup.color,
+                    backgroundColor: isOverBudget ? colors.error : displayColor,
                     width: `${progressPercent}%` 
                   }
                 ]} 
@@ -125,11 +130,14 @@ export default function BudgetDetailScreen() {
               {progressPercent.toFixed(1)}% of {formatCurrency(budgetGroup.totalAmount, currency)}
             </Text>
           </View>
-        </View>
+        </Animated.View>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Category Limits</Text>
+        {/* Category Limits */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Allocations</Text>
+        </View>
         <View style={styles.categoriesList}>
-          {budgetGroup.categories.map((cat) => {
+          {budgetGroup.categories.map((cat, index) => {
             const catInfo = EXPENSE_CATEGORIES.find(e => e.id === cat.category);
             const catTransactions = budgetTransactions.filter(t => t.category === cat.category);
             const catSpent = catTransactions.reduce((acc, t) => acc + t.amount, 0);
@@ -137,42 +145,63 @@ export default function BudgetDetailScreen() {
             const catOver = catSpent > cat.amount;
 
             return (
-              <View key={cat.id} style={[styles.catItem, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
+              <Animated.View 
+                key={cat.id} 
+                entering={FadeInDown.delay(index * 50).springify()}
+                style={[styles.catItem, { backgroundColor: colors.surface }]}
+              >
                 <View style={styles.catItemHeader}>
-                  <Text style={styles.catEmoji}>{catInfo?.emoji || '🏷️'}</Text>
-                  <Text style={[styles.catName, { color: colors.text }]}>{catInfo?.label || cat.category}</Text>
-                  <Text style={[styles.catAmount, { color: catOver ? colors.expense : colors.text }]}>
-                    {formatCurrency(catSpent, currency)} / {formatCurrency(cat.amount, currency)}
-                  </Text>
+                  <View style={[styles.catIconContainer, { backgroundColor: colors.background }]}>
+                    <Text style={styles.catEmoji}>{catInfo?.emoji || '🏷️'}</Text>
+                  </View>
+                  <View style={styles.catInfo}>
+                    <Text style={[styles.catName, { color: colors.text }]}>{catInfo?.label || cat.category}</Text>
+                    <Text style={[styles.catAmount, { color: catOver ? colors.expense : displayColor }]}>
+                      {formatCurrency(catSpent, currency)} / {formatCurrency(cat.amount, currency)}
+                    </Text>
+                  </View>
                 </View>
-                <View style={[styles.catProgressBarBg, { backgroundColor: colors.border }]}>
+                <View style={[styles.catProgressBarBg, { backgroundColor: colors.background }]}>
                   <View 
                     style={[
                       styles.catProgressBarFill, 
                       { 
-                        backgroundColor: catOver ? colors.expense : colors.primary,
+                        backgroundColor: catOver ? colors.expense : displayColor,
                         width: `${catProgress}%` 
                       }
                     ]} 
                   />
                 </View>
-              </View>
+              </Animated.View>
             );
           })}
         </View>
 
-        <BudgetSpendingChart budget={budgetGroup} transactions={budgetTransactions} />
+        {/* Chart */}
+        <Animated.View entering={FadeInDown.delay(300).springify()}>
+          <BudgetSpendingChart budget={budgetGroup} transactions={budgetTransactions} />
+        </Animated.View>
 
-        <Text style={[styles.sectionTitle, { color: colors.text }]}>Transactions</Text>
+        {/* Transactions */}
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Recent Transactions</Text>
+        </View>
+        
         {budgetTransactions.length === 0 ? (
-          <View style={styles.emptyState}>
+          <Animated.View entering={FadeInDown.delay(400)} style={[styles.emptyState, { backgroundColor: colors.surface }]}>
+            <Ionicons name="receipt-outline" size={32} color={colors.textMuted} style={{ opacity: 0.5, marginBottom: 8 }} />
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>No transactions yet for this budget.</Text>
-          </View>
+          </Animated.View>
         ) : (
-          budgetTransactions.map(t => (
-            <TransactionItem key={t.id} transaction={t} />
-          ))
+          <View style={styles.transactionsContainer}>
+            {budgetTransactions.map((t, index) => (
+              <Animated.View key={t.id} entering={FadeInDown.delay(400 + (index * 50)).springify()}>
+                <TransactionItem transaction={t} />
+              </Animated.View>
+            ))}
+          </View>
         )}
+        
       </ScrollView>
     </View>
   );
@@ -188,61 +217,51 @@ const styles = StyleSheet.create({
     paddingTop: 60,
     paddingBottom: 16,
   },
-  backBtn: { padding: 4 },
+  headerBtn: { padding: 4, width: 40, alignItems: 'center', justifyContent: 'center' },
   title: { fontFamily: 'Inter-Bold', fontSize: 18 },
-  content: { padding: 20 },
-  summaryCard: {
+  content: { padding: 16, paddingBottom: 60 },
+  
+  heroCard: {
     padding: 20,
     borderRadius: 24,
-    borderWidth: 1,
     marginBottom: 24,
+    borderWidth: 1,
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
   },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  emojiContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 16,
-  },
-  emoji: { fontSize: 24 },
-  cardHeaderText: { flex: 1 },
-  budgetName: { fontFamily: 'Inter-Bold', fontSize: 20, marginBottom: 2 },
-  budgetCategory: { fontFamily: 'Inter-Medium', fontSize: 13, textTransform: 'capitalize' },
-  amountsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 20,
-  },
-  amountCol: {},
-  amountLabel: { fontFamily: 'Inter-Medium', fontSize: 13, marginBottom: 4 },
-  amountValue: { fontFamily: 'Inter-Bold', fontSize: 18 },
-  progressContainer: {},
-  progressBarBg: {
-    height: 12,
-    borderRadius: 6,
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  progressBarFill: {
-    height: '100%',
-    borderRadius: 6,
-  },
-  progressText: { fontFamily: 'Inter-Medium', fontSize: 12, textAlign: 'right' },
-  sectionTitle: { fontFamily: 'Inter-Bold', fontSize: 18, marginBottom: 16 },
+  heroTopRow: { flexDirection: 'row', alignItems: 'center' },
+  heroTitleContainer: { flex: 1 },
+  heroBudgetName: { fontFamily: 'Inter-Bold', fontSize: 22, marginBottom: 2 },
+  heroBudgetPeriod: { fontFamily: 'Inter-Medium', fontSize: 12, textTransform: 'capitalize' },
+  heroDivider: { height: 1, marginVertical: 16 },
+  heroAmountsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  heroAmountCol: { flex: 1 },
+  heroAmountLabel: { fontFamily: 'Inter-SemiBold', fontSize: 11, marginBottom: 4, letterSpacing: 0.5 },
+  heroAmountValue: { fontFamily: 'Inter-Bold', fontSize: 20 },
+  
+  progressContainer: { marginTop: 4 },
+  progressBarBg: { height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
+  progressBarFill: { height: '100%', borderRadius: 4 },
+  progressText: { fontFamily: 'Inter-Medium', fontSize: 12, color: 'rgba(255,255,255,0.8)', textAlign: 'right' },
+  
+  sectionHeader: { marginBottom: 16, marginTop: 8, paddingHorizontal: 4 },
+  sectionTitle: { fontFamily: 'Inter-Bold', fontSize: 20 },
+  
   categoriesList: { marginBottom: 24, gap: 12 },
-  catItem: { padding: 16, borderRadius: 16, borderWidth: 1 },
-  catItemHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
-  catEmoji: { fontSize: 20, marginRight: 12 },
-  catName: { flex: 1, fontFamily: 'Inter-Medium', fontSize: 15 },
+  catItem: { padding: 16, borderRadius: 24, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
+  catItemHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
+  catIconContainer: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
+  catEmoji: { fontSize: 22 },
+  catInfo: { flex: 1 },
+  catName: { fontFamily: 'Inter-Medium', fontSize: 16, marginBottom: 2 },
   catAmount: { fontFamily: 'Inter-Bold', fontSize: 14 },
-  catProgressBarBg: { height: 6, borderRadius: 3, overflow: 'hidden' },
-  catProgressBarFill: { height: '100%', borderRadius: 3 },
-  emptyState: { padding: 24, alignItems: 'center' },
-  emptyText: { fontFamily: 'Inter-Medium', fontSize: 14 },
+  catProgressBarBg: { height: 8, borderRadius: 4, overflow: 'hidden' },
+  catProgressBarFill: { height: '100%', borderRadius: 4 },
+  
+  transactionsContainer: { gap: 8, marginTop: 4 },
+  emptyState: { padding: 32, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#333' },
+  emptyText: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center' },
 });

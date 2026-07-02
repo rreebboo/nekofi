@@ -102,9 +102,9 @@ export function BudgetSpendingChart({ budget, transactions }: Props) {
           backgroundGradientFrom: colors.surface,
           backgroundGradientTo: colors.surface,
           decimalPlaces: 0,
-          color: (opacity = 1) => `rgba(${hexToRgb(colors.primary)}, ${opacity})`,
+          color: (opacity = 1) => `rgba(${hexToRgb(budget.color || colors.primary)}, ${opacity})`,
           labelColor: () => colors.textMuted,
-          propsForDots: { r: '4', strokeWidth: '2', stroke: colors.primary },
+          propsForDots: { r: '4', strokeWidth: '2', stroke: budget.color || colors.primary },
           propsForBackgroundLines: { stroke: colors.border, strokeDasharray: '4' },
         }}
         bezier
