@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -43,15 +43,33 @@ export default function AddAccountScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const { addAccount } = useAccountStore();
+  const [selectedOption, setSelectedOption] = useState<CreateAccountDto | null>(null);
 
-  const handleSelect = async (option: CreateAccountDto) => {
-    // In a real app, this would route to a form to enter credentials/balances
-    // For this redesign, we'll simulate adding it right away with some dummy balance
-    await addAccount({
-      ...option,
-      balance: Math.floor(Math.random() * 50000) + 1000, 
-    });
-    router.back();
+  const handleSelect = (option: CreateAccountDto) => {
+    setSelectedOption(option);
+  };
+
+  const closePrompt = () => setSelectedOption(null);
+
+  const handleConnect = () => {
+    console.log('Triggering SDK for:', selectedOption?.name);
+    closePrompt();
+  };
+
+  const handleManualAdd = () => {
+    closePrompt();
+    if (selectedOption) {
+      router.push({
+        pathname: '/account/setup',
+        params: {
+          name: selectedOption.name,
+          type: selectedOption.type,
+          brandIcon: selectedOption.brandIcon,
+          color: selectedOption.color,
+          textColor: selectedOption.textColor,
+        },
+      });
+    }
   };
 
   return (
@@ -97,6 +115,71 @@ export default function AddAccountScreen() {
           </View>
         ))}
       </ScrollView>
+
+      {/* Custom Bottom Sheet Prompt */}
+      <Modal
+        visible={!!selectedOption}
+        transparent
+        animationType="fade"
+        onRequestClose={closePrompt}
+      >
+        <Pressable style={styles.modalOverlay} onPress={closePrompt}>
+          <Pressable style={[styles.modalContent, { backgroundColor: colors.surface }]} onPress={(e) => e.stopPropagation()}>
+            {selectedOption && (
+              <>
+                <View style={styles.modalHeader}>
+                  <View style={[styles.modalIconBox, { backgroundColor: selectedOption.color }]}>
+                    <Ionicons name={selectedOption.brandIcon as any} size={28} color={selectedOption.textColor} />
+                  </View>
+                  <Text style={[styles.modalTitle, { color: colors.text }]}>Add {selectedOption.name}</Text>
+                  <Text style={[styles.modalSubtitle, { color: colors.textMuted }]}>
+                    Nekofi will securely connect to read your balance and transactions automatically.
+                  </Text>
+                </View>
+
+                <View style={styles.modalFeatures}>
+                  <View style={styles.featureRow}>
+                    <Ionicons name="wallet-outline" size={24} color={colors.text} />
+                    <Text style={[styles.featureText, { color: colors.text }]}>Read your account balance</Text>
+                  </View>
+                  <View style={styles.featureRow}>
+                    <Ionicons name="list-outline" size={24} color={colors.text} />
+                    <Text style={[styles.featureText, { color: colors.text }]}>Sync recent transactions</Text>
+                  </View>
+                  <View style={styles.featureRow}>
+                    <Ionicons name="lock-closed-outline" size={24} color={colors.text} />
+                    <Text style={[styles.featureText, { color: colors.text }]}>Bank-grade security</Text>
+                  </View>
+                </View>
+
+                <View style={styles.modalActions}>
+                  <Pressable 
+                    style={[styles.connectButton, { backgroundColor: selectedOption.color }]} 
+                    onPress={handleConnect}
+                  >
+                    <Text style={[styles.connectButtonText, { color: selectedOption.textColor }]}>
+                      Connect {selectedOption.name}
+                    </Text>
+                  </Pressable>
+
+                  <Pressable 
+                    style={styles.manualButton} 
+                    onPress={handleManualAdd}
+                  >
+                    <Text style={[styles.manualButtonText, { color: colors.text }]}>
+                      Add manually instead
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <Pressable style={styles.cancelButton} onPress={closePrompt}>
+                  <Text style={[styles.cancelText, { color: colors.textMuted }]}>Cancel</Text>
+                </Pressable>
+              </>
+            )}
+          </Pressable>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -142,4 +225,81 @@ const styles = StyleSheet.create({
   },
   optionText: { fontFamily: 'Inter-Medium', fontSize: 15 },
   divider: { height: 1, marginLeft: 72 },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.6)',
+    justifyContent: 'flex-end',
+  },
+  modalContent: {
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    padding: 24,
+    paddingBottom: 40,
+  },
+  modalHeader: {
+    alignItems: 'center',
+    marginBottom: 32,
+  },
+  modalIconBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTitle: {
+    fontFamily: 'Inter-SemiBold',
+    fontSize: 22,
+    marginBottom: 8,
+  },
+  modalSubtitle: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 15,
+    textAlign: 'center',
+    lineHeight: 22,
+    paddingHorizontal: 16,
+  },
+  modalFeatures: {
+    gap: 16,
+    marginBottom: 32,
+    paddingHorizontal: 8,
+  },
+  featureRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
+  },
+  featureText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 15,
+  },
+  modalActions: {
+    marginBottom: 16,
+  },
+  connectButton: {
+    paddingVertical: 18,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+  connectButtonText: {
+    fontFamily: 'Inter-Bold',
+    fontSize: 16,
+  },
+  manualButton: {
+    paddingVertical: 16,
+    alignItems: 'center',
+  },
+  manualButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 15,
+  },
+  cancelButton: {
+    alignItems: 'center',
+    paddingVertical: 12,
+  },
+  cancelText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 16,
+  },
 });
