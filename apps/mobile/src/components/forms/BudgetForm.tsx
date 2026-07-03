@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useBudgetStore } from '@/stores/budgetStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { CreateBudgetGroupDto } from '@/types/budget';
@@ -233,34 +233,39 @@ export function BudgetForm({ onSuccess }: Props) {
     const catInfo = EXPENSE_CATEGORIES.find(c => c.id === activeCatId);
     return (
       <Modal visible={isCatModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.catModal, { backgroundColor: colors.surface }]}>
-            <View style={styles.catModalHeader}>
-              <View style={[styles.catModalIcon, { backgroundColor: colors.background }]}>
-                <Text style={{ fontSize: 32 }}>{catInfo?.emoji}</Text>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.catModal, { backgroundColor: colors.surface }]}>
+              <View style={styles.catModalHeader}>
+                <View style={[styles.catModalIcon, { backgroundColor: colors.background }]}>
+                  <Text style={{ fontSize: 32 }}>{catInfo?.emoji}</Text>
+                </View>
+                <Text style={[styles.catModalTitle, { color: colors.text }]}>{catInfo?.label}</Text>
+                <Text style={[styles.catModalSub, { color: colors.textMuted }]}>Set your spending limit</Text>
               </View>
-              <Text style={[styles.catModalTitle, { color: colors.text }]}>{catInfo?.label}</Text>
-              <Text style={[styles.catModalSub, { color: colors.textMuted }]}>Set your spending limit</Text>
-            </View>
-            <TextInput 
-              style={[styles.catModalInput, { backgroundColor: colors.background, color: colors.text }]} 
-              placeholder="0.00" 
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-              value={tempAmount}
-              onChangeText={setTempAmount}
-              autoFocus
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.background }]} onPress={() => setIsCatModalVisible(false)}>
-                <Text style={[styles.modalActionText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.primary }]} onPress={saveCategory}>
-                <Text style={[styles.modalActionText, { color: '#fff' }]}>Save</Text>
-              </TouchableOpacity>
+              <TextInput 
+                style={[styles.catModalInput, { backgroundColor: colors.background, color: colors.text }]} 
+                placeholder="0.00" 
+                placeholderTextColor={colors.textMuted}
+                keyboardType="decimal-pad"
+                value={tempAmount}
+                onChangeText={setTempAmount}
+                autoFocus
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.background }]} onPress={() => setIsCatModalVisible(false)}>
+                  <Text style={[styles.modalActionText, { color: colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.primary }]} onPress={saveCategory}>
+                  <Text style={[styles.modalActionText, { color: '#fff' }]}>Save</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     );
   };
