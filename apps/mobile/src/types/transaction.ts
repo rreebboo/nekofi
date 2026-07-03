@@ -2,6 +2,8 @@ import type { SyncStatus } from './account';
 
 export type TransactionType = 'income' | 'expense';
 
+export type TransactionSource = 'manual' | 'brick_sync' | 'brick_webhook';
+
 export interface Transaction {
   id: string;
   userId: string;
@@ -11,6 +13,9 @@ export interface Transaction {
   category: string;
   description: string;
   date: string; // ISO 8601
+  accountId?: string;
+  source?: TransactionSource;
+  externalId?: string;
   receiptUrl?: string;
   budgetId?: string;
   createdAt: string;

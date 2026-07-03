@@ -15,6 +15,8 @@ export interface Account {
   gradientEnd: string;
   textColor: string;
   numberMasked?: string;
+  linkedAccountId?: string;
+  isLinked?: boolean;
   createdAt: string;
   syncStatus?: SyncStatus;
 }
