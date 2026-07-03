@@ -26,18 +26,40 @@ export function BudgetSpendingChart({ budget, transactions }: Props) {
     let labels: string[] = [];
     let data: number[] = [];
 
-    if (budget.period === 'weekly') {
-      // 7 days
-      for (let i = 0; i < 7; i++) {
-        const d = new Date(start);
-        d.setDate(start.getDate() + i);
-        const dayStr = d.toISOString().split('T')[0];
-        const dayTotal = transactions
-          .filter(t => t.date.startsWith(dayStr))
-          .reduce((sum, t) => sum + t.amount, 0);
+    if (budget.period === 'custom') {
+      const end = budget.endDate ? new Date(budget.endDate) : new Date(start.getTime() + 6 * 24 * 60 * 60 * 1000);
+      const diffTime = Math.abs(end.getTime() - start.getTime());
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+      
+      if (diffDays <= 14) {
+        for (let i = 0; i < diffDays; i++) {
+          const d = new Date(start);
+          d.setDate(start.getDate() + i);
+          const dayStr = d.toISOString().split('T')[0];
+          const dayTotal = transactions
+            .filter(t => t.date.startsWith(dayStr))
+            .reduce((sum, t) => sum + t.amount, 0);
+          
+          labels.push(diffDays <= 7 ? ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()] : `${d.getDate()}`);
+          data.push(dayTotal);
+        }
+      } else {
+        const chunks = 5;
+        const daysPerChunk = Math.ceil(diffDays / chunks);
+        for (let i = 0; i < chunks; i++) {
+          labels.push(`P${i+1}`);
+          data.push(0);
+        }
         
-        labels.push(['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()]);
-        data.push(dayTotal);
+        transactions.forEach(t => {
+          const tDate = new Date(t.date);
+          if (tDate >= start && tDate <= end) {
+            const tDiffTime = tDate.getTime() - start.getTime();
+            const tDiffDays = Math.floor(tDiffTime / (1000 * 60 * 60 * 24));
+            const chunkIndex = Math.min(Math.floor(tDiffDays / daysPerChunk), chunks - 1);
+            data[chunkIndex] += t.amount;
+          }
+        });
       }
     } else if (budget.period === 'monthly') {
       // 5 weeks
