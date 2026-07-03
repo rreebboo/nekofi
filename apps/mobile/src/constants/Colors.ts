@@ -38,7 +38,6 @@ export const Colors = {
     // Finance-specific
     income: '#20A175',
     expense: '#D94141',
-    transfer: '#2E77D6',
 
     tint: tintColorLight,
     tabIconDefault: '#9CA3AF',
@@ -76,7 +75,6 @@ export const Colors = {
     // Finance-specific
     income: '#2CB888',
     expense: '#E85A5A',
-    transfer: '#4F94EB',
 
     tint: tintColorDark,
     tabIconDefault: '#6B7280',

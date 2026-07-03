@@ -4,6 +4,7 @@ import type { BudgetGroup } from '@/types/budget';
 import { BudgetCard } from './BudgetCard';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
 
 interface Props {
   budgetGroups: BudgetGroup[];
@@ -11,6 +12,7 @@ interface Props {
 
 export function BudgetProgressCard({ budgetGroups }: Props) {
   const colors = useThemeColors();
+  const router = useRouter();
   if (budgetGroups.length === 0) return null;
 
   return (
@@ -18,7 +20,7 @@ export function BudgetProgressCard({ budgetGroups }: Props) {
       <Text style={[styles.title, { color: colors.text }]}>Budget Progress</Text>
       {budgetGroups.slice(0, 3).map((b, index) => (
         <Animated.View key={b.name} entering={FadeInDown.delay(index * 100).springify()}>
-          <BudgetCard budget={b} />
+          <BudgetCard budget={b} onPress={() => router.push(`/budget/${encodeURIComponent(b.name)}`)} />
         </Animated.View>
       ))}
     </View>

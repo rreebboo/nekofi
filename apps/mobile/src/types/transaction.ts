@@ -1,6 +1,6 @@
 import type { SyncStatus } from './account';
 
-export type TransactionType = 'income' | 'expense' | 'transfer';
+export type TransactionType = 'income' | 'expense';
 
 export interface Transaction {
   id: string;

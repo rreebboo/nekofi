@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import { TransactionForm } from '@/components/forms/TransactionForm';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { TransactionType } from '@/types/transaction';
@@ -11,7 +11,18 @@ import { TransactionType } from '@/types/transaction';
  */
 export default function AddTransactionScreen() {
   const [type, setType] = useState<TransactionType>('expense');
+  const [formKey, setFormKey] = useState(0);
   const colors = useThemeColors();
+
+  useFocusEffect(
+    useCallback(() => {
+      // Reset state when screen comes INTO focus.
+      // Doing this on focus instead of blur prevents React Native layout engine
+      // bugs that occur when calculating flex layouts in the background.
+      setFormKey(prev => prev + 1);
+      setType('expense');
+    }, [])
+  );
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -24,7 +35,7 @@ export default function AddTransactionScreen() {
       </View>
 
       <View style={[styles.typePicker, { backgroundColor: colors.surface }]}>
-        {(['expense', 'income', 'transfer'] as TransactionType[]).map((t) => (
+        {(['expense', 'income'] as TransactionType[]).map((t) => (
           <TouchableOpacity
             key={t}
             style={[styles.typeBtn, type === t && { backgroundColor: colors.primary }]}
@@ -38,7 +49,7 @@ export default function AddTransactionScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
-        <TransactionForm type={type} onSuccess={() => router.replace('/(tabs)')} />
+        <TransactionForm key={formKey} type={type} onSuccess={() => router.replace('/(tabs)')} />
         <View style={{ height: 100 }} />
       </ScrollView>
     </SafeAreaView>
@@ -50,8 +61,8 @@ const styles = StyleSheet.create({
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 },
   cancel: { fontFamily: 'Inter-Medium', fontSize: 16 },
   title: { fontFamily: 'Inter-SemiBold', fontSize: 18 },
-  typePicker: { flexDirection: 'row', marginHorizontal: 20, borderRadius: 16, padding: 6, marginBottom: 12 },
-  typeBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center' },
+  typePicker: { flexDirection: 'row', marginHorizontal: 20, borderRadius: 16, padding: 4, marginBottom: 12 },
+  typeBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   typeBtnText: { fontFamily: 'Inter-Medium', fontSize: 14 },
   typeBtnTextActive: { color: '#fff' },
   scroll: { paddingHorizontal: 20, paddingBottom: 40 },

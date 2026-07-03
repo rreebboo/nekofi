@@ -33,7 +33,7 @@ export function BudgetSpendingChart({ budget, transactions }: Props) {
         d.setDate(start.getDate() + i);
         const dayStr = d.toISOString().split('T')[0];
         const dayTotal = transactions
-          .filter(t => t.date.startsWith(dayStr))
+          .filter(t => t.type === 'expense' && t.date.startsWith(dayStr))
           .reduce((sum, t) => sum + t.amount, 0);
         
         labels.push(['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'][d.getDay()]);
@@ -45,6 +45,7 @@ export function BudgetSpendingChart({ budget, transactions }: Props) {
       data = [0, 0, 0, 0, 0];
       
       transactions.forEach(t => {
+        if (t.type !== 'expense') return;
         const tDate = new Date(t.date);
         if (tDate >= start) {
           const diffTime = Math.abs(tDate.getTime() - start.getTime());
@@ -66,6 +67,7 @@ export function BudgetSpendingChart({ budget, transactions }: Props) {
       }
       
       transactions.forEach(t => {
+        if (t.type !== 'expense') return;
         const tDate = new Date(t.date);
         if (tDate >= start) {
           const monthDiff = (tDate.getFullYear() - start.getFullYear()) * 12 + (tDate.getMonth() - start.getMonth());
@@ -101,11 +103,14 @@ export function BudgetSpendingChart({ budget, transactions }: Props) {
           backgroundColor: colors.surface,
           backgroundGradientFrom: colors.surface,
           backgroundGradientTo: colors.surface,
+          fillShadowGradientFromOpacity: 0.3,
+          fillShadowGradientToOpacity: 0,
+          useShadowColorFromDataset: true,
           decimalPlaces: 0,
           color: (opacity = 1) => `rgba(${hexToRgb(budget.color || colors.primary)}, ${opacity})`,
           labelColor: () => colors.textMuted,
-          propsForDots: { r: '4', strokeWidth: '2', stroke: budget.color || colors.primary },
-          propsForBackgroundLines: { stroke: colors.border, strokeDasharray: '4' },
+          propsForDots: { r: '3', strokeWidth: '0' },
+          propsForBackgroundLines: { stroke: colors.border, strokeDasharray: '4', strokeOpacity: 0.5 },
         }}
         bezier
         style={styles.chart}

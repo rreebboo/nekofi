@@ -18,6 +18,7 @@ export function TransactionForm({ type, onSuccess }: Props) {
   const [amount, setAmount] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState('');
+  const [customCategory, setCustomCategory] = useState('');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const colors = useThemeColors();
@@ -37,7 +38,8 @@ export function TransactionForm({ type, onSuccess }: Props) {
 
     setLoading(true);
     try {
-      const dto: CreateTransactionDto = { type, amount: parsed, currency: 'PHP', category, description, date };
+      const finalCategory = category.startsWith('other') ? (customCategory.trim() || 'Others') : category;
+      const dto: CreateTransactionDto = { type, amount: parsed, currency: 'PHP', category: finalCategory, description, date };
       await createTransaction(dto);
       onSuccess();
     } catch (err: any) {
@@ -68,6 +70,15 @@ export function TransactionForm({ type, onSuccess }: Props) {
           </TouchableOpacity>
         ))}
       </View>
+      {category.startsWith('other') && (
+        <TextInput 
+          style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text, marginTop: 4 }]} 
+          placeholder="Specify custom category (optional)" 
+          placeholderTextColor={colors.textMuted} 
+          value={customCategory} 
+          onChangeText={setCustomCategory} 
+        />
+      )}
 
       <Text style={[styles.label, { color: colors.textMuted }]}>Date</Text>
       <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />

@@ -87,29 +87,53 @@ export const useTransactionStore = create<TransactionState>()(
         try {
           const { data: { session } } = await supabase.auth.getSession();
           if (session) {
-            let query = supabase
-              .from('transactions')
-              .select('*')
-              .order('date', { ascending: false });
-              
+            let allServerTxs: Transaction[] = [];
+            
             if (params.limit) {
-              query = query.limit(params.limit);
+              const { data, error } = await supabase
+                .from('transactions')
+                .select('*')
+                .order('date', { ascending: false })
+                .limit(params.limit);
+                
+              if (error) throw error;
+              if (data) allServerTxs = data.map(mapToCamelTx);
+            } else {
+              // Fetch complete dataset recursively
+              let offset = 0;
+              const limit = 1000;
+              let hasMore = true;
+              
+              while (hasMore) {
+                const { data, error } = await supabase
+                  .from('transactions')
+                  .select('*')
+                  .order('date', { ascending: false })
+                  .range(offset, offset + limit - 1);
+                  
+                if (error) throw error;
+                
+                if (data && data.length > 0) {
+                  allServerTxs.push(...data.map(mapToCamelTx));
+                  if (data.length < limit) {
+                    hasMore = false; // Reached the end
+                  } else {
+                    offset += limit;
+                  }
+                } else {
+                  hasMore = false;
+                }
+              }
             }
 
-            const { data, error } = await query;
-            if (error) throw error;
-            
-            if (data) {
-              const serverTxs = data.map(mapToCamelTx);
-              set((state) => {
-                const pending = state.transactions.filter(t => t.syncStatus && t.syncStatus !== 'synced');
-                const pendingIds = pending.map(p => p.id);
-                const filteredServer = serverTxs.filter(st => !pendingIds.includes(st.id));
-                // Keep the pending ones sorted correctly would require re-sorting, but for now just prepend them
-                const merged = [...pending, ...filteredServer].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-                return { transactions: merged };
-              });
-            }
+            set((state) => {
+              const pending = state.transactions.filter(t => t.syncStatus && t.syncStatus !== 'synced');
+              const pendingIds = pending.map(p => p.id);
+              const filteredServer = allServerTxs.filter(st => !pendingIds.includes(st.id));
+              // Keep the pending ones sorted correctly would require re-sorting, but for now just prepend them
+              const merged = [...pending, ...filteredServer].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+              return { transactions: merged };
+            });
           }
         } catch (err: any) {
           console.warn('Error fetching transactions:', err.message);

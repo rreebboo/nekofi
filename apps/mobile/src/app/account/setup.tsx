@@ -14,19 +14,21 @@ export default function SetupAccountScreen() {
   const { addAccount } = useAccountStore();
   
   const [balanceStr, setBalanceStr] = useState('');
+  const [customName, setCustomName] = useState('');
 
   // Extract params passed from add.tsx
   const name = params.name as string;
   const type = params.type as any;
-  const brandIcon = params.brandIcon as string;
+  const brandIcon = params.brandIcon as keyof typeof Ionicons.glyphMap;
   const color = params.color as string;
   const textColor = params.textColor as string;
 
   const handleSave = async () => {
     const balance = parseFloat(balanceStr) || 0;
+    const finalName = name.startsWith('Other') ? (customName.trim() || name) : name;
     
     const option: CreateAccountDto = {
-      name,
+      name: finalName,
       type,
       brandIcon,
       color,
@@ -65,6 +67,22 @@ export default function SetupAccountScreen() {
             </Text>
           </View>
         </View>
+
+        {/* Optional Custom Name if 'Other' */}
+        {name.startsWith('Other') && (
+          <View style={[styles.inputSection, { marginBottom: 24 }]}>
+            <Text style={[styles.inputLabel, { color: colors.textMuted }]}>Account Name</Text>
+            <View style={[styles.inputWrapper, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 14 }]}>
+              <TextInput
+                style={[styles.input, { color: colors.text, fontSize: 18, fontFamily: 'Inter-Medium' }]}
+                placeholder={`Custom name (optional)`}
+                placeholderTextColor={colors.textMuted}
+                value={customName}
+                onChangeText={setCustomName}
+              />
+            </View>
+          </View>
+        )}
 
         {/* User Input for Balance */}
         <View style={styles.inputSection}>

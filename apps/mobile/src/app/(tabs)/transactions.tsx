@@ -14,7 +14,6 @@ const FILTERS: { label: string; value: TransactionType | 'all' }[] = [
   { label: 'All', value: 'all' },
   { label: 'Income', value: 'income' },
   { label: 'Expense', value: 'expense' },
-  { label: 'Transfer', value: 'transfer' },
 ];
 
 /**

@@ -302,8 +302,8 @@ export function BalanceCard() {
       <View style={[styles.summaryWrapper, { paddingHorizontal: 20 }]}>
         <View style={[styles.summaryRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.stat}>
-            <View style={[styles.iconCircle, { backgroundColor: `${colors.income}20` }]}>
-               <Ionicons name="arrow-down" size={16} color={colors.income} />
+            <View style={[styles.iconCircle, { backgroundColor: `${colors.primary}20` }]}>
+               <Ionicons name="arrow-down" size={16} color={colors.primary} />
             </View>
             <View>
               <Text style={[styles.statLabel, { color: colors.textMuted }]}>Income</Text>
