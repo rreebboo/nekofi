@@ -18,7 +18,7 @@ export default function SetupAccountScreen() {
   // Extract params passed from add.tsx
   const name = params.name as string;
   const type = params.type as any;
-  const brandIcon = params.brandIcon as string;
+  const brandIcon = params.brandIcon as keyof typeof Ionicons.glyphMap;
   const color = params.color as string;
   const textColor = params.textColor as string;
 

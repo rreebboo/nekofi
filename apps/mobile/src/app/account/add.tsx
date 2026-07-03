@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, ActivityIndicator, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAccountStore } from '@/stores/accountStore';
 import { AccountType, CreateAccountDto } from '@/types/account';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { brickService } from '@/services/brickService';
 
 const ACCOUNT_OPTIONS: { title: string, options: CreateAccountDto[] }[] = [
   {
@@ -44,6 +45,7 @@ export default function AddAccountScreen() {
   const colors = useThemeColors();
   const { addAccount } = useAccountStore();
   const [selectedOption, setSelectedOption] = useState<CreateAccountDto | null>(null);
+  const [connecting, setConnecting] = useState(false);
 
   const handleSelect = (option: CreateAccountDto) => {
     setSelectedOption(option);
@@ -51,9 +53,39 @@ export default function AddAccountScreen() {
 
   const closePrompt = () => setSelectedOption(null);
 
-  const handleConnect = () => {
-    console.log('Triggering SDK for:', selectedOption?.name);
-    closePrompt();
+  const handleConnect = async () => {
+    if (!selectedOption || connecting) return;
+
+    setConnecting(true);
+    try {
+      // Get a public token from Brick via our Edge Function
+      const { publicToken, redirectUrl } = await brickService.getPublicToken(selectedOption.name);
+
+      closePrompt();
+
+      // Navigate to the WebView connect screen with the token
+      router.push({
+        pathname: '/account/connect',
+        params: {
+          publicToken,
+          redirectUrl,
+          name: selectedOption.name,
+          type: selectedOption.type,
+          brandIcon: selectedOption.brandIcon,
+          color: selectedOption.color,
+          textColor: selectedOption.textColor,
+        },
+      });
+    } catch (err: any) {
+      console.error('Failed to start connection:', err);
+      Alert.alert(
+        'Connection Error',
+        err.message || 'Failed to start the connection. Please try again.',
+        [{ text: 'OK' }],
+      );
+    } finally {
+      setConnecting(false);
+    }
   };
 
   const handleManualAdd = () => {
@@ -154,12 +186,22 @@ export default function AddAccountScreen() {
 
                 <View style={styles.modalActions}>
                   <Pressable 
-                    style={[styles.connectButton, { backgroundColor: selectedOption.color }]} 
+                    style={[styles.connectButton, { backgroundColor: selectedOption.color, opacity: connecting ? 0.7 : 1 }]} 
                     onPress={handleConnect}
+                    disabled={connecting}
                   >
-                    <Text style={[styles.connectButtonText, { color: selectedOption.textColor }]}>
-                      Connect {selectedOption.name}
-                    </Text>
+                    {connecting ? (
+                      <View style={styles.connectButtonLoading}>
+                        <ActivityIndicator size="small" color={selectedOption.textColor} />
+                        <Text style={[styles.connectButtonText, { color: selectedOption.textColor, marginLeft: 8 }]}>
+                          Connecting...
+                        </Text>
+                      </View>
+                    ) : (
+                      <Text style={[styles.connectButtonText, { color: selectedOption.textColor }]}>
+                        Connect {selectedOption.name}
+                      </Text>
+                    )}
                   </Pressable>
 
                   <Pressable 
@@ -285,6 +327,11 @@ const styles = StyleSheet.create({
   connectButtonText: {
     fontFamily: 'Inter-Bold',
     fontSize: 16,
+  },
+  connectButtonLoading: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   manualButton: {
     paddingVertical: 16,
