@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvo
 import { router } from 'expo-router';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { SocialAuthButton } from '@/components/ui/SocialAuthButton';
 
 /**
  * Sign-up screen — creates a new Supabase user.
@@ -12,8 +13,9 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fbLoading, setFbLoading] = useState(false);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
-  const { signUp, syncConflict } = useAuthStore();
+  const { signUp, signInWithFacebook, syncConflict } = useAuthStore();
   const colors = useThemeColors();
 
   React.useEffect(() => {
@@ -59,6 +61,25 @@ export default function SignUpScreen() {
     }
   };
 
+  /**
+   * Handles Facebook OAuth sign-up / sign-in.
+   * If this is a brand-new Facebook account, Supabase creates the user automatically.
+   * If they already have a Supabase account linked to this Facebook ID, they are signed in.
+   */
+  const handleFacebookSignIn = async () => {
+    setFbLoading(true);
+    try {
+      await signInWithFacebook();
+      // Auth layout useEffect will navigate to /(tabs) once session is set in the store.
+    } catch (err: any) {
+      if (!err.message?.includes('cancelled')) {
+        Alert.alert('Facebook Sign Up Failed', err.message);
+      }
+    } finally {
+      setFbLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.title, { color: colors.text }]}>Create account</Text>
@@ -73,6 +94,22 @@ export default function SignUpScreen() {
           <Text style={styles.btnText}>{loading ? 'Creating account...' : 'Create Account'}</Text>
         </TouchableOpacity>
       </View>
+
+      {/* ── Divider ─────────────────────────────────────────── */}
+      <View style={styles.dividerRow}>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        <Text style={[styles.dividerText, { color: colors.textMuted }]}>or sign up with</Text>
+        <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+      </View>
+
+      {/* ── Facebook Sign-Up Button ───────────────────────── */}
+      <SocialAuthButton
+        provider="facebook"
+        onPress={handleFacebookSignIn}
+        loading={fbLoading}
+        disabled={loading}
+        style={styles.socialBtn}
+      />
 
       <TouchableOpacity onPress={() => router.back()}>
         <Text style={[styles.switchText, { color: colors.textMuted }]}>Already have an account? <Text style={[styles.switchLink, { color: colors.primary }]}>Sign in</Text></Text>
@@ -90,6 +127,13 @@ const styles = StyleSheet.create({
   btn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 8 },
   btnDisabled: { opacity: 0.6 },
   btnText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
+  // Divider
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 4 },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { fontFamily: 'Inter-Regular', fontSize: 12, marginHorizontal: 12 },
+  // Social
+  socialBtn: { marginTop: 16 },
+  // Footer
   switchText: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center', marginTop: 32 },
   switchLink: { fontFamily: 'Inter-SemiBold' },
 });
