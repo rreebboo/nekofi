@@ -23,7 +23,7 @@ interface BudgetState {
   updateSyncStatus: (id: string, status: SyncStatus) => void;
   removeLocal: (id: string) => void;
   handleRealtimeChange: (payload: any) => void;
-  
+
   invites: BudgetInvite[];
   collaborators: BudgetCollaborator[];
   fetchInvites: () => Promise<void>;
@@ -73,7 +73,7 @@ export const mapToCollaboratorCamel = (item: any): BudgetCollaborator => ({
 
 export const computeBudgetGroups = (budgets: Budget[], transactions?: Transaction[]): BudgetGroup[] => {
   const groups: Record<string, BudgetGroup> = {};
-  
+
   // Filter out pending deletes so they don't show up in groups
   const activeBudgets = budgets.filter(b => b.syncStatus !== 'pending_delete');
 
@@ -94,14 +94,14 @@ export const computeBudgetGroups = (budgets: Budget[], transactions?: Transactio
     groups[b.name].totalAmount += b.amount;
     groups[b.name].categories.push(b);
   });
-  
+
   const result = Object.values(groups);
 
   if (transactions) {
     result.forEach(group => {
       const start = new Date(group.startDate);
       const end = group.endDate ? new Date(group.endDate) : new Date(8640000000000000);
-      
+
       const groupTransactions = transactions.filter(t => {
         const tDate = new Date(t.date);
         if (tDate < start || tDate > end) return false;
@@ -131,11 +131,11 @@ export const useBudgetStore = create<BudgetState>()(
 
       setBudgets: (budgets) => set({ budgets }),
       clearBudgets: () => set({ budgets: [] }),
-      
+
       updateSyncStatus: (id, status) => set((state) => ({
         budgets: state.budgets.map(b => b.id === id ? { ...b, syncStatus: status } : b)
       })),
-      
+
       removeLocal: (id) => set((state) => ({
         budgets: state.budgets.filter(b => b.id !== id)
       })),
@@ -143,14 +143,14 @@ export const useBudgetStore = create<BudgetState>()(
       handleRealtimeChange: (payload) => set((state) => {
         const { eventType, new: newRecord, old: oldRecord } = payload;
         let budgets = [...state.budgets];
-        
+
         if (eventType === 'DELETE') {
           return { budgets: budgets.filter(b => b.id !== oldRecord.id) };
         }
-        
+
         const camelRecord = mapToCamel(newRecord);
         const index = budgets.findIndex(b => b.id === camelRecord.id);
-        
+
         if (index >= 0) {
           if (budgets[index].syncStatus && budgets[index].syncStatus !== 'synced') {
             return state;
@@ -159,7 +159,7 @@ export const useBudgetStore = create<BudgetState>()(
         } else {
           budgets.push(camelRecord);
         }
-        
+
         return { budgets };
       }),
 
@@ -198,7 +198,7 @@ export const useBudgetStore = create<BudgetState>()(
 
       createBudget: async (dto) => {
         const { data: userData } = await supabase.auth.getUser();
-        
+
         const localId = uuidv4();
         const newBudget: Budget = {
           id: localId,
@@ -225,7 +225,7 @@ export const useBudgetStore = create<BudgetState>()(
 
       createBudgetGroup: async (dto) => {
         const { data: userData } = await supabase.auth.getUser();
-        
+
         const newBudgets: Budget[] = dto.categories.map(cat => ({
           id: uuidv4(),
           userId: userData.user?.id || 'guest',
@@ -264,14 +264,14 @@ export const useBudgetStore = create<BudgetState>()(
       },
 
       deleteBudget: async (id) => {
-        set((state) => ({ 
+        set((state) => ({
           budgets: state.budgets.map((b) => b.id === id ? { ...b, syncStatus: 'pending_delete' } : b)
         }));
         syncEmitter.emit();
       },
 
       deleteBudgetGroup: async (name) => {
-        set((state) => ({ 
+        set((state) => ({
           budgets: state.budgets.map((b) => b.name === name ? { ...b, syncStatus: 'pending_delete' } : b)
         }));
         syncEmitter.emit();

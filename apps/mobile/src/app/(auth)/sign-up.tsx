@@ -8,7 +8,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { SocialAuthButton } from '@/components/ui/SocialAuthButton';
 
 /**
- * Sign-up screen — creates a new Supabase user.
+ * Sign-up screen - creates a new Supabase user.
  */
 export default function SignUpScreen() {
   const [name, setName] = useState('');
@@ -41,7 +41,7 @@ export default function SignUpScreen() {
       const wasGuest = useAuthStore.getState().isGuest;
       useAuthStore.getState().setIsCheckingConflict(true);
       await signUp(email, password, name);
-      
+
       let hasConflict = false;
       if (wasGuest) {
         const { checkAndHandleSyncConflict } = require('@/services/syncService');
@@ -63,16 +63,10 @@ export default function SignUpScreen() {
     }
   };
 
-  /**
-   * Handles Facebook OAuth sign-up / sign-in.
-   * If this is a brand-new Facebook account, Supabase creates the user automatically.
-   * If they already have a Supabase account linked to this Facebook ID, they are signed in.
-   */
   const handleFacebookSignIn = async () => {
     setFbLoading(true);
     try {
       await signInWithFacebook();
-      // Auth layout useEffect will navigate to /(tabs) once session is set in the store.
     } catch (err: any) {
       if (!err.message?.includes('cancelled')) {
         Alert.alert('Facebook Sign Up Failed', err.message);
@@ -131,13 +125,10 @@ const styles = StyleSheet.create({
   btn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 8 },
   btnDisabled: { opacity: 0.6 },
   btnText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
-  // Divider
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 4 },
   dividerLine: { flex: 1, height: 1 },
   dividerText: { fontFamily: 'Inter-Regular', fontSize: 12, marginHorizontal: 12 },
-  // Social
   socialBtn: { marginTop: 16 },
-  // Footer
   switchText: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center', marginTop: 32 },
   switchLink: { fontFamily: 'Inter-SemiBold' },
 });

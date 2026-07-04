@@ -56,19 +56,11 @@ export default function SignInScreen() {
     }
   };
 
-  /**
-   * Handles Facebook OAuth sign-in.
-   * If the account is new, Supabase auto-creates it.
-   * If it already exists, the user is signed in.
-   */
   const handleFacebookSignIn = async () => {
     setFbLoading(true);
     try {
       await signInWithFacebook();
-      // signInWithFacebook sets the session in the store;
-      // the auth layout's useEffect will redirect to /(tabs) automatically.
     } catch (err: any) {
-      // Don't show an alert for user-cancelled flows
       if (!err.message?.includes('cancelled')) {
         Alert.alert('Facebook Sign In Failed', err.message);
       }
@@ -145,13 +137,10 @@ const styles = StyleSheet.create({
   btn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 8 },
   btnDisabled: { opacity: 0.6 },
   btnText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
-  // Divider
   dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 4 },
   dividerLine: { flex: 1, height: 1 },
   dividerText: { fontFamily: 'Inter-Regular', fontSize: 12, marginHorizontal: 12 },
-  // Social
   socialBtn: { marginTop: 16 },
-  // Footer
   switchText: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center', marginTop: 32 },
   switchLink: { fontFamily: 'Inter-SemiBold' },
 });

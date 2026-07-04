@@ -31,12 +31,12 @@ DROP POLICY IF EXISTS "Users can delete own budgets" ON public.budgets;
 DROP POLICY IF EXISTS "Users can insert own budgets" ON public.budgets;
 
 CREATE POLICY "Users can view budgets" ON public.budgets FOR SELECT USING (
-    auth.uid() = user_id OR 
+    auth.uid() = user_id OR
     EXISTS (SELECT 1 FROM budget_members WHERE budget_id = budgets.id AND user_id = auth.uid() AND status = 'accepted')
 );
 
 CREATE POLICY "Users can update budgets" ON public.budgets FOR UPDATE USING (
-    auth.uid() = user_id OR 
+    auth.uid() = user_id OR
     EXISTS (SELECT 1 FROM budget_members WHERE budget_id = budgets.id AND user_id = auth.uid() AND status = 'accepted')
 );
 
@@ -58,10 +58,10 @@ DROP POLICY IF EXISTS "Users can update transactions" ON public.transactions;
 DROP POLICY IF EXISTS "Users can delete transactions" ON public.transactions;
 
 CREATE POLICY "Users can view transactions" ON public.transactions FOR SELECT USING (
-    auth.uid() = user_id OR 
+    auth.uid() = user_id OR
     (budget_id IS NOT NULL AND EXISTS (
         SELECT 1 FROM budgets WHERE id = transactions.budget_id AND (
-            user_id = auth.uid() OR 
+            user_id = auth.uid() OR
             EXISTS (SELECT 1 FROM budget_members WHERE budget_id = budgets.id AND user_id = auth.uid() AND status = 'accepted')
         )
     ))
@@ -72,20 +72,20 @@ CREATE POLICY "Users can insert transactions" ON public.transactions FOR INSERT 
 );
 
 CREATE POLICY "Users can update transactions" ON public.transactions FOR UPDATE USING (
-    auth.uid() = user_id OR 
+    auth.uid() = user_id OR
     (budget_id IS NOT NULL AND EXISTS (
         SELECT 1 FROM budgets WHERE id = transactions.budget_id AND (
-            user_id = auth.uid() OR 
+            user_id = auth.uid() OR
             EXISTS (SELECT 1 FROM budget_members WHERE budget_id = budgets.id AND user_id = auth.uid() AND status = 'accepted')
         )
     ))
 );
 
 CREATE POLICY "Users can delete transactions" ON public.transactions FOR DELETE USING (
-    auth.uid() = user_id OR 
+    auth.uid() = user_id OR
     (budget_id IS NOT NULL AND EXISTS (
         SELECT 1 FROM budgets WHERE id = transactions.budget_id AND (
-            user_id = auth.uid() OR 
+            user_id = auth.uid() OR
             EXISTS (SELECT 1 FROM budget_members WHERE budget_id = budgets.id AND user_id = auth.uid() AND status = 'accepted')
         )
     ))
@@ -95,7 +95,7 @@ CREATE POLICY "Users can delete transactions" ON public.transactions FOR DELETE 
 -- RLS for budget_members
 -- ──────────────────────────────────────────
 CREATE POLICY "Users can view budget_members" ON public.budget_members FOR SELECT USING (
-    user_id = auth.uid() OR 
+    user_id = auth.uid() OR
     budget_id IN (SELECT id FROM budgets WHERE user_id = auth.uid())
 );
 
@@ -107,7 +107,7 @@ CREATE POLICY "Users can delete own pending invites" ON public.budget_members FO
 -- Views
 -- ──────────────────────────────────────────
 CREATE OR REPLACE VIEW public.pending_budget_invites AS
-SELECT 
+SELECT
     b.name AS budget_name,
     b.user_id AS owner_id,
     p.name AS owner_name,
@@ -121,7 +121,7 @@ WHERE m.status = 'pending'
 GROUP BY b.name, b.user_id, p.name, p.avatar_url, m.user_id;
 
 CREATE OR REPLACE VIEW public.budget_collaborators AS
-SELECT 
+SELECT
     b.name AS budget_name,
     b.user_id AS owner_id,
     m.user_id AS collaborator_id,
@@ -170,7 +170,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.accept_budget_invite(p_budget_name TEXT, p_owner_id UUID)
 RETURNS void AS $$
 BEGIN
-    UPDATE public.budget_members 
+    UPDATE public.budget_members
     SET status = 'accepted', updated_at = NOW()
     WHERE user_id = auth.uid() AND status = 'pending'
     AND budget_id IN (SELECT id FROM public.budgets WHERE name = p_budget_name AND user_id = p_owner_id);
@@ -180,7 +180,7 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.decline_budget_invite(p_budget_name TEXT, p_owner_id UUID)
 RETURNS void AS $$
 BEGIN
-    DELETE FROM public.budget_members 
+    DELETE FROM public.budget_members
     WHERE user_id = auth.uid() AND status = 'pending'
     AND budget_id IN (SELECT id FROM public.budgets WHERE name = p_budget_name AND user_id = p_owner_id);
 END;
@@ -193,7 +193,7 @@ BEGIN
         RAISE EXCEPTION 'Unauthorized';
     END IF;
 
-    DELETE FROM public.budget_members 
+    DELETE FROM public.budget_members
     WHERE user_id = p_user_id
     AND budget_id IN (SELECT id FROM public.budgets WHERE name = p_budget_name AND user_id = p_owner_id);
 END;

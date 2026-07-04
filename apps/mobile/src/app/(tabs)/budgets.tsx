@@ -21,8 +21,8 @@ export default function BudgetsScreen() {
   const colors = useThemeColors();
   const scrollHandler = useFabScroll();
 
-  useEffect(() => { 
-    fetchBudgets(); 
+  useEffect(() => {
+    fetchBudgets();
     fetchTransactions();
     fetchInvites();
   }, []);
@@ -49,14 +49,14 @@ export default function BudgetsScreen() {
                   </Text>
                 </View>
                 <View style={styles.inviteActions}>
-                  <TouchableOpacity 
-                    style={[styles.inviteBtn, { backgroundColor: colors.primary + '20' }]} 
+                  <TouchableOpacity
+                    style={[styles.inviteBtn, { backgroundColor: colors.primary + '20' }]}
                     onPress={() => acceptInvite(invite.budgetName, invite.ownerId)}
                   >
                     <Text style={[styles.inviteBtnText, { color: colors.primary }]}>Accept</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity 
-                    style={[styles.inviteBtn, { backgroundColor: '#FF4B4B20' }]} 
+                  <TouchableOpacity
+                    style={[styles.inviteBtn, { backgroundColor: '#FF4B4B20' }]}
                     onPress={() => declineInvite(invite.budgetName, invite.ownerId)}
                   >
                     <Text style={[styles.inviteBtnText, { color: '#FF4B4B' }]}>Decline</Text>
