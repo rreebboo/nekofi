@@ -32,6 +32,13 @@ export function initRealtimeSync() {
         useTransactionStore.getState().handleRealtimeChange(payload);
       }
     )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'budget_members' },
+      (payload) => {
+        useBudgetStore.getState().handleMembersRealtimeChange();
+      }
+    )
     .subscribe((status) => {
       console.log('Realtime sync status:', status);
     });

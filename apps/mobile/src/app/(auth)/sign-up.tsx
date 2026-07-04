@@ -5,17 +5,19 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { SocialAuthButton } from '@/components/ui/SocialAuthButton';
 
 /**
- * Sign-up screen — creates a new Supabase user.
+ * Sign-up screen - creates a new Supabase user.
  */
 export default function SignUpScreen() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fbLoading, setFbLoading] = useState(false);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
-  const { signUp, syncConflict } = useAuthStore();
+  const { signUp, signInWithFacebook, syncConflict } = useAuthStore();
   const colors = useThemeColors();
 
   React.useEffect(() => {
@@ -39,7 +41,7 @@ export default function SignUpScreen() {
       const wasGuest = useAuthStore.getState().isGuest;
       useAuthStore.getState().setIsCheckingConflict(true);
       await signUp(email, password, name);
-      
+
       let hasConflict = false;
       if (wasGuest) {
         const { checkAndHandleSyncConflict } = require('@/services/syncService');
@@ -61,6 +63,19 @@ export default function SignUpScreen() {
     }
   };
 
+  const handleFacebookSignIn = async () => {
+    setFbLoading(true);
+    try {
+      await signInWithFacebook();
+    } catch (err: any) {
+      if (!err.message?.includes('cancelled')) {
+        Alert.alert('Facebook Sign Up Failed', err.message);
+      }
+    } finally {
+      setFbLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
       <Animated.View entering={FadeInDown.duration(400).springify()} style={[styles.container, { backgroundColor: colors.background }]}>
@@ -76,6 +91,20 @@ export default function SignUpScreen() {
             <Text style={styles.btnText}>{loading ? 'Creating account...' : 'Create Account'}</Text>
           </AnimatedPressable>
         </View>
+
+        <View style={styles.dividerRow}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <Text style={[styles.dividerText, { color: colors.textMuted }]}>or sign up with</Text>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+        <SocialAuthButton
+          provider="facebook"
+          onPress={handleFacebookSignIn}
+          loading={fbLoading}
+          disabled={loading}
+          style={styles.socialBtn}
+        />
 
         <AnimatedPressable onPress={() => router.back()}>
           <Text style={[styles.switchText, { color: colors.textMuted }]}>Already have an account? <Text style={[styles.switchLink, { color: colors.primary }]}>Sign in</Text></Text>
@@ -94,6 +123,10 @@ const styles = StyleSheet.create({
   btn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 8 },
   btnDisabled: { opacity: 0.6 },
   btnText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 4 },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { fontFamily: 'Inter-Regular', fontSize: 12, marginHorizontal: 12 },
+  socialBtn: { marginTop: 16 },
   switchText: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center', marginTop: 32 },
   switchLink: { fontFamily: 'Inter-SemiBold' },
 });

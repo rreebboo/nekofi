@@ -61,3 +61,21 @@ export interface CreateBudgetGroupDto {
     amount: number;
   }[];
 }
+
+export interface BudgetInvite {
+  budgetName: string;
+  ownerId: string;
+  ownerName: string;
+  ownerAvatarUrl: string | null;
+  inviteeId: string;
+  invitedAt: string;
+}
+
+export interface BudgetCollaborator {
+  budgetName: string;
+  ownerId: string;
+  collaboratorId: string;
+  collaboratorName: string;
+  collaboratorAvatarUrl: string | null;
+  status: 'pending' | 'accepted' | 'declined';
+}

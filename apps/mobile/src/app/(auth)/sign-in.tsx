@@ -6,6 +6,7 @@ import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { checkAndHandleSyncConflict } from '@/services/syncService';
+import { SocialAuthButton } from '@/components/ui/SocialAuthButton';
 
 /**
  * Sign-in screen with email/password and Supabase Auth.
@@ -14,8 +15,9 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [fbLoading, setFbLoading] = useState(false);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
-  const { signIn, syncConflict } = useAuthStore();
+  const { signIn, signInWithFacebook, syncConflict } = useAuthStore();
   const colors = useThemeColors();
 
   React.useEffect(() => {
@@ -34,7 +36,7 @@ export default function SignInScreen() {
       const wasGuest = useAuthStore.getState().isGuest;
       useAuthStore.getState().setIsCheckingConflict(true);
       await signIn(email, password);
-      
+
       let hasConflict = false;
       if (wasGuest) {
         hasConflict = await checkAndHandleSyncConflict();
@@ -51,6 +53,19 @@ export default function SignInScreen() {
       Alert.alert('Sign In Failed', err.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleFacebookSignIn = async () => {
+    setFbLoading(true);
+    try {
+      await signInWithFacebook();
+    } catch (err: any) {
+      if (!err.message?.includes('cancelled')) {
+        Alert.alert('Facebook Sign In Failed', err.message);
+      }
+    } finally {
+      setFbLoading(false);
     }
   };
 
@@ -88,6 +103,20 @@ export default function SignInScreen() {
           </AnimatedPressable>
         </View>
 
+        <View style={styles.dividerRow}>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+          <Text style={[styles.dividerText, { color: colors.textMuted }]}>or continue with</Text>
+          <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
+        </View>
+
+        <SocialAuthButton
+          provider="facebook"
+          onPress={handleFacebookSignIn}
+          loading={fbLoading}
+          disabled={loading}
+          style={styles.socialBtn}
+        />
+
         <AnimatedPressable onPress={() => router.push('/(auth)/sign-up')}>
           <Text style={[styles.switchText, { color: colors.textMuted }]}>Don't have an account? <Text style={[styles.switchLink, { color: colors.primary }]}>Sign up</Text></Text>
         </AnimatedPressable>
@@ -106,6 +135,10 @@ const styles = StyleSheet.create({
   btn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 8 },
   btnDisabled: { opacity: 0.6 },
   btnText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 4 },
+  dividerLine: { flex: 1, height: 1 },
+  dividerText: { fontFamily: 'Inter-Regular', fontSize: 12, marginHorizontal: 12 },
+  socialBtn: { marginTop: 16 },
   switchText: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center', marginTop: 32 },
   switchLink: { fontFamily: 'Inter-SemiBold' },
 });
