@@ -92,12 +92,14 @@ export default function SignUpScreen() {
           </AnimatedPressable>
         </View>
 
+        {/* ── Divider ─────────────────────────────────────────── */}
         <View style={styles.dividerRow}>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
           <Text style={[styles.dividerText, { color: colors.textMuted }]}>or sign up with</Text>
           <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         </View>
 
+        {/* ── Facebook Sign-Up Button ───────────────────────── */}
         <SocialAuthButton
           provider="facebook"
           onPress={handleFacebookSignIn}
