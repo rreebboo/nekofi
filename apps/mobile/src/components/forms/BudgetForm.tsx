@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, Pressable } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
 import { useBudgetStore } from '@/stores/budgetStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { CreateBudgetGroupDto } from '@/types/budget';
@@ -14,7 +14,7 @@ interface Props {
 }
 
 const PERIODS = [
-  { id: 'weekly', label: 'Weekly' },
+  { id: 'custom', label: 'Custom' },
   { id: 'monthly', label: 'Monthly' },
   { id: 'yearly', label: 'Yearly' },
 ] as const;
@@ -22,12 +22,10 @@ const PERIODS = [
 const COLORS = ['#10B981', '#4F46E5', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#F43F5E'];
 const EMOJIS = ['💰', '🚗', '🏠', '🛒', '✈️', '🍔', '🎁', '🎓', '🏥', '🎮', '👗', '🐾'];
 
-const getStartOfPeriod = (p: 'weekly'|'monthly'|'yearly') => {
+const getStartOfPeriod = (p: 'custom'|'monthly'|'yearly') => {
   const d = new Date();
-  if (p === 'weekly') {
-    const day = d.getDay();
-    const diff = d.getDate() - day + (day === 0 ? -6 : 1);
-    d.setDate(diff);
+  if (p === 'custom') {
+    // Custom period defaults to today
   } else if (p === 'monthly') {
     d.setDate(1);
   } else if (p === 'yearly') {
@@ -36,11 +34,9 @@ const getStartOfPeriod = (p: 'weekly'|'monthly'|'yearly') => {
   return d.toISOString().split('T')[0];
 };
 
-const calculateEndDate = (startStr: string, p: 'weekly'|'monthly'|'yearly', mult: number) => {
+const calculateEndDate = (startStr: string, p: 'custom'|'monthly'|'yearly', mult: number) => {
   const d = new Date(startStr);
-  if (p === 'weekly') {
-    d.setDate(d.getDate() + 7 * mult - 1);
-  } else if (p === 'monthly') {
+  if (p === 'monthly') {
     d.setMonth(d.getMonth() + mult);
     d.setDate(d.getDate() - 1);
   } else if (p === 'yearly') {
@@ -48,6 +44,15 @@ const calculateEndDate = (startStr: string, p: 'weekly'|'monthly'|'yearly', mult
     d.setDate(d.getDate() - 1);
   }
   return d.toISOString();
+};
+
+const getStartOfCurrentWeek = () => {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  const day = d.getDay();
+  const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+  d.setDate(diff);
+  return d;
 };
 
 const getDaysInMonth = (year: number, month: number) => new Date(year, month + 1, 0).getDate();
@@ -62,9 +67,10 @@ export function BudgetForm({ onSuccess }: Props) {
   
   // Data state
   const [name, setName] = useState('');
-  const [period, setPeriod] = useState<'weekly' | 'monthly' | 'yearly'>('monthly');
+  const [period, setPeriod] = useState<'custom' | 'monthly' | 'yearly'>('monthly');
   const [multiplier, setMultiplier] = useState('1');
   const [startDate, setStartDate] = useState(getStartOfPeriod('monthly'));
+  const [endDate, setEndDate] = useState(getStartOfPeriod('monthly'));
   const [color, setColor] = useState(COLORS[0]);
   const [emoji, setEmoji] = useState(EMOJIS[0]);
   const [categories, setCategories] = useState<{categoryId: string, amount: number}[]>([]);
@@ -76,13 +82,16 @@ export function BudgetForm({ onSuccess }: Props) {
 
   // Calendar Modal state
   const [isCalVisible, setIsCalVisible] = useState(false);
+  const [calTarget, setCalTarget] = useState<'start'|'end'>('start');
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
 
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setStartDate(getStartOfPeriod(period));
+    const newStart = getStartOfPeriod(period);
+    setStartDate(newStart);
+    setEndDate(newStart);
   }, [period]);
 
   const totalAmount = categories.reduce((sum, c) => sum + c.amount, 0);
@@ -113,22 +122,15 @@ export function BudgetForm({ onSuccess }: Props) {
     setIsCatModalVisible(false);
   };
 
-  const openCalendar = () => {
+  const openCalendar = (target: 'start'|'end' = 'start') => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-    const d = new Date(startDate);
+    setCalTarget(target);
+    const d = new Date(target === 'start' ? startDate : endDate);
     if (!isNaN(d.getTime())) {
       setCalYear(d.getFullYear());
       setCalMonth(d.getMonth());
     }
     setIsCalVisible(true);
-  };
-
-  const selectDate = (day: number) => {
-    Haptics.selectionAsync();
-    const m = (calMonth + 1).toString().padStart(2, '0');
-    const d = day.toString().padStart(2, '0');
-    setStartDate(`${calYear}-${m}-${d}`);
-    setIsCalVisible(false);
   };
 
   const nextStep = () => {
@@ -159,7 +161,7 @@ export function BudgetForm({ onSuccess }: Props) {
         currency: 'PHP', 
         period,
         startDate: new Date(startDate).toISOString(),
-        endDate: calculateEndDate(startDate, period, multNum),
+        endDate: period === 'custom' ? new Date(endDate + 'T23:59:59Z').toISOString() : calculateEndDate(startDate, period, multNum),
         color,
         emoji,
         categories
@@ -175,54 +177,199 @@ export function BudgetForm({ onSuccess }: Props) {
   };
 
   const renderCalendarModal = () => {
-    const daysInMonth = getDaysInMonth(calYear, calMonth);
-    const firstDay = getFirstDayOfMonth(calYear, calMonth);
-    const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
-    const blanks = Array.from({ length: firstDay }, (_, i) => i);
-    const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentYear = today.getFullYear();
+    const currentMonth = today.getMonth();
+
+    const startOfCurrentWeek = getStartOfCurrentWeek();
 
     return (
       <Modal visible={isCalVisible} transparent animationType="fade">
         <View style={styles.modalOverlay}>
           <View style={[styles.calModal, { backgroundColor: colors.surface }]}>
-            <View style={styles.calHeader}>
-              <TouchableOpacity onPress={() => {
-                if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); }
-                else setCalMonth(m => m - 1);
-              }}>
-                <Ionicons name="chevron-back" size={24} color={colors.text} />
-              </TouchableOpacity>
-              <Text style={[styles.calMonthText, { color: colors.text }]}>{monthNames[calMonth]} {calYear}</Text>
-              <TouchableOpacity onPress={() => {
-                if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); }
-                else setCalMonth(m => m + 1);
-              }}>
-                <Ionicons name="chevron-forward" size={24} color={colors.text} />
-              </TouchableOpacity>
-            </View>
-            <View style={styles.calWeekRow}>
-              {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
-                <Text key={d} style={[styles.calWeekDay, { color: colors.textMuted }]}>{d}</Text>
-              ))}
-            </View>
-            <View style={styles.calDaysGrid}>
-              {blanks.map(b => <View key={`blank-${b}`} style={styles.calDayCell} />)}
-              {days.map(d => {
-                const isSelected = startDate === `${calYear}-${(calMonth+1).toString().padStart(2, '0')}-${d.toString().padStart(2, '0')}`;
-                return (
+            {period === 'yearly' && (
+              <View>
+                <Text style={[styles.calMonthText, { color: colors.text, marginBottom: 20, textAlign: 'center' }]}>Select Year</Text>
+                <View style={styles.calGrid}>
+                  {Array.from({ length: 12 }, (_, i) => currentYear + i).map(year => {
+                    const isSelected = startDate.startsWith(`${year}`);
+                    return (
+                      <TouchableOpacity 
+                        key={year} 
+                        style={[styles.calGridCell, isSelected && { backgroundColor: colors.primary }]}
+                        onPress={() => {
+                          setStartDate(`${year}-01-01`);
+                          setIsCalVisible(false);
+                        }}
+                      >
+                        <Text style={[styles.calGridText, { color: isSelected ? '#fff' : colors.text }]}>{year}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {period === 'monthly' && (
+              <View>
+                <View style={styles.calHeader}>
                   <TouchableOpacity 
-                    key={d} 
-                    style={[styles.calDayCell, isSelected && { backgroundColor: colors.primary, borderRadius: 20 }]} 
-                    onPress={() => selectDate(d)}
+                    onPress={() => setCalYear(y => y - 1)}
+                    disabled={calYear <= currentYear}
+                    style={{ opacity: calYear <= currentYear ? 0.3 : 1 }}
                   >
-                    <Text style={[styles.calDayText, { color: isSelected ? '#fff' : colors.text }]}>{d}</Text>
+                    <Ionicons name="chevron-back" size={24} color={colors.text} />
                   </TouchableOpacity>
-                );
-              })}
-            </View>
-            <TouchableOpacity style={[styles.calCloseBtn, { backgroundColor: colors.background }]} onPress={() => setIsCalVisible(false)}>
-              <Text style={[styles.calCloseBtnText, { color: colors.text }]}>Cancel</Text>
-            </TouchableOpacity>
+                  <Text style={[styles.calMonthText, { color: colors.text }]}>{calYear}</Text>
+                  <TouchableOpacity onPress={() => setCalYear(y => y + 1)}>
+                    <Ionicons name="chevron-forward" size={24} color={colors.text} />
+                  </TouchableOpacity>
+                </View>
+                <View style={styles.calGrid}>
+                  {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((monthStr, i) => {
+                    const isDisabled = calYear === currentYear && i < currentMonth;
+                    const isSelected = startDate === `${calYear}-${(i+1).toString().padStart(2, '0')}-01`;
+                    return (
+                      <TouchableOpacity 
+                        key={monthStr} 
+                        style={[styles.calGridCell, isSelected && { backgroundColor: colors.primary }, isDisabled && { opacity: 0.3 }]}
+                        disabled={isDisabled}
+                        onPress={() => {
+                          setStartDate(`${calYear}-${(i+1).toString().padStart(2, '0')}-01`);
+                          setIsCalVisible(false);
+                        }}
+                      >
+                        <Text style={[styles.calGridText, { color: isSelected ? '#fff' : colors.text }]}>{monthStr}</Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            )}
+
+            {period === 'custom' && (() => {
+              const daysInMonth = getDaysInMonth(calYear, calMonth);
+              const firstDay = getFirstDayOfMonth(calYear, calMonth);
+              const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+              const prevMonthDisabled = calYear < currentYear || (calYear === currentYear && calMonth <= currentMonth);
+
+              const gridDates: { year: number, month: number, day: number, isCurrentMonth: boolean }[] = [];
+              const prevMonth = calMonth === 0 ? 11 : calMonth - 1;
+              const prevMonthYear = calMonth === 0 ? calYear - 1 : calYear;
+              const prevMonthDays = getDaysInMonth(prevMonthYear, prevMonth);
+              for (let i = 0; i < firstDay; i++) {
+                gridDates.push({ year: prevMonthYear, month: prevMonth, day: prevMonthDays - firstDay + i + 1, isCurrentMonth: false });
+              }
+              for (let i = 1; i <= daysInMonth; i++) {
+                gridDates.push({ year: calYear, month: calMonth, day: i, isCurrentMonth: true });
+              }
+              const nextMonth = calMonth === 11 ? 0 : calMonth + 1;
+              const nextMonthYear = calMonth === 11 ? calYear + 1 : calYear;
+              const rows = Math.ceil(gridDates.length / 7);
+              const nextDaysCount = rows * 7 - gridDates.length;
+              for (let i = 1; i <= nextDaysCount; i++) {
+                gridDates.push({ year: nextMonthYear, month: nextMonth, day: i, isCurrentMonth: false });
+              }
+
+              const [sYear, sMonth, sDay] = startDate.split('-').map(Number);
+              const selStartObj = new Date(sYear, sMonth - 1, sDay);
+              
+              const [eYear, eMonth, eDay] = endDate.split('-').map(Number);
+              const selEndObj = new Date(eYear, eMonth - 1, eDay);
+
+              return (
+                <View>
+                  <Text style={[styles.calMonthText, { color: colors.text, marginBottom: 12, textAlign: 'center' }]}>
+                    {calTarget === 'start' ? 'Select Start Date' : 'Select End Date'}
+                  </Text>
+                  <View style={styles.calHeader}>
+                    <TouchableOpacity 
+                      onPress={() => {
+                        if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); }
+                        else setCalMonth(m => m - 1);
+                      }}
+                    >
+                      <Ionicons name="chevron-back" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                    <Text style={[styles.calMonthText, { color: colors.text }]}>{monthNames[calMonth]} {calYear}</Text>
+                    <TouchableOpacity onPress={() => {
+                      if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); }
+                      else setCalMonth(m => m + 1);
+                    }}>
+                      <Ionicons name="chevron-forward" size={24} color={colors.text} />
+                    </TouchableOpacity>
+                  </View>
+                  <View style={styles.calWeekRow}>
+                    {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
+                      <Text key={d} style={[styles.calWeekDay, { color: colors.textMuted }]}>{d}</Text>
+                    ))}
+                  </View>
+                  <View style={styles.calDaysGrid}>
+                    {gridDates.map((item, index) => {
+                      const cellDate = new Date(item.year, item.month, item.day);
+                      let isDisabled = false;
+                      if (calTarget === 'end') {
+                        // End date must be after or equal to start date
+                        isDisabled = cellDate < selStartObj;
+                      }
+                      
+                      const isExactStart = cellDate.getTime() === selStartObj.getTime();
+                      const isExactEnd = cellDate.getTime() === selEndObj.getTime();
+                      const isInRange = cellDate >= selStartObj && cellDate <= selEndObj;
+
+                      return (
+                        <TouchableOpacity 
+                          key={index} 
+                          style={[
+                            styles.calDayCell, 
+                            (isExactStart || isExactEnd) && { backgroundColor: color, borderRadius: 20 },
+                            isInRange && !(isExactStart || isExactEnd) && { backgroundColor: color + '30', borderRadius: 20 },
+                            isDisabled && { opacity: 0.3 },
+                            !item.isCurrentMonth && !isDisabled && { opacity: 0.4 }
+                          ]} 
+                          disabled={isDisabled}
+                          onPress={() => {
+                            const m = (item.month + 1).toString().padStart(2, '0');
+                            const dayStr = item.day.toString().padStart(2, '0');
+                            const dateStr = `${item.year}-${m}-${dayStr}`;
+                            
+                            if (calTarget === 'start') {
+                              setStartDate(dateStr);
+                            } else {
+                              setEndDate(dateStr);
+                            }
+                          }}
+                        >
+                          <Text style={[styles.calDayText, { color: (isExactStart || isExactEnd) ? '#fff' : colors.text }]}>{item.day}</Text>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </View>
+                </View>
+              );
+            })()}
+
+            {period === 'custom' ? (
+              <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
+                <TouchableOpacity style={[styles.calCloseBtn, { flex: 1, backgroundColor: colors.background }]} onPress={() => setIsCalVisible(false)}>
+                  <Text style={[styles.calCloseBtnText, { color: colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity 
+                  style={[styles.calCloseBtn, { flex: 1, backgroundColor: color }]} 
+                  onPress={() => {
+                    if (calTarget === 'start') setCalTarget('end');
+                    else setIsCalVisible(false);
+                  }}
+                >
+                  <Text style={[styles.calCloseBtnText, { color: '#fff' }]}>{calTarget === 'start' ? 'Set Start Date' : 'Set Range'}</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity style={[styles.calCloseBtn, { backgroundColor: colors.background, marginTop: 16 }]} onPress={() => setIsCalVisible(false)}>
+                <Text style={[styles.calCloseBtnText, { color: colors.text }]}>Cancel</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
       </Modal>
@@ -233,34 +380,39 @@ export function BudgetForm({ onSuccess }: Props) {
     const catInfo = EXPENSE_CATEGORIES.find(c => c.id === activeCatId);
     return (
       <Modal visible={isCatModalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
-          <View style={[styles.catModal, { backgroundColor: colors.surface }]}>
-            <View style={styles.catModalHeader}>
-              <View style={[styles.catModalIcon, { backgroundColor: colors.background }]}>
-                <Text style={{ fontSize: 32 }}>{catInfo?.emoji}</Text>
+        <KeyboardAvoidingView 
+          style={{ flex: 1 }} 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={[styles.catModal, { backgroundColor: colors.surface }]}>
+              <View style={styles.catModalHeader}>
+                <View style={[styles.catModalIcon, { backgroundColor: colors.background }]}>
+                  <Text style={{ fontSize: 32 }}>{catInfo?.emoji}</Text>
+                </View>
+                <Text style={[styles.catModalTitle, { color: colors.text }]}>{catInfo?.label}</Text>
+                <Text style={[styles.catModalSub, { color: colors.textMuted }]}>Set your spending limit</Text>
               </View>
-              <Text style={[styles.catModalTitle, { color: colors.text }]}>{catInfo?.label}</Text>
-              <Text style={[styles.catModalSub, { color: colors.textMuted }]}>Set your spending limit</Text>
-            </View>
-            <TextInput 
-              style={[styles.catModalInput, { backgroundColor: colors.background, color: colors.text }]} 
-              placeholder="0.00" 
-              placeholderTextColor={colors.textMuted}
-              keyboardType="decimal-pad"
-              value={tempAmount}
-              onChangeText={setTempAmount}
-              autoFocus
-            />
-            <View style={styles.modalActions}>
-              <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.background }]} onPress={() => setIsCatModalVisible(false)}>
-                <Text style={[styles.modalActionText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.primary }]} onPress={saveCategory}>
-                <Text style={[styles.modalActionText, { color: '#fff' }]}>Save</Text>
-              </TouchableOpacity>
+              <TextInput 
+                style={[styles.catModalInput, { backgroundColor: colors.background, color: colors.text }]} 
+                placeholder="0.00" 
+                placeholderTextColor={colors.textMuted}
+                keyboardType="decimal-pad"
+                value={tempAmount}
+                onChangeText={setTempAmount}
+                autoFocus
+              />
+              <View style={styles.modalActions}>
+                <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.background }]} onPress={() => setIsCatModalVisible(false)}>
+                  <Text style={[styles.modalActionText, { color: colors.text }]}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.primary }]} onPress={saveCategory}>
+                  <Text style={[styles.modalActionText, { color: '#fff' }]}>Save</Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </KeyboardAvoidingView>
       </Modal>
     );
   };
@@ -379,23 +531,54 @@ export function BudgetForm({ onSuccess }: Props) {
             ))}
           </View>
         </View>
-        <View style={[styles.row, { marginTop: 4 }]}>
-          <View style={styles.flex1}>
-            <Text style={[styles.label, { color: colors.textMuted }]}>When does this start?</Text>
-            <TouchableOpacity style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center' }]} onPress={openCalendar}>
-              <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-Medium' }}>{startDate || 'Select Date'}</Text>
-            </TouchableOpacity>
+        {period === 'custom' ? (
+          <View style={[styles.row, { marginTop: 4, alignItems: 'flex-end' }]}>
+            <View style={{ flex: 3 }}>
+              <Text style={[styles.label, { color: colors.textMuted }]}>Select Date Range</Text>
+              <TouchableOpacity style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: 56 }]} onPress={() => openCalendar('start')}>
+                <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-Medium', fontSize: 13 }} numberOfLines={1} adjustsFontSizeToFit>
+                  {startDate && endDate ? `${startDate} to ${endDate}` : 'Select Range'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.flex1}>
+              <View style={{ height: 76, justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[styles.label, { color: colors.textMuted }]}>Days</Text>
+                <View style={{ height: 56, justifyContent: 'center' }}>
+                  <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-SemiBold', fontSize: 20 }}>
+                    {(() => {
+                      if (!startDate || !endDate) return '-';
+                      const s = new Date(startDate);
+                      const e = new Date(endDate);
+                      const diff = Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+                      return isNaN(diff) || diff < 1 ? '-' : diff;
+                    })()}
+                  </Text>
+                </View>
+              </View>
+            </View>
           </View>
-          <View style={styles.flex1}>
-            <Text style={[styles.label, { color: colors.textMuted }]}>Duration (e.g. 1)</Text>
-            <TextInput 
-              style={[styles.input, { backgroundColor: colors.background, color: colors.text, textAlign: 'center' }]} 
-              value={multiplier} 
-              onChangeText={setMultiplier} 
-              keyboardType="number-pad"
-            />
+        ) : (
+          <View style={[styles.row, { marginTop: 4, alignItems: 'flex-end' }]}>
+            <View>
+              <Text style={[styles.label, { color: colors.textMuted }]}>When does this start?</Text>
+              <TouchableOpacity style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: 56 }]} onPress={() => openCalendar('start')}>
+                <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-Medium' }}>{startDate || 'Select Date'}</Text>
+              </TouchableOpacity>
+            </View>
+            <View style={styles.flex1}>
+              <View>
+                <Text style={[styles.label, { color: colors.textMuted }]}>Duration</Text>
+                <TextInput 
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, textAlign: 'center', height: 56 }]} 
+                  value={multiplier} 
+                  onChangeText={setMultiplier} 
+                  keyboardType="number-pad"
+                />
+              </View>
+            </View>
           </View>
-        </View>
+        )}
       </View>
     </Animated.View>
   );
@@ -453,12 +636,10 @@ export function BudgetForm({ onSuccess }: Props) {
       </ScrollView>
 
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.borderAlt }]}>
-        {step > 1 ? (
+        {step > 1 && (
           <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderAlt }]} onPress={prevStep}>
             <Text style={[styles.footerBtnText, { color: colors.text }]}>Back</Text>
           </TouchableOpacity>
-        ) : (
-          <View style={styles.footerBtn} />
         )}
         
         {step < 3 ? (
@@ -559,6 +740,9 @@ const styles = StyleSheet.create({
   calDaysGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
   calDayCell: { width: '14.28%', height: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   calDayText: { fontFamily: 'Inter-Medium', fontSize: 15 },
+  calGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
+  calGridCell: { width: '30%', paddingVertical: 16, alignItems: 'center', borderRadius: 16 },
+  calGridText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
   calCloseBtn: { marginTop: 12, paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
   calCloseBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
 });

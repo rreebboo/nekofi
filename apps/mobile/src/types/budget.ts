@@ -8,7 +8,7 @@ export interface Budget {
   amount: number;
   spent: number;
   currency: string;
-  period: 'weekly' | 'monthly' | 'yearly';
+  period: 'custom' | 'monthly' | 'yearly';
   startDate: string;
   endDate?: string;
   color: string;
@@ -38,7 +38,7 @@ export interface BudgetWithProgress extends Budget {
 
 export interface BudgetGroup {
   name: string;
-  period: 'weekly' | 'monthly' | 'yearly';
+  period: 'custom' | 'monthly' | 'yearly';
   startDate: string;
   endDate?: string;
   color: string;
@@ -50,7 +50,7 @@ export interface BudgetGroup {
 
 export interface CreateBudgetGroupDto {
   name: string;
-  period: 'weekly' | 'monthly' | 'yearly';
+  period: 'custom' | 'monthly' | 'yearly';
   startDate: string;
   endDate?: string;
   color: string;

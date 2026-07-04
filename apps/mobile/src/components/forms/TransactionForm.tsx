@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useTransactionStore } from '@/stores/transactionStore';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/categories';
 import { useThemeColors } from '@/hooks/useThemeColors';
@@ -51,8 +52,18 @@ export function TransactionForm({ type, onSuccess }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, { color: colors.textMuted }]}>Amount (PHP)</Text>
-      <TextInput style={[styles.amountInput, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]} placeholder="0.00" placeholderTextColor={colors.textMuted} value={amount} onChangeText={setAmount} keyboardType="decimal-pad" />
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: 'center', marginTop: 16 }]}>Amount</Text>
+      <View style={styles.amountContainer}>
+        <Text style={[styles.currencySymbol, { color: colors.text }]}>₱</Text>
+        <TextInput 
+          style={[styles.amountInput, { color: colors.text }]} 
+          placeholder="0" 
+          placeholderTextColor={colors.textMuted} 
+          value={amount} 
+          onChangeText={setAmount} 
+          keyboardType="decimal-pad" 
+        />
+      </View>
 
       <Text style={[styles.label, { color: colors.textMuted }]}>Description</Text>
       <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]} placeholder="What was this for?" placeholderTextColor={colors.textMuted} value={description} onChangeText={setDescription} />
@@ -83,8 +94,15 @@ export function TransactionForm({ type, onSuccess }: Props) {
       <Text style={[styles.label, { color: colors.textMuted }]}>Date</Text>
       <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
 
-      <TouchableOpacity style={[styles.submitBtn, { backgroundColor: colors.primary }, loading && styles.submitBtnDisabled]} onPress={handleSubmit} disabled={loading}>
-        <Text style={styles.submitBtnText}>{loading ? 'Saving...' : 'Save Transaction'}</Text>
+      <TouchableOpacity style={[styles.submitBtnContainer, loading && styles.submitBtnDisabled]} onPress={handleSubmit} disabled={loading}>
+        <LinearGradient
+          colors={[colors.primary, colors.primary + 'CC']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.submitBtn}
+        >
+          <Text style={styles.submitBtnText}>{loading ? 'Saving...' : 'Save Transaction'}</Text>
+        </LinearGradient>
       </TouchableOpacity>
     </View>
   );
@@ -93,13 +111,16 @@ export function TransactionForm({ type, onSuccess }: Props) {
 const styles = StyleSheet.create({
   container: { gap: 8, paddingTop: 8 },
   label: { fontFamily: 'Inter-Medium', fontSize: 13, marginTop: 8 },
-  amountInput: { borderRadius: 16, paddingHorizontal: 18, paddingVertical: 18, fontFamily: 'Inter-Bold', fontSize: 32, borderWidth: 1, textAlign: 'center' },
+  amountContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 16 },
+  currencySymbol: { fontFamily: 'Inter-Bold', fontSize: 40, marginRight: 8 },
+  amountInput: { fontFamily: 'Inter-Bold', fontSize: 48, padding: 0, margin: 0, minWidth: 60, textAlign: 'center' },
   input: { borderRadius: 14, paddingHorizontal: 18, paddingVertical: 14, fontFamily: 'Inter-Regular', fontSize: 15, borderWidth: 1 },
   categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 12, paddingVertical: 8, borderRadius: 12, borderWidth: 1 },
-  categoryEmoji: { fontSize: 16 },
-  categoryLabel: { fontFamily: 'Inter-Regular', fontSize: 12 },
-  submitBtn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 24 },
+  categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, borderWidth: 1 },
+  categoryEmoji: { fontSize: 18 },
+  categoryLabel: { fontFamily: 'Inter-Medium', fontSize: 13 },
+  submitBtnContainer: { marginTop: 32, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
+  submitBtn: { paddingVertical: 18, alignItems: 'center', justifyContent: 'center' },
   submitBtnDisabled: { opacity: 0.6 },
-  submitBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
+  submitBtnText: { fontFamily: 'Inter-Bold', fontSize: 16, color: '#fff' },
 });
