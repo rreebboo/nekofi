@@ -13,7 +13,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
  * Budgets overview screen.
  */
 export default function BudgetsScreen() {
-  const { budgets, fetchBudgets } = useBudgetStore();
+  const { budgets, fetchBudgets, invites, fetchInvites, acceptInvite, declineInvite } = useBudgetStore();
   const { transactions, fetchTransactions } = useTransactionStore();
   const budgetGroups = React.useMemo(() => computeBudgetGroups(budgets, transactions), [budgets, transactions]);
   const colors = useThemeColors();
@@ -21,6 +21,7 @@ export default function BudgetsScreen() {
   useEffect(() => { 
     fetchBudgets(); 
     fetchTransactions();
+    fetchInvites();
   }, []);
 
   return (
@@ -35,6 +36,33 @@ export default function BudgetsScreen() {
       <FlatList
         data={budgetGroups}
         keyExtractor={(b) => b.name}
+        ListHeaderComponent={invites.length > 0 ? (
+          <View style={styles.invitesContainer}>
+            {invites.map((invite, index) => (
+              <View key={`${invite.budgetName}-${invite.ownerId}`} style={[styles.inviteCard, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
+                <View style={styles.inviteInfo}>
+                  <Text style={[styles.inviteText, { color: colors.text }]}>
+                    <Text style={{ fontFamily: 'Inter-SemiBold' }}>{invite.ownerName}</Text> invited you to <Text style={{ fontFamily: 'Inter-SemiBold' }}>{invite.budgetName}</Text>
+                  </Text>
+                </View>
+                <View style={styles.inviteActions}>
+                  <TouchableOpacity 
+                    style={[styles.inviteBtn, { backgroundColor: colors.primary + '20' }]} 
+                    onPress={() => acceptInvite(invite.budgetName, invite.ownerId)}
+                  >
+                    <Text style={[styles.inviteBtnText, { color: colors.primary }]}>Accept</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity 
+                    style={[styles.inviteBtn, { backgroundColor: '#FF4B4B20' }]} 
+                    onPress={() => declineInvite(invite.budgetName, invite.ownerId)}
+                  >
+                    <Text style={[styles.inviteBtnText, { color: '#FF4B4B' }]}>Decline</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            ))}
+          </View>
+        ) : null}
         renderItem={({ item, index }) => (
           <Animated.View entering={FadeInDown.delay(index * 50).springify()}>
             <BudgetCard budget={item} onPress={() => router.push(`/budget/${encodeURIComponent(item.name)}`)} />
@@ -70,4 +98,11 @@ const styles = StyleSheet.create({
   emptySubtitle: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center', paddingHorizontal: 40 },
   createBtn: { marginTop: 16, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 32 },
   createBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#fff' },
+  invitesContainer: { paddingHorizontal: 20, marginBottom: 16, gap: 8 },
+  inviteCard: { padding: 16, borderRadius: 16, borderWidth: 1, gap: 12 },
+  inviteInfo: { flexDirection: 'row', alignItems: 'center' },
+  inviteText: { fontFamily: 'Inter-Regular', fontSize: 15, flex: 1 },
+  inviteActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
+  inviteBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
+  inviteBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 14 },
 });

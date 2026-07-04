@@ -4,7 +4,7 @@
   "main": "index.js",
   "scripts": {
     "start": "expo start",
-    "android": "cross-env ANDROID_HOME=C:/Users/arshn/AppData/Local/Android/Sdk expo run:android",
+    "android": "expo run:android",
     "ios": "expo run:ios",
     "web": "expo start --web",
     "lint": "eslint src --ext .ts,.tsx",

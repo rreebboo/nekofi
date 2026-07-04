@@ -1,10 +1,11 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Modal, TextInput } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useBudgetStore, computeBudgetGroups } from '@/stores/budgetStore';
 import { useTransactionStore } from '@/stores/transactionStore';
+import { supabase } from '@/services/supabase/client';
 import { TransactionItem } from '@/components/cards/TransactionItem';
 import { BudgetSpendingChart } from '@/components/charts/BudgetSpendingChart';
 import { formatCurrency } from '@/utils/formatters';
@@ -17,11 +18,25 @@ export default function BudgetDetailScreen() {
   const colors = useThemeColors();
   
   const name = decodeURIComponent(id as string);
-  const budgets = useBudgetStore((state) => state.budgets);
+  const { budgets, deleteBudgetGroup, collaborators, fetchCollaborators, inviteUser, removeCollaborator } = useBudgetStore();
   const transactions = useTransactionStore((state) => state.transactions);
   const budgetGroup = useMemo(() => computeBudgetGroups(budgets, transactions).find(bg => bg.name === name), [budgets, transactions, name]);
   
-  const deleteBudgetGroup = useBudgetStore((state) => state.deleteBudgetGroup);
+  const [inviteModalVisible, setInviteModalVisible] = React.useState(false);
+  const [inviteEmail, setInviteEmail] = React.useState('');
+  const [myUserId, setMyUserId] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) setMyUserId(data.user.id);
+    });
+  }, []);
+
+  React.useEffect(() => {
+    if (budgetGroup?.name) {
+      fetchCollaborators(budgetGroup.name);
+    }
+  }, [budgetGroup?.name]);
 
   const budgetTransactions = useMemo(() => {
     if (!budgetGroup) return [];
@@ -72,6 +87,21 @@ export default function BudgetDetailScreen() {
     ]);
   };
 
+  const handleInvite = async () => {
+    if (!inviteEmail.trim()) return;
+    try {
+      await inviteUser(budgetGroup.name, inviteEmail.trim());
+      setInviteModalVisible(false);
+      setInviteEmail('');
+      Alert.alert('Success', 'Invitation sent!');
+      fetchCollaborators(budgetGroup.name);
+    } catch (err: any) {
+      Alert.alert('Error', err.message);
+    }
+  };
+
+  const isOwner = budgetGroup.categories[0]?.userId === myUserId;
+
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       
@@ -81,9 +111,13 @@ export default function BudgetDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Budget Details</Text>
-        <TouchableOpacity onPress={handleDelete} style={styles.headerBtn}>
-          <Ionicons name="trash-outline" size={24} color={colors.expense} />
-        </TouchableOpacity>
+        {isOwner ? (
+          <TouchableOpacity onPress={handleDelete} style={styles.headerBtn}>
+            <Ionicons name="trash-outline" size={24} color={colors.expense} />
+          </TouchableOpacity>
+        ) : (
+          <View style={styles.headerBtn} />
+        )}
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -177,6 +211,47 @@ export default function BudgetDetailScreen() {
           })}
         </View>
 
+        {/* Collaborators */}
+        <View style={[styles.sectionHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
+          <Text style={[styles.sectionTitle, { color: colors.text }]}>Collaborators</Text>
+          {isOwner && (
+            <TouchableOpacity onPress={() => setInviteModalVisible(true)}>
+              <Text style={{ color: colors.primary, fontFamily: 'Inter-Medium' }}>+ Invite</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.categoriesList}>
+          {/* Owner */}
+          <View style={[styles.catItem, { backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }]}>
+            <View style={[styles.catIconContainer, { backgroundColor: colors.primary, width: 36, height: 36, borderRadius: 18 }]}>
+              <Ionicons name="person" size={18} color="#fff" />
+            </View>
+            <View style={styles.catInfo}>
+              <Text style={[styles.catName, { color: colors.text, fontSize: 15 }]}>Owner</Text>
+              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Creator</Text>
+            </View>
+          </View>
+          
+          {/* Collaborators */}
+          {collaborators.filter(c => c.budgetName === budgetGroup.name).map((c) => (
+            <View key={c.collaboratorId} style={[styles.catItem, { backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }]}>
+              <View style={[styles.catIconContainer, { backgroundColor: c.status === 'pending' ? colors.borderAlt : colors.primary, width: 36, height: 36, borderRadius: 18 }]}>
+                <Ionicons name={c.status === 'pending' ? 'time' : 'person'} size={18} color="#fff" />
+              </View>
+              <View style={styles.catInfo}>
+                <Text style={[styles.catName, { color: colors.text, fontSize: 15 }]}>{c.collaboratorName}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: 12 }}>{c.status === 'pending' ? 'Pending Invite' : 'Collaborator'}</Text>
+              </View>
+              {(isOwner || c.collaboratorId === myUserId) && (
+                <TouchableOpacity onPress={() => removeCollaborator(budgetGroup.name, budgetGroup.categories[0].userId, c.collaboratorId)}>
+                  <Ionicons name="close-circle" size={22} color={colors.expense} />
+                </TouchableOpacity>
+              )}
+            </View>
+          ))}
+        </View>
+
         {/* Chart */}
         <Animated.View entering={FadeInDown.delay(300).springify()}>
           <BudgetSpendingChart budget={budgetGroup} transactions={budgetTransactions} />
@@ -203,6 +278,34 @@ export default function BudgetDetailScreen() {
         )}
         
       </ScrollView>
+
+      {/* Invite Modal */}
+      <Modal visible={inviteModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Invite Collaborator</Text>
+            <Text style={[styles.modalDesc, { color: colors.textMuted }]}>Enter the email address of the Nekofi user you want to invite.</Text>
+            <TextInput
+              style={[styles.modalInput, { backgroundColor: colors.background, color: colors.text, borderColor: colors.borderAlt }]}
+              placeholder="Email address"
+              placeholderTextColor={colors.textMuted}
+              value={inviteEmail}
+              onChangeText={setInviteEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.modalBtn} onPress={() => setInviteModalVisible(false)}>
+                <Text style={[styles.modalBtnText, { color: colors.textMuted }]}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.modalBtn} onPress={handleInvite}>
+                <Text style={[styles.modalBtnText, { color: colors.primary }]}>Invite</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
     </View>
   );
 }
@@ -264,4 +367,13 @@ const styles = StyleSheet.create({
   transactionsContainer: { gap: 8, marginTop: 4 },
   emptyState: { padding: 32, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#333' },
   emptyText: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center' },
+  
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
+  modalContent: { width: '100%', padding: 24, borderRadius: 24, borderWidth: 1 },
+  modalTitle: { fontFamily: 'Inter-Bold', fontSize: 18, marginBottom: 8 },
+  modalDesc: { fontFamily: 'Inter-Regular', fontSize: 14, marginBottom: 20 },
+  modalInput: { height: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, fontFamily: 'Inter-Regular', fontSize: 15, marginBottom: 24 },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16 },
+  modalBtn: { paddingVertical: 8, paddingHorizontal: 16 },
+  modalBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 15 },
 });
