@@ -21,19 +21,9 @@ function TabIcon({ route, isFocused, colors }: { route: any, isFocused: boolean,
   let iconName: keyof typeof Ionicons.glyphMap = 'home';
   if (route.name === 'index') iconName = isFocused ? 'home' : 'home-outline';
   if (route.name === 'transactions') iconName = isFocused ? 'swap-horizontal' : 'swap-horizontal-outline';
-  if (route.name === 'add') iconName = 'add';
+  if (route.name === 'stats') iconName = isFocused ? 'stats-chart' : 'stats-chart-outline';
   if (route.name === 'budgets') iconName = isFocused ? 'pie-chart' : 'pie-chart-outline';
   if (route.name === 'profile') iconName = isFocused ? 'person' : 'person-outline';
-
-  if (route.name === 'add') {
-    return (
-      <View style={[styles.addBtnContainer, { shadowColor: '#000' }]}>
-        <View style={[styles.addBtn, { backgroundColor: colors.primary }]}>
-            <Ionicons name="add" size={32} color="#FFF" />
-        </View>
-      </View>
-    );
-  }
 
   return (
     <View style={styles.iconWrapper}>
@@ -103,35 +93,34 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
   const resolvedTheme = useResolvedTheme();
   const isDark = resolvedTheme === 'dark';
   
+  const visibleRoutes = state.routes.filter(route => route.name !== 'add');
+  const activeVisibleIndex = visibleRoutes.findIndex(r => r.key === state.routes[state.index].key);
+
   const [tabBarWidth, setTabBarWidth] = useState(0);
-  const tabWidth = tabBarWidth > 0 ? tabBarWidth / state.routes.length : 0;
+  const tabWidth = tabBarWidth > 0 ? tabBarWidth / visibleRoutes.length : 0;
 
   // Liquid Indicator Animation state
   const indicatorLeft = useSharedValue(0);
   const indicatorRight = useSharedValue(48);
-  const indicatorOpacity = useSharedValue(state.routes[state.index].name === 'add' ? 0 : 1);
-  const previousIndex = useSharedValue(state.index);
+  const indicatorOpacity = useSharedValue(activeVisibleIndex === -1 ? 0 : 1);
+  const previousIndex = useSharedValue(activeVisibleIndex >= 0 ? activeVisibleIndex : 0);
 
   useEffect(() => {
-    if (tabWidth > 0) {
-      const center = state.index * tabWidth + tabWidth / 2;
+    if (tabWidth > 0 && activeVisibleIndex !== -1) {
+      const center = activeVisibleIndex * tabWidth + tabWidth / 2;
       const targetLeft = center - 24;
       const targetRight = center + 24;
       
-      const isMovingRight = state.index > previousIndex.value;
-      previousIndex.value = state.index;
+      const isMovingRight = activeVisibleIndex > previousIndex.value;
+      previousIndex.value = activeVisibleIndex;
 
-      if (state.routes[state.index].name === 'add') {
-        indicatorOpacity.value = withTiming(0, { duration: 150 });
-      } else {
-        indicatorOpacity.value = withTiming(1, { duration: 200 });
-      }
+      indicatorOpacity.value = withTiming(1, { duration: 200 });
 
       if (isMovingRight) {
         // Slugs to the right: right edge moves fast, left edge lags
         indicatorRight.value = withSpring(targetRight, { damping: 14, stiffness: 220 });
         indicatorLeft.value = withSpring(targetLeft, { damping: 18, stiffness: 150 });
-      } else if (state.index < previousIndex.value) {
+      } else if (activeVisibleIndex < previousIndex.value) {
         // Slugs to the left: left edge moves fast, right edge lags
         indicatorLeft.value = withSpring(targetLeft, { damping: 14, stiffness: 220 });
         indicatorRight.value = withSpring(targetRight, { damping: 18, stiffness: 150 });
@@ -140,13 +129,15 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
         indicatorLeft.value = targetLeft;
         indicatorRight.value = targetRight;
       }
+    } else if (activeVisibleIndex === -1) {
+       indicatorOpacity.value = withTiming(0, { duration: 150 });
     }
-  }, [state.index, tabWidth]);
+  }, [activeVisibleIndex, tabWidth]);
 
   const navigateToIndex = (index: number) => {
-    if (index >= 0 && index < state.routes.length) {
-      const route = state.routes[index];
-      const isFocused = state.index === index;
+    if (index >= 0 && index < visibleRoutes.length) {
+      const route = visibleRoutes[index];
+      const isFocused = route.key === state.routes[state.index].key;
       const event = navigation.emit({
         type: 'tabPress',
         target: route.key,
@@ -175,7 +166,7 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
       if (tabWidth === 0) return;
       const center = (previousIndex.value * tabWidth + tabWidth / 2) + e.translationX;
       // Clamp center to valid bounds
-      const clampedCenter = Math.max(tabWidth / 2, Math.min(center, tabWidth * (state.routes.length - 0.5)));
+      const clampedCenter = Math.max(tabWidth / 2, Math.min(center, tabWidth * (visibleRoutes.length - 0.5)));
       
       // Dynamic stretching based on velocity
       const stretch = Math.min(Math.abs(e.velocityX) * 0.015, 30);
@@ -192,15 +183,12 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
       const currentCenter = (indicatorLeft.value + indicatorRight.value) / 2;
       const finalX = currentCenter + e.velocityX * 0.1;
       const nearestIndex = Math.round((finalX - tabWidth / 2) / tabWidth);
-      const clampedIndex = Math.max(0, Math.min(nearestIndex, state.routes.length - 1));
+      const clampedIndex = Math.max(0, Math.min(nearestIndex, visibleRoutes.length - 1));
       
       runOnJS(navigateToIndex)(clampedIndex);
       
       // If we dropped it on the current active index, it won't trigger the useEffect state change, so snap back manually
-      if (clampedIndex === state.index) {
-        if (state.routes[clampedIndex].name === 'add') {
-           indicatorOpacity.value = withTiming(0, { duration: 150 });
-        }
+      if (clampedIndex === activeVisibleIndex) {
         const targetCenter = clampedIndex * tabWidth + tabWidth / 2;
         indicatorLeft.value = withSpring(targetCenter - 24, { damping: 14, stiffness: 220 });
         indicatorRight.value = withSpring(targetCenter + 24, { damping: 14, stiffness: 220 });
@@ -224,12 +212,17 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
     };
   });
 
+  if (state.routes[state.index].name === 'add') {
+    return null;
+  }
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <View style={[styles.shadowView, { shadowColor: isDark ? '#000' : 'rgba(0,0,0,0.3)' }]} />
       
       <BlurView 
-        intensity={Platform.OS === 'ios' ? 20 : 35} 
+        intensity={Platform.OS === 'ios' ? 20 : 35}
+
         tint={isDark ? 'dark' : 'light'} 
         experimentalBlurMethod="dimezisBlurView"
         style={[
@@ -255,9 +248,9 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
             </Animated.View>
           )}
 
-          {state.routes.map((route, index) => {
+          {visibleRoutes.map((route, index) => {
             const { options } = descriptors[route.key];
-            const isFocused = state.index === index;
+            const isFocused = route.key === state.routes[state.index].key;
             
             return (
               <TabItem 
@@ -323,22 +316,4 @@ const styles = StyleSheet.create({
     padding: 10,
     borderRadius: 20,
   },
-  addBtnContainer: {
-    transform: [{ translateY: -20 }],
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-    zIndex: 10,
-  },
-  addBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    alignItems: 'center',
-    justifyContent: 'center',
-  }
 });
-
-
-
