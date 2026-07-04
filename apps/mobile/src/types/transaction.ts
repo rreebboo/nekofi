@@ -2,7 +2,7 @@ import type { SyncStatus } from './account';
 
 export type TransactionType = 'income' | 'expense';
 
-export type TransactionSource = 'manual' | 'brick_sync' | 'brick_webhook';
+export type TransactionSource = 'manual' | 'brankas_sync';
 
 export interface Transaction {
   id: string;

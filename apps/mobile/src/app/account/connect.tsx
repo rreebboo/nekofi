@@ -1,200 +1,305 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator, Alert } from 'react-native';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { WebView, WebViewMessageEvent } from 'react-native-webview';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { useAccountStore } from '@/stores/accountStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { brickService } from '@/services/brickService';
-import { CreateAccountDto } from '@/types/account';
+import { bankService } from '@/services/bankService';
+import { supabase } from '@/services/supabase/client';
+import type { CreateAccountDto } from '@/types/account';
 
-type ConnectState = 'loading' | 'webview' | 'linking' | 'success' | 'error';
+type ConnectState = 'launching' | 'waiting' | 'syncing' | 'success' | 'error';
+
+/** Polling interval for checking statement status (ms) */
+const SYNC_POLL_INTERVAL = 3000;
+/** Maximum number of poll attempts before timing out */
+const MAX_POLL_ATTEMPTS = 40; // ~2 minutes
 
 export default function ConnectAccountScreen() {
   const router = useRouter();
   const colors = useThemeColors();
   const params = useLocalSearchParams();
   const { addAccount } = useAccountStore();
-  const webViewRef = useRef<WebView>(null);
 
   // Params passed from add.tsx
-  const publicToken = params.publicToken as string;
   const redirectUrl = params.redirectUrl as string;
+  const statementId = params.statementId as string;
   const name = params.name as string;
   const type = params.type as string;
   const brandIcon = params.brandIcon as string;
   const color = params.color as string;
   const textColor = params.textColor as string;
 
-  const [state, setState] = useState<ConnectState>(publicToken ? 'webview' : 'error');
-  const [errorMessage, setErrorMessage] = useState('');
-
-  // Build the Brick Link widget URL with the public token
-  const widgetUrl = redirectUrl
-    ? `${redirectUrl}?accessToken=${publicToken}`
-    : `https://sandbox.onebrick.io/v2/widget?accessToken=${publicToken}`;
+  const [state, setState] = useState<ConnectState>(redirectUrl ? 'launching' : 'error');
+  const [errorMessage, setErrorMessage] = useState(
+    redirectUrl ? '' : 'No connection URL received. Please go back and try again.',
+  );
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollCountRef = useRef(0);
 
   /**
-   * Handle messages from the Brick WebView.
-   * Brick posts a message when the user completes or cancels the flow.
+   * Clean up the polling interval.
    */
-  const handleWebViewMessage = useCallback(async (event: WebViewMessageEvent) => {
-    try {
-      const data = JSON.parse(event.nativeEvent.data);
+  const stopPolling = useCallback(() => {
+    if (pollRef.current) {
+      clearInterval(pollRef.current);
+      pollRef.current = null;
+    }
+    pollCountRef.current = 0;
+  }, []);
 
-      if (data.status === 'success' && data.accessToken) {
-        setState('linking');
+  /**
+   * Poll the brankas-sync function to check if the statement is ready,
+   * then sync transactions into the database.
+   */
+  const pollForSync = useCallback(async (stmtId: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const userId = user?.id;
 
-        // Step 1: Create the account locally first (optimistic)
-        const accountDto: CreateAccountDto = {
-          name,
-          type: type as any,
-          brandIcon: brandIcon as any,
-          color,
-          gradientEnd: '#0F1115',
-          textColor: textColor || '#FFFFFF',
-        };
+    if (!userId) {
+      setErrorMessage('You must be signed in to sync your account.');
+      setState('error');
+      stopPolling();
+      return;
+    }
 
-        await addAccount(accountDto);
+    setState('syncing');
 
-        // Get the account ID from the store (it was just added)
-        const accounts = useAccountStore.getState().accounts;
-        const newAccount = accounts.find(a => a.name === name);
+    pollRef.current = setInterval(async () => {
+      pollCountRef.current++;
 
-        if (!newAccount) {
-          throw new Error('Account was not created successfully');
-        }
-
-        // Step 2: Link the account via the backend
-        const linkResult = await brickService.linkAccount(
-          data.accessToken,
-          newAccount.id,
-          name,
-        );
-
-        // Step 3: Update the account with linked status and balance
-        useAccountStore.setState((s) => ({
-          accounts: s.accounts.map(a =>
-            a.id === newAccount.id
-              ? {
-                  ...a,
-                  balance: linkResult.balance,
-                  isLinked: true,
-                  linkedAccountId: linkResult.linkedAccountId,
-                  syncStatus: 'synced',
-                }
-              : a
-          ),
-        }));
-
+      if (pollCountRef.current > MAX_POLL_ATTEMPTS) {
+        stopPolling();
+        // Don't error — the sync will still happen via webhook if configured
+        // Just let the user know it's taking longer
         setState('success');
+        setTimeout(() => router.replace('/(tabs)'), 1500);
+        return;
+      }
 
-        // Navigate back after a brief success animation
-        setTimeout(() => {
-          router.replace('/(tabs)');
-        }, 1500);
-      } else if (data.status === 'error') {
-        setErrorMessage(data.message || 'Connection failed. Please try again.');
-        setState('error');
-      } else if (data.status === 'closed' || data.status === 'cancelled') {
+      try {
+        const result = await bankService.syncStatement(stmtId, userId);
+
+        if (result.status === 'synced') {
+          stopPolling();
+
+          // Update the account in the store with balance
+          const accounts = useAccountStore.getState().accounts;
+          const targetAccount = accounts.find(a => a.name === name);
+
+          if (targetAccount && result.balance !== undefined) {
+            useAccountStore.setState((s) => ({
+              accounts: s.accounts.map(a =>
+                a.id === targetAccount.id
+                  ? {
+                      ...a,
+                      balance: result.balance ?? a.balance,
+                      isLinked: true,
+                      linkedAccountId: stmtId,
+                      syncStatus: 'synced',
+                    }
+                  : a
+              ),
+            }));
+          }
+
+          setState('success');
+          setTimeout(() => router.replace('/(tabs)'), 1500);
+        }
+        // If status is 'pending' or similar, keep polling
+      } catch (err: any) {
+        console.error('[ConnectAccount] Sync poll error:', err);
+        // Don't stop polling on transient errors
+      }
+    }, SYNC_POLL_INTERVAL);
+  }, [name, router, stopPolling]);
+
+  /**
+   * Open the Brankas Tap URL in the system browser.
+   * When the user finishes, they're redirected back to the app via deep link.
+   */
+  const openBrankasTap = useCallback(async () => {
+    if (!redirectUrl) return;
+
+    setState('launching');
+
+    try {
+      const result = await WebBrowser.openAuthSessionAsync(
+        redirectUrl,
+        'nekofi://bank-connect',
+      );
+
+      // If openAuthSessionAsync resolves (browser closed), start polling.
+      // This may not fire if Expo Router intercepts the deep link first,
+      // in which case the AppState fallback below handles it.
+      if (result.type === 'success' || result.type === 'dismiss') {
+        if (!pollRef.current) {
+          await pollForSync(statementId);
+        }
+      } else if (result.type === 'cancel') {
         router.back();
       }
     } catch (err: any) {
-      console.error('Error processing Brick response:', err);
-      setErrorMessage(err.message || 'Something went wrong while linking your account.');
+      console.error('[ConnectAccount] WebBrowser error:', err);
+      setErrorMessage('Failed to open the secure connection page.');
       setState('error');
     }
-  }, [name, type, brandIcon, color, textColor, addAccount, router]);
+  }, [redirectUrl, statementId, pollForSync, router]);
 
   /**
-   * JavaScript injected into the WebView to capture Brick's postMessage events
-   * and forward them to React Native.
+   * Fallback: When the app comes back to foreground after the browser,
+   * start polling if we haven't already. This handles the case where
+   * Expo Router intercepts the deep link before openAuthSessionAsync resolves.
    */
-  const injectedJS = `
-    (function() {
-      // Listen for Brick's completion message
-      window.addEventListener('message', function(event) {
-        if (event.data && typeof event.data === 'string') {
-          window.ReactNativeWebView.postMessage(event.data);
-        } else if (event.data && typeof event.data === 'object') {
-          window.ReactNativeWebView.postMessage(JSON.stringify(event.data));
-        }
-      });
-
-      // Also intercept if Brick uses a custom callback
-      if (window.onBrickSuccess) {
-        var originalSuccess = window.onBrickSuccess;
-        window.onBrickSuccess = function(data) {
-          window.ReactNativeWebView.postMessage(JSON.stringify({
-            status: 'success',
-            accessToken: data.accessToken || data.access_token,
-          }));
-          if (originalSuccess) originalSuccess(data);
-        };
+  useEffect(() => {
+    const handleAppState = (nextState: string) => {
+      if (nextState === 'active' && state === 'launching' && !pollRef.current) {
+        pollForSync(statementId);
       }
-      true;
-    })();
-  `;
+    };
+
+    const { AppState } = require('react-native');
+    const sub = AppState.addEventListener('change', handleAppState);
+    return () => sub.remove();
+  }, [state, statementId, pollForSync]);
+
+  /**
+   * Handle deep link callbacks from Brankas.
+   * The Tap UI redirects to nekofi://bank-connect/success or /error.
+   * These are also handled by route files in app/bank-connect/,
+   * which call router.back() to return here.
+   */
+  useEffect(() => {
+    const handleDeepLink = (event: { url: string }) => {
+      const url = event.url;
+      if (url.includes('bank-connect/error')) {
+        stopPolling();
+        setErrorMessage('Bank connection was unsuccessful. Please try again.');
+        setState('error');
+      } else if (url.includes('bank-connect/success')) {
+        // Start sync if not already polling
+        if (!pollRef.current) {
+          pollForSync(statementId);
+        }
+      }
+    };
+
+    const subscription = Linking.addEventListener('url', handleDeepLink);
+    return () => {
+      subscription.remove();
+      stopPolling();
+    };
+  }, [statementId, pollForSync, stopPolling]);
+
+  /**
+   * Launch the browser on mount.
+   */
+  useEffect(() => {
+    if (redirectUrl && state === 'launching') {
+      // Create the account optimistically before launching
+      const createAndLaunch = async () => {
+        try {
+          const accountDto: CreateAccountDto = {
+            name,
+            type: type as any,
+            brandIcon: brandIcon as any,
+            color,
+            gradientEnd: '#0F1115',
+            textColor: textColor || '#FFFFFF',
+          };
+          await addAccount(accountDto);
+          await openBrankasTap();
+        } catch (err: any) {
+          console.error('[ConnectAccount] Error:', err);
+          setErrorMessage(err.message || 'Something went wrong.');
+          setState('error');
+        }
+      };
+      createAndLaunch();
+    }
+  }, []); // Run once on mount
 
   const handleRetry = () => {
-    if (publicToken) {
-      setState('webview');
-      setErrorMessage('');
+    if (redirectUrl) {
+      openBrankasTap();
     } else {
       router.back();
     }
+  };
+
+  /** Navigate to the manual setup screen as a fallback. */
+  const handleManualFallback = () => {
+    router.replace({
+      pathname: '/account/setup',
+      params: {
+        name,
+        type,
+        brandIcon,
+        color,
+        textColor,
+      },
+    });
   };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.borderAlt }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <Pressable onPress={() => { stopPolling(); router.back(); }} style={styles.backButton}>
           <Ionicons name="close" size={24} color={colors.text} />
         </Pressable>
         <Text style={[styles.title, { color: colors.text }]}>Connect {name}</Text>
         <View style={{ width: 24 }} />
       </View>
 
-      {/* WebView State */}
-      {state === 'webview' && (
-        <WebView
-          ref={webViewRef}
-          source={{ uri: widgetUrl }}
-          style={styles.webview}
-          onMessage={handleWebViewMessage}
-          injectedJavaScript={injectedJS}
-          javaScriptEnabled
-          domStorageEnabled
-          startInLoadingState
-          renderLoading={() => (
-            <View style={[styles.centeredContainer, { backgroundColor: colors.background }]}>
-              <ActivityIndicator size="large" color={color || colors.primary} />
-              <Text style={[styles.statusText, { color: colors.textMuted }]}>
-                Loading secure connection...
-              </Text>
-            </View>
-          )}
-          onError={(syntheticEvent) => {
-            const { nativeEvent } = syntheticEvent;
-            console.error('WebView error:', nativeEvent);
-            setErrorMessage('Failed to load the connection page. Please check your internet connection.');
-            setState('error');
-          }}
-        />
-      )}
-
-      {/* Linking State */}
-      {state === 'linking' && (
+      {/* Launching / Waiting State */}
+      {(state === 'launching' || state === 'waiting') && (
         <View style={[styles.centeredContainer, { backgroundColor: colors.background }]}>
           <View style={[styles.statusIcon, { backgroundColor: (color || colors.primary) + '20' }]}>
             <ActivityIndicator size="large" color={color || colors.primary} />
           </View>
-          <Text style={[styles.statusTitle, { color: colors.text }]}>Linking {name}...</Text>
-          <Text style={[styles.statusText, { color: colors.textMuted }]}>
-            Fetching your balance and recent transactions.
+          <Text style={[styles.statusTitle, { color: colors.text }]}>
+            {state === 'launching' ? 'Opening secure connection...' : 'Waiting for bank login...'}
           </Text>
+          <Text style={[styles.statusText, { color: colors.textMuted }]}>
+            Complete the login in the browser window that just opened. You'll be redirected back here when done.
+          </Text>
+        </View>
+      )}
+
+      {/* Syncing State */}
+      {state === 'syncing' && (
+        <View style={[styles.centeredContainer, { backgroundColor: colors.background }]}>
+          <View style={[styles.statusIcon, { backgroundColor: (color || colors.primary) + '20' }]}>
+            <ActivityIndicator size="large" color={color || colors.primary} />
+          </View>
+          <Text style={[styles.statusTitle, { color: colors.text }]}>Syncing {name}...</Text>
+          <Text style={[styles.statusText, { color: colors.textMuted }]}>
+            Securely fetching your balance and recent transactions. This usually takes 15–30 seconds.
+          </Text>
+          <Text style={[styles.statusHint, { color: colors.textMuted }]}>
+            {pollCountRef.current > 3
+              ? 'Almost there — processing your data...'
+              : 'Connecting to your bank...'}
+          </Text>
+
+          {/* Let user continue using the app while sync runs in background */}
+          <Pressable
+            style={[styles.backgroundButton, { borderColor: colors.borderAlt }]}
+            onPress={() => {
+              // Don't stop polling — it continues in background
+              // and updates the store when complete
+              router.replace('/(tabs)');
+            }}
+          >
+            <Ionicons name="arrow-back" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+            <Text style={[styles.backgroundButtonText, { color: colors.textMuted }]}>
+              Continue in background
+            </Text>
+          </Pressable>
         </View>
       )}
 
@@ -232,22 +337,20 @@ export default function ConnectAccountScreen() {
               </Text>
             </Pressable>
 
+            {/* Manual fallback — always visible on error */}
+            <Pressable style={styles.manualFallbackButton} onPress={handleManualFallback}>
+              <Ionicons name="create-outline" size={20} color={colors.text} style={{ marginRight: 8 }} />
+              <Text style={[styles.manualFallbackText, { color: colors.text }]}>
+                Add manually instead
+              </Text>
+            </Pressable>
+
             <Pressable style={styles.cancelLink} onPress={() => router.back()}>
               <Text style={[styles.cancelLinkText, { color: colors.textMuted }]}>
                 Go Back
               </Text>
             </Pressable>
           </View>
-        </View>
-      )}
-
-      {/* Loading State (initial) */}
-      {state === 'loading' && (
-        <View style={[styles.centeredContainer, { backgroundColor: colors.background }]}>
-          <ActivityIndicator size="large" color={color || colors.primary} />
-          <Text style={[styles.statusText, { color: colors.textMuted }]}>
-            Preparing secure connection...
-          </Text>
         </View>
       )}
     </SafeAreaView>
@@ -266,7 +369,6 @@ const styles = StyleSheet.create({
   },
   backButton: { padding: 4, marginLeft: -4 },
   title: { fontFamily: 'Inter-SemiBold', fontSize: 18 },
-  webview: { flex: 1 },
   centeredContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -294,6 +396,27 @@ const styles = StyleSheet.create({
     lineHeight: 22,
     marginTop: 12,
   },
+  statusHint: {
+    fontFamily: 'Inter-Regular',
+    fontSize: 13,
+    textAlign: 'center',
+    marginTop: 16,
+    opacity: 0.7,
+  },
+  backgroundButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 32,
+    paddingVertical: 14,
+    paddingHorizontal: 24,
+    borderRadius: 16,
+    borderWidth: 1,
+  },
+  backgroundButtonText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 14,
+  },
   errorActions: {
     marginTop: 32,
     width: '100%',
@@ -307,8 +430,19 @@ const styles = StyleSheet.create({
     fontFamily: 'Inter-Bold',
     fontSize: 16,
   },
-  cancelLink: {
+  manualFallbackButton: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingVertical: 16,
+    marginTop: 8,
+  },
+  manualFallbackText: {
+    fontFamily: 'Inter-Medium',
+    fontSize: 15,
+  },
+  cancelLink: {
+    paddingVertical: 12,
     alignItems: 'center',
   },
   cancelLinkText: {

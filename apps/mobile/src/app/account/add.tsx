@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Modal, ActivityIndicator, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Modal, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useAccountStore } from '@/stores/accountStore';
 import { AccountType, CreateAccountDto } from '@/types/account';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import { brickService } from '@/services/brickService';
+import { bankService, BankServiceError } from '@/services/bankService';
 
 const ACCOUNT_OPTIONS: { title: string, options: CreateAccountDto[] }[] = [
   {
@@ -46,29 +46,39 @@ export default function AddAccountScreen() {
   const { addAccount } = useAccountStore();
   const [selectedOption, setSelectedOption] = useState<CreateAccountDto | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState<{
+    message: string;
+    shouldFallback: boolean;
+  } | null>(null);
 
   const handleSelect = (option: CreateAccountDto) => {
     setSelectedOption(option);
+    setConnectionError(null); // Reset error when selecting a new option
   };
 
-  const closePrompt = () => setSelectedOption(null);
+  const closePrompt = () => {
+    setSelectedOption(null);
+    setConnectionError(null);
+  };
 
   const handleConnect = async () => {
     if (!selectedOption || connecting) return;
 
     setConnecting(true);
+    setConnectionError(null);
+
     try {
-      // Get a public token from Brick via our Edge Function
-      const { publicToken, redirectUrl } = await brickService.getPublicToken(selectedOption.name);
+      // Initialize a Brankas Statement session via our Edge Function
+      const { redirectUrl, statementId } = await bankService.initConnection(selectedOption.name);
 
       closePrompt();
 
-      // Navigate to the WebView connect screen with the token
+      // Navigate to the connect screen which will open Brankas Tap
       router.push({
         pathname: '/account/connect',
         params: {
-          publicToken,
           redirectUrl,
+          statementId,
           name: selectedOption.name,
           type: selectedOption.type,
           brandIcon: selectedOption.brandIcon,
@@ -78,11 +88,15 @@ export default function AddAccountScreen() {
       });
     } catch (err: any) {
       console.error('Failed to start connection:', err);
-      Alert.alert(
-        'Connection Error',
-        err.message || 'Failed to start the connection. Please try again.',
-        [{ text: 'OK' }],
-      );
+
+      // Show inline error in the modal instead of a disruptive Alert
+      const isBankError = err instanceof BankServiceError;
+      setConnectionError({
+        message: isBankError
+          ? err.userMessage
+          : (err.message || 'Failed to start the connection. Please try again.'),
+        shouldFallback: isBankError ? err.shouldFallbackToManual : false,
+      });
     } finally {
       setConnecting(false);
     }
@@ -169,50 +183,89 @@ export default function AddAccountScreen() {
                   </Text>
                 </View>
 
-                <View style={styles.modalFeatures}>
-                  <View style={styles.featureRow}>
-                    <Ionicons name="wallet-outline" size={24} color={colors.text} />
-                    <Text style={[styles.featureText, { color: colors.text }]}>Read your account balance</Text>
-                  </View>
-                  <View style={styles.featureRow}>
-                    <Ionicons name="list-outline" size={24} color={colors.text} />
-                    <Text style={[styles.featureText, { color: colors.text }]}>Sync recent transactions</Text>
-                  </View>
-                  <View style={styles.featureRow}>
-                    <Ionicons name="lock-closed-outline" size={24} color={colors.text} />
-                    <Text style={[styles.featureText, { color: colors.text }]}>Bank-grade security</Text>
-                  </View>
-                </View>
-
-                <View style={styles.modalActions}>
-                  <Pressable 
-                    style={[styles.connectButton, { backgroundColor: selectedOption.color, opacity: connecting ? 0.7 : 1 }]} 
-                    onPress={handleConnect}
-                    disabled={connecting}
-                  >
-                    {connecting ? (
-                      <View style={styles.connectButtonLoading}>
-                        <ActivityIndicator size="small" color={selectedOption.textColor} />
-                        <Text style={[styles.connectButtonText, { color: selectedOption.textColor, marginLeft: 8 }]}>
-                          Connecting...
-                        </Text>
-                      </View>
-                    ) : (
-                      <Text style={[styles.connectButtonText, { color: selectedOption.textColor }]}>
-                        Connect {selectedOption.name}
+                {/* ─── Connection Error State ─── */}
+                {connectionError ? (
+                  <View style={styles.errorContainer}>
+                    <View style={[styles.errorBanner, { backgroundColor: '#FF4D4D12', borderColor: '#FF4D4D40' }]}>
+                      <Ionicons name="alert-circle" size={22} color="#FF4D4D" />
+                      <Text style={[styles.errorText, { color: colors.text }]}>
+                        {connectionError.message}
                       </Text>
-                    )}
-                  </Pressable>
+                    </View>
 
-                  <Pressable 
-                    style={styles.manualButton} 
-                    onPress={handleManualAdd}
-                  >
-                    <Text style={[styles.manualButtonText, { color: colors.text }]}>
-                      Add manually instead
-                    </Text>
-                  </Pressable>
-                </View>
+                    <View style={styles.modalActions}>
+                      {/* Primary action: manual add (especially if Brick is misconfigured) */}
+                      <Pressable
+                        style={[styles.connectButton, { backgroundColor: selectedOption.color }]}
+                        onPress={handleManualAdd}
+                      >
+                        <Text style={[styles.connectButtonText, { color: selectedOption.textColor }]}>
+                          Add manually instead
+                        </Text>
+                      </Pressable>
+
+                      {/* Secondary: retry (only show if not a permanent failure) */}
+                      {!connectionError.shouldFallback && (
+                        <Pressable
+                          style={styles.manualButton}
+                          onPress={handleConnect}
+                        >
+                          <Text style={[styles.manualButtonText, { color: colors.text }]}>
+                            Try again
+                          </Text>
+                        </Pressable>
+                      )}
+                    </View>
+                  </View>
+                ) : (
+                  /* ─── Normal State ─── */
+                  <>
+                    <View style={styles.modalFeatures}>
+                      <View style={styles.featureRow}>
+                        <Ionicons name="wallet-outline" size={24} color={colors.text} />
+                        <Text style={[styles.featureText, { color: colors.text }]}>Read your account balance</Text>
+                      </View>
+                      <View style={styles.featureRow}>
+                        <Ionicons name="list-outline" size={24} color={colors.text} />
+                        <Text style={[styles.featureText, { color: colors.text }]}>Sync recent transactions</Text>
+                      </View>
+                      <View style={styles.featureRow}>
+                        <Ionicons name="lock-closed-outline" size={24} color={colors.text} />
+                        <Text style={[styles.featureText, { color: colors.text }]}>Bank-grade security</Text>
+                      </View>
+                    </View>
+
+                    <View style={styles.modalActions}>
+                      <Pressable 
+                        style={[styles.connectButton, { backgroundColor: selectedOption.color, opacity: connecting ? 0.7 : 1 }]} 
+                        onPress={handleConnect}
+                        disabled={connecting}
+                      >
+                        {connecting ? (
+                          <View style={styles.connectButtonLoading}>
+                            <ActivityIndicator size="small" color={selectedOption.textColor} />
+                            <Text style={[styles.connectButtonText, { color: selectedOption.textColor, marginLeft: 8 }]}>
+                              Connecting...
+                            </Text>
+                          </View>
+                        ) : (
+                          <Text style={[styles.connectButtonText, { color: selectedOption.textColor }]}>
+                            Connect {selectedOption.name}
+                          </Text>
+                        )}
+                      </Pressable>
+
+                      <Pressable 
+                        style={styles.manualButton} 
+                        onPress={handleManualAdd}
+                      >
+                        <Text style={[styles.manualButtonText, { color: colors.text }]}>
+                          Add manually instead
+                        </Text>
+                      </Pressable>
+                    </View>
+                  </>
+                )}
 
                 <Pressable style={styles.cancelButton} onPress={closePrompt}>
                   <Text style={[styles.cancelText, { color: colors.textMuted }]}>Cancel</Text>
@@ -315,6 +368,24 @@ const styles = StyleSheet.create({
   featureText: {
     fontFamily: 'Inter-Medium',
     fontSize: 15,
+  },
+  errorContainer: {
+    marginBottom: 8,
+  },
+  errorBanner: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+    padding: 16,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginBottom: 24,
+  },
+  errorText: {
+    flex: 1,
+    fontFamily: 'Inter-Regular',
+    fontSize: 14,
+    lineHeight: 20,
   },
   modalActions: {
     marginBottom: 16,
