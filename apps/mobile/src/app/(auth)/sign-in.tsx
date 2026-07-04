@@ -14,8 +14,9 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [fbLoading, setFbLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
-  const { signIn, signInWithFacebook, syncConflict } = useAuthStore();
+  const { signIn, signInWithFacebook, signInWithGoogle, syncConflict } = useAuthStore();
   const colors = useThemeColors();
 
   React.useEffect(() => {
@@ -75,6 +76,28 @@ export default function SignInScreen() {
     }
   };
 
+  /**
+   * Handles Google native sign-in.
+   * Shows the OS-level Google account picker — no browser opens.
+   * If the account is new, Supabase auto-creates it.
+   * If it already exists, the user is signed in.
+   */
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      // signInWithGoogle sets the session in the store;
+      // the auth layout's useEffect will redirect to /(tabs) automatically.
+    } catch (err: any) {
+      // Don't show an alert for user-cancelled flows
+      if (!err.message?.includes('cancelled')) {
+        Alert.alert('Google Sign In Failed', err.message);
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.title, { color: colors.text }]}>Welcome back 🐱</Text>
@@ -115,12 +138,21 @@ export default function SignInScreen() {
         <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
       </View>
 
-      {/* ── Facebook Sign-In Button ───────────────────────── */}
+      {/* ── Facebook Sign-In Button ──────────────────── */}
       <SocialAuthButton
         provider="facebook"
         onPress={handleFacebookSignIn}
         loading={fbLoading}
-        disabled={loading}
+        disabled={loading || googleLoading}
+        style={styles.socialBtn}
+      />
+
+      {/* ── Google Sign-In Button ────────────────────── */}
+      <SocialAuthButton
+        provider="google"
+        onPress={handleGoogleSignIn}
+        loading={googleLoading}
+        disabled={loading || fbLoading}
         style={styles.socialBtn}
       />
 

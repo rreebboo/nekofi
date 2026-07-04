@@ -14,8 +14,9 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [fbLoading, setFbLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
-  const { signUp, signInWithFacebook, syncConflict } = useAuthStore();
+  const { signUp, signInWithFacebook, signInWithGoogle, syncConflict } = useAuthStore();
   const colors = useThemeColors();
 
   React.useEffect(() => {
@@ -80,6 +81,26 @@ export default function SignUpScreen() {
     }
   };
 
+  /**
+   * Handles Google native sign-up / sign-in.
+   * If this is a brand-new Google account, Supabase creates the user automatically.
+   * Full name, email, and avatar_url are populated from the Google profile.
+   * If they already have a Supabase account linked to this Google ID, they are signed in.
+   */
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      // Auth layout useEffect will navigate to /(tabs) once session is set in the store.
+    } catch (err: any) {
+      if (!err.message?.includes('cancelled')) {
+        Alert.alert('Google Sign Up Failed', err.message);
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.title, { color: colors.text }]}>Create account</Text>
@@ -95,19 +116,28 @@ export default function SignUpScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* ── Divider ─────────────────────────────────────────── */}
+      {/* ── Divider ──────────────────────────────────── */}
       <View style={styles.dividerRow}>
         <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
         <Text style={[styles.dividerText, { color: colors.textMuted }]}>or sign up with</Text>
         <View style={[styles.dividerLine, { backgroundColor: colors.border }]} />
       </View>
 
-      {/* ── Facebook Sign-Up Button ───────────────────────── */}
+      {/* ── Facebook Sign-Up Button ──────────────────── */}
       <SocialAuthButton
         provider="facebook"
         onPress={handleFacebookSignIn}
         loading={fbLoading}
-        disabled={loading}
+        disabled={loading || googleLoading}
+        style={styles.socialBtn}
+      />
+
+      {/* ── Google Sign-Up Button ────────────────────── */}
+      <SocialAuthButton
+        provider="google"
+        onPress={handleGoogleSignIn}
+        loading={googleLoading}
+        disabled={loading || fbLoading}
         style={styles.socialBtn}
       />
 
