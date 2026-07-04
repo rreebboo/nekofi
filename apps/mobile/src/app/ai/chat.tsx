@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, FlatList, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -24,7 +24,7 @@ export default function AIChatScreen() {
     {
       id: '0',
       role: 'assistant',
-      content: "Hi! I'm Nekofi AI 🐱 I can help you analyze your spending, suggest savings tips, and answer any financial questions. What would you like to know?",
+      content: "Hi! I'm Nekofi AI! I can help you analyze your spending, suggest savings tips, and answer any financial questions. What would you like to know?",
       timestamp: new Date(),
     },
   ]);
@@ -72,7 +72,10 @@ export default function AIChatScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </AnimatedPressable>
         <View style={styles.headerCenter}>
-          <Text style={[styles.headerTitle, { color: colors.text }]}>Nekofi AI</Text>
+          <View style={styles.headerTitleRow}>
+            <Image source={require('../../../assets/images/icon.png')} style={styles.headerLogo} />
+            <Text style={[styles.headerTitle, { color: colors.text }]}>Nekofi AI</Text>
+          </View>
           <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
             {isReady ? '100% Offline AI' : 'Initializing AI...'}
           </Text>
@@ -138,6 +141,8 @@ const styles = StyleSheet.create({
   container: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
   headerCenter: { flex: 1, alignItems: 'center' },
+  headerTitleRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerLogo: { width: 20, height: 20, borderRadius: 6 },
   headerTitle: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
   headerSubtitle: { fontFamily: 'Inter-Regular', fontSize: 11 },
   list: { paddingHorizontal: 16, paddingVertical: 16, gap: 12 },

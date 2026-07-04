@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
 import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
@@ -23,7 +23,7 @@ export default function WelcomeScreen() {
   return (
     <LinearGradient colors={[colors.background, colors.surface]} style={styles.container}>
       <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.hero}>
-        <Text style={styles.emoji}>🐱</Text>
+        <Image source={require('../../../assets/images/icon.png')} style={styles.logo} />
         <Text style={[styles.title, { color: colors.text }]}>Nekofi</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your AI-powered{'\n'}budget companion</Text>
       </Animated.View>
@@ -48,7 +48,7 @@ export default function WelcomeScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, justifyContent: 'space-between', paddingVertical: 80, paddingHorizontal: 24 },
   hero: { alignItems: 'center', gap: 12 },
-  emoji: { fontSize: 72 },
+  logo: { width: 80, height: 80, borderRadius: 20 },
   title: { fontFamily: 'Inter-Bold', fontSize: 48, letterSpacing: -1 },
   subtitle: { fontFamily: 'Inter-Regular', fontSize: 18, textAlign: 'center', lineHeight: 28 },
   actions: { gap: 12 },

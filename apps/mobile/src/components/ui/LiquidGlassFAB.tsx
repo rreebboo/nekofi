@@ -52,7 +52,7 @@ export function LiquidGlassFAB() {
                 }
               ]}
             />
-            <Ionicons name="add" size={32} color={isDark ? '#FFFFFF' : '#000000'} />
+            <Ionicons name="add" size={32} color="#FFFFFF" />
           </Animated.View>
         )}
       </Pressable>
