@@ -20,8 +20,7 @@ import { AppState } from 'react-native';
 //
 // react-native-get-random-values (imported in _layout.tsx) provides
 // crypto.getRandomValues, but NOT crypto.subtle. This polyfill fills the gap
-// using expo-crypto's native SHA-256 implementation (no extra install needed
-// for Expo SDK 51).
+// using expo-crypto's native SHA-256 implementation.
 //
 // CORRECTNESS
 // -----------
