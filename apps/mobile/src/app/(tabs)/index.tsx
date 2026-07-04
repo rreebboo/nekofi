@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
 import { useBudgetStore, computeBudgetGroups } from '@/stores/budgetStore';
@@ -64,7 +64,10 @@ export default function DashboardScreen() {
             {/* Header */}
             <View style={styles.header}>
               <Text style={[styles.greeting, { color: colors.textMuted }]}>{greeting()},</Text>
-              <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'User'} 🐱</Text>
+              <View style={styles.nameRow}>
+                <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'User'}</Text>
+                <Image source={require('../../../assets/images/icon.png')} style={styles.nameLogo} />
+              </View>
             </View>
 
             {/* Credit Card Carousel Section */}
@@ -97,6 +100,8 @@ const styles = StyleSheet.create({
   scroll: { paddingBottom: 32 },
   header: { paddingTop: 16, paddingBottom: 8, paddingHorizontal: 20 },
   greeting: { fontFamily: 'Inter-Medium', fontSize: 14, marginBottom: 4 },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  nameLogo: { width: 32, height: 32, borderRadius: 8 },
   name: { fontFamily: 'Inter-Bold', fontSize: 28, letterSpacing: -0.5 },
   carouselWrapper: {
     marginVertical: 8,

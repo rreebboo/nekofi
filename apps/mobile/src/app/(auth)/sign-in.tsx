@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform, Image } from 'react-native';
 import { router } from 'expo-router';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
@@ -72,7 +72,10 @@ export default function SignInScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
       <Animated.View entering={FadeInDown.duration(400).springify()} style={[styles.container, { backgroundColor: colors.background }]}>
-        <Text style={[styles.title, { color: colors.text }]}>Welcome back 🐱</Text>
+        <View style={styles.titleRow}>
+          <Image source={require('../../../assets/images/icon.png')} style={styles.titleLogo} />
+          <Text style={[styles.title, { color: colors.text, marginBottom: 0 }]}>Welcome back</Text>
+        </View>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>Sign in to your Nekofi account</Text>
 
         <View style={styles.form}>
@@ -129,6 +132,8 @@ export default function SignInScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, paddingHorizontal: 24, paddingTop: 80 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 8 },
+  titleLogo: { width: 36, height: 36, borderRadius: 10 },
   title: { fontFamily: 'Inter-Bold', fontSize: 32, marginBottom: 8 },
   subtitle: { fontFamily: 'Inter-Regular', fontSize: 15, marginBottom: 40 },
   form: { gap: 16 },
