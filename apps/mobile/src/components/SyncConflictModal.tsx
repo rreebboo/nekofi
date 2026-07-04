@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Modal, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { OriginDialog } from '@/components/ui/OriginDialog';
+
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { resolveSyncChoice } from '@/services/syncService';
@@ -17,39 +20,37 @@ export function SyncConflictModal() {
   };
 
   return (
-    <Modal visible={syncConflict} animationType="slide" transparent>
-      <View style={[styles.overlay, { backgroundColor: 'rgba(0,0,0,0.5)' }]}>
-        <View style={[styles.card, { backgroundColor: colors.surface }]}>
-          <Ionicons name="cloud-offline" size={48} color={colors.primary} style={{ alignSelf: 'center', marginBottom: 16 }} />
-          <Text style={[styles.title, { color: colors.text }]}>Data Conflict Detected</Text>
-          <Text style={[styles.message, { color: colors.textMuted }]}>
-            You have local data on this device, but your account also contains existing cloud data. Please choose which data you want to keep.
-          </Text>
+    <OriginDialog visible={syncConflict} onClose={() => {}} origin={null}>
+      <View style={[styles.card, { backgroundColor: colors.surface }]}>
+        <Ionicons name="cloud-offline" size={48} color={colors.primary} style={{ alignSelf: 'center', marginBottom: 16 }} />
+        <Text style={[styles.title, { color: colors.text }]}>Data Conflict Detected</Text>
+        <Text style={[styles.message, { color: colors.textMuted }]}>
+          You have local data on this device, but your account also contains existing cloud data. Please choose which data you want to keep.
+        </Text>
 
-          {resolving ? (
-            <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 24 }} />
-          ) : (
-            <View style={styles.buttonContainer}>
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: colors.primary }]}
-                onPress={() => handleChoice('local')}
-              >
-                <Text style={styles.buttonText}>Keep Local Data</Text>
-                <Text style={[styles.subText, { color: 'rgba(255,255,255,0.7)' }]}>Overwrites cloud data</Text>
-              </TouchableOpacity>
+        {resolving ? (
+          <ActivityIndicator size="large" color={colors.primary} style={{ marginVertical: 24 }} />
+        ) : (
+          <View style={styles.buttonContainer}>
+            <AnimatedPressable
+              style={[styles.button, { backgroundColor: colors.primary }]}
+              onPress={() => handleChoice('local')}
+            >
+              <Text style={styles.buttonText}>Keep Local Data</Text>
+              <Text style={[styles.subText, { color: 'rgba(255,255,255,0.7)' }]}>Overwrites cloud data</Text>
+            </AnimatedPressable>
 
-              <TouchableOpacity
-                style={[styles.button, { backgroundColor: colors.border }]}
-                onPress={() => handleChoice('cloud')}
-              >
-                <Text style={[styles.buttonText, { color: colors.text }]}>Use Cloud Data</Text>
-                <Text style={[styles.subText, { color: colors.textMuted }]}>Discards local data</Text>
-              </TouchableOpacity>
-            </View>
-          )}
-        </View>
+            <AnimatedPressable
+              style={[styles.button, { backgroundColor: colors.border }]}
+              onPress={() => handleChoice('cloud')}
+            >
+              <Text style={[styles.buttonText, { color: colors.text }]}>Use Cloud Data</Text>
+              <Text style={[styles.subText, { color: colors.textMuted }]}>Discards local data</Text>
+            </AnimatedPressable>
+          </View>
+        )}
       </View>
-    </Modal>
+    </OriginDialog>
   );
 }
 

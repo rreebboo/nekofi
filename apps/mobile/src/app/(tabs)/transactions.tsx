@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, TextInput } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,6 +9,8 @@ import { FilterChip } from '@/components/ui/FilterChip';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { TransactionType } from '@/types/transaction';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { useFabScroll } from '@/contexts/FabContext';
 
 const FILTERS: { label: string; value: TransactionType | 'all' }[] = [
   { label: 'All', value: 'all' },
@@ -24,6 +26,7 @@ export default function TransactionsScreen() {
   const [filter, setFilter] = useState<TransactionType | 'all'>('all');
   const [search, setSearch] = useState('');
   const colors = useThemeColors();
+  const scrollHandler = useFabScroll();
 
   const filtered = transactions.filter((t) => {
     const matchType = filter === 'all' || t.type === filter;
@@ -35,9 +38,9 @@ export default function TransactionsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Transactions</Text>
-        <TouchableOpacity onPress={() => router.push('/ai/chat')} style={[styles.aiBtn, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
+        <AnimatedPressable onPress={() => router.push('/ai/chat')} style={[styles.aiBtn, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
           <Ionicons name="sparkles" size={20} color={colors.primary} />
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
@@ -51,7 +54,7 @@ export default function TransactionsScreen() {
         ))}
       </View>
 
-      <FlatList
+      <Animated.FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
         renderItem={({ item, index }) => (
@@ -61,6 +64,8 @@ export default function TransactionsScreen() {
         )}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         ListEmptyComponent={<Text style={[styles.empty, { color: colors.textMuted }]}>No transactions found.</Text>}
         ListFooterComponent={<View style={{ height: 100 }} />}
       />

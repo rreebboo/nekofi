@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert } from 'react-native';
 import { router } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { supabase } from '@/services/supabase/client';
 import { useThemeColors } from '@/hooks/useThemeColors';
 
@@ -27,17 +29,17 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
+    <Animated.View entering={FadeInDown.duration(400).springify()} style={[styles.container, { backgroundColor: colors.background }]}>
       <Text style={[styles.title, { color: colors.text }]}>Reset Password</Text>
       <Text style={[styles.subtitle, { color: colors.textMuted }]}>We'll send a reset link to your email.</Text>
       <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]} placeholder="Email" placeholderTextColor={colors.textMuted} value={email} onChangeText={setEmail} autoCapitalize="none" keyboardType="email-address" />
-      <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }, loading && styles.btnDisabled]} onPress={handleReset} disabled={loading}>
+      <AnimatedPressable style={[styles.btn, { backgroundColor: colors.primary }, loading && styles.btnDisabled]} onPress={handleReset} disabled={loading}>
         <Text style={styles.btnText}>{loading ? 'Sending...' : 'Send Reset Link'}</Text>
-      </TouchableOpacity>
-      <TouchableOpacity onPress={() => router.back()}>
+      </AnimatedPressable>
+      <AnimatedPressable onPress={() => router.back()}>
         <Text style={[styles.backText, { color: colors.primary }]}>← Back to sign in</Text>
-      </TouchableOpacity>
-    </View>
+      </AnimatedPressable>
+    </Animated.View>
   );
 }
 

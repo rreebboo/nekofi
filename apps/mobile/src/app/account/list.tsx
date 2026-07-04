@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert, LayoutAnimation } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, LayoutAnimation } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Swipeable } from 'react-native-gesture-handler';
@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { useAccountStore } from '@/stores/accountStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { formatCurrency } from '@/utils/formatters';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 export default function AccountListScreen() {
   const router = useRouter();
@@ -33,12 +34,12 @@ export default function AccountListScreen() {
 
   const renderRightActions = (acc: any) => {
     return (
-      <Pressable 
+      <AnimatedPressable 
         style={[styles.deleteAction, { backgroundColor: colors.expense }]} 
         onPress={() => handleRemove(acc.id, acc.name)}
       >
         <Ionicons name="trash" size={24} color="#FFF" />
-      </Pressable>
+      </AnimatedPressable>
     );
   };
 
@@ -46,9 +47,9 @@ export default function AccountListScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.borderAlt }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="close" size={24} color={colors.text} />
-        </Pressable>
+        </AnimatedPressable>
         <Text style={[styles.title, { color: colors.text }]}>All Accounts</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -90,13 +91,13 @@ export default function AccountListScreen() {
             <Text style={[styles.emptyTitle, { color: colors.text }]}>No accounts linked</Text>
             <Text style={[styles.emptySub, { color: colors.textMuted }]}>Add a card or wallet to track balances</Text>
             
-            <Pressable 
+            <AnimatedPressable 
               style={[styles.addButton, { backgroundColor: colors.primary }]}
               onPress={() => router.push('/account/add')}
             >
               <Ionicons name="add" size={16} color="#FFF" />
               <Text style={styles.addButtonText}>Add Account</Text>
-            </Pressable>
+            </AnimatedPressable>
           </View>
         )}
       </ScrollView>

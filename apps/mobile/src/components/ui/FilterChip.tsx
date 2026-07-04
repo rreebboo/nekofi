@@ -1,6 +1,7 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { Text, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 interface Props {
   label: string;
@@ -12,7 +13,7 @@ export function FilterChip({ label, active, onPress }: Props) {
   const colors = useThemeColors();
 
   return (
-    <TouchableOpacity 
+    <AnimatedPressable 
       style={[
         styles.chip, 
         { backgroundColor: colors.surface, borderColor: colors.borderAlt },
@@ -21,7 +22,7 @@ export function FilterChip({ label, active, onPress }: Props) {
       onPress={onPress}
     >
       <Text style={[styles.label, { color: colors.textMuted }, active && styles.labelActive]}>{label}</Text>
-    </TouchableOpacity>
+    </AnimatedPressable>
   );
 }
 

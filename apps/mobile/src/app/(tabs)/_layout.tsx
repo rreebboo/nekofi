@@ -1,13 +1,14 @@
 import { Tabs, router, useSegments } from 'expo-router';
-import { View, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
-import { Ionicons } from '@expo/vector-icons';
+import { LiquidGlassFAB } from '@/components/ui/LiquidGlassFAB';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { FabProvider } from '@/contexts/FabContext';
 
 /**
  * Main bottom-tab navigation layout.
  */
-export default function TabsLayout() {
+function TabsLayout() {
   const colors = useThemeColors();
   const segments = useSegments();
   const isAddScreen = segments[segments.length - 1] === 'add';
@@ -60,34 +61,22 @@ export default function TabsLayout() {
 
       {/* Floating Action Button */}
       {!isAddScreen && (
-        <TouchableOpacity
-          style={[styles.fab, { backgroundColor: colors.primary, shadowColor: colors.primary }]}
-          onPress={() => router.push('/add')}
-        >
-          <Ionicons name="add" size={32} color="#FFF" />
-        </TouchableOpacity>
+        <LiquidGlassFAB />
       )}
     </View>
+  );
+}
+
+export default function AppLayout() {
+  return (
+    <FabProvider>
+      <TabsLayout />
+    </FabProvider>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  fab: {
-    position: 'absolute',
-    bottom: 110, // positioned above the nav bar
-    right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
-    elevation: 8,
-    zIndex: 1000,
   },
 });

@@ -2,7 +2,9 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 import { useAuthStore } from '@/stores/authStore';
 
@@ -20,25 +22,25 @@ export default function WelcomeScreen() {
 
   return (
     <LinearGradient colors={[colors.background, colors.surface]} style={styles.container}>
-      <View style={styles.hero}>
+      <Animated.View entering={FadeInDown.duration(600).springify()} style={styles.hero}>
         <Text style={styles.emoji}>🐱</Text>
         <Text style={[styles.title, { color: colors.text }]}>Nekofi</Text>
         <Text style={[styles.subtitle, { color: colors.textMuted }]}>Your AI-powered{'\n'}budget companion</Text>
-      </View>
+      </Animated.View>
 
-      <View style={styles.actions}>
-        <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: colors.primary }]} onPress={() => router.push('/(auth)/sign-up')}>
+      <Animated.View entering={FadeIn.delay(300).duration(500)} style={styles.actions}>
+        <AnimatedPressable style={[styles.primaryBtn, { backgroundColor: colors.primary }]} onPress={() => router.push('/(auth)/sign-up')}>
           <Text style={styles.primaryBtnText}>Get Started</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
-        <TouchableOpacity style={styles.secondaryBtn} onPress={() => router.push('/(auth)/sign-in')}>
+        <AnimatedPressable style={styles.secondaryBtn} onPress={() => router.push('/(auth)/sign-in')}>
           <Text style={[styles.secondaryBtnText, { color: colors.textMuted }]}>I already have an account</Text>
-        </TouchableOpacity>
+        </AnimatedPressable>
 
-        <TouchableOpacity style={styles.secondaryBtn} onPress={handleGuest}>
+        <AnimatedPressable style={styles.secondaryBtn} onPress={handleGuest}>
           <Text style={[styles.secondaryBtnText, { color: colors.textMuted }]}>Continue as Guest</Text>
-        </TouchableOpacity>
-      </View>
+        </AnimatedPressable>
+      </Animated.View>
     </LinearGradient>
   );
 }

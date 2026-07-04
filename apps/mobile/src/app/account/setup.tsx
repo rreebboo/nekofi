@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Pressable, TextInput } from 'react-native';
+import { View, Text, StyleSheet, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useAccountStore } from '@/stores/accountStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { CreateAccountDto } from '@/types/account';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 export default function SetupAccountScreen() {
   const router = useRouter();
@@ -49,9 +50,9 @@ export default function SetupAccountScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       {/* Header */}
       <View style={[styles.header, { borderBottomColor: colors.borderAlt }]}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </Pressable>
+        </AnimatedPressable>
         <Text style={[styles.title, { color: colors.text }]}>Add {name}</Text>
         <View style={{ width: 24 }} />
       </View>
@@ -103,13 +104,13 @@ export default function SetupAccountScreen() {
 
         <View style={{ flex: 1 }} />
 
-        <Pressable 
+        <AnimatedPressable 
           style={[styles.saveButton, { backgroundColor: color || colors.primary, opacity: balanceStr ? 1 : 0.5 }]} 
           onPress={handleSave}
           disabled={!balanceStr}
         >
           <Text style={[styles.saveButtonText, { color: textColor || '#FFF' }]}>Save Account</Text>
-        </Pressable>
+        </AnimatedPressable>
       </View>
     </SafeAreaView>
   );

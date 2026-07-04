@@ -1,9 +1,12 @@
 import React, { useMemo, useState } from 'react';
-import { View, Text, ScrollView, StyleSheet, Dimensions, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, LineChart } from 'react-native-chart-kit';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTransactionStore } from '@/stores/transactionStore';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { useFabScroll } from '@/contexts/FabContext';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -33,6 +36,7 @@ export default function StatsScreen() {
   const colors = useThemeColors();
   const { transactions } = useTransactionStore();
   const [filterType, setFilterType] = useState<'expense' | 'income'>('expense');
+  const scrollHandler = useFabScroll();
 
   // Filter transactions
   const filteredTxs = useMemo(() => {
@@ -109,7 +113,7 @@ export default function StatsScreen() {
 
       <View style={[styles.typePicker, { backgroundColor: colors.surface }]}>
         {(['expense', 'income'] as const).map((t) => (
-          <TouchableOpacity
+          <AnimatedPressable
             key={t}
             style={[styles.typeBtn, filterType === t && { backgroundColor: colors.primary }]}
             onPress={() => setFilterType(t)}
@@ -117,11 +121,16 @@ export default function StatsScreen() {
             <Text style={[styles.typeBtnText, { color: colors.textMuted }, filterType === t && styles.typeBtnTextActive]}>
               {t.charAt(0).toUpperCase() + t.slice(1)}
             </Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         ))}
       </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView 
+        contentContainerStyle={styles.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
         <View style={[styles.card, { backgroundColor: colors.surface }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>
             Total {filterType === 'expense' ? 'Expenses' : 'Income'}
@@ -168,7 +177,7 @@ export default function StatsScreen() {
             }}
           />
         </View>
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTransactionStore } from '@/stores/transactionStore';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/categories';
@@ -71,14 +73,14 @@ export function TransactionForm({ type, onSuccess }: Props) {
       <Text style={[styles.label, { color: colors.textMuted }]}>Category</Text>
       <View style={styles.categoryGrid}>
         {categories.map((c) => (
-          <TouchableOpacity 
+          <AnimatedPressable 
             key={c.id} 
             style={[styles.categoryBtn, { backgroundColor: colors.surface, borderColor: colors.borderAlt }, category === c.id && { borderColor: colors.primary, backgroundColor: colors.primary + '20' }]} 
             onPress={() => setCategory(c.id)}
           >
             <Text style={styles.categoryEmoji}>{c.emoji}</Text>
             <Text style={[styles.categoryLabel, { color: colors.textMuted }, category === c.id && { color: colors.primary }]}>{c.label}</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         ))}
       </View>
       {category.startsWith('other') && (
@@ -94,7 +96,7 @@ export function TransactionForm({ type, onSuccess }: Props) {
       <Text style={[styles.label, { color: colors.textMuted }]}>Date</Text>
       <TextInput style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]} value={date} onChangeText={setDate} placeholder="YYYY-MM-DD" placeholderTextColor={colors.textMuted} />
 
-      <TouchableOpacity style={[styles.submitBtnContainer, loading && styles.submitBtnDisabled]} onPress={handleSubmit} disabled={loading}>
+      <AnimatedPressable style={[styles.submitBtnContainer, loading && styles.submitBtnDisabled]} onPress={handleSubmit} disabled={loading}>
         <LinearGradient
           colors={[colors.primary, colors.primary + 'CC']}
           start={{ x: 0, y: 0 }}
@@ -103,7 +105,7 @@ export function TransactionForm({ type, onSuccess }: Props) {
         >
           <Text style={styles.submitBtnText}>{loading ? 'Saving...' : 'Save Transaction'}</Text>
         </LinearGradient>
-      </TouchableOpacity>
+      </AnimatedPressable>
     </View>
   );
 }

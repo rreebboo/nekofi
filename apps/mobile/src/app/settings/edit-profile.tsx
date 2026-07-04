@@ -3,7 +3,6 @@ import {
   View,
   Text,
   TextInput,
-  TouchableOpacity,
   StyleSheet,
   Alert,
   ScrollView,
@@ -21,6 +20,7 @@ import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 
 export default function EditProfileScreen() {
@@ -195,9 +195,9 @@ export default function EditProfileScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
         <View style={styles.header}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Edit Profile</Text>
-          <TouchableOpacity style={[styles.closeButton, { backgroundColor: colors.surface }]} onPress={() => router.back()} disabled={saving}>
+          <AnimatedPressable style={[styles.closeButton, { backgroundColor: colors.surface }]} onPress={() => router.back()} disabled={saving}>
             <Ionicons name="close" size={24} color={colors.text} />
-          </TouchableOpacity>
+          </AnimatedPressable>
         </View>
 
         <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
@@ -219,14 +219,14 @@ export default function EditProfileScreen() {
                 </View>
               )}
             </View>
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.changePhotoButton, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}
               onPress={handlePickAvatar}
               disabled={saving}
             >
               <Ionicons name="camera-outline" size={16} color={colors.primary} />
               <Text style={[styles.changePhotoText, { color: colors.primary }]}>Change Photo</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           {/* Form */}
@@ -311,7 +311,7 @@ export default function EditProfileScreen() {
 
           {/* Action Buttons */}
           <View style={styles.actions}>
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.btn, styles.saveBtn, { backgroundColor: colors.primary }, saving && styles.btnDisabled]}
               onPress={handleSave}
               disabled={saving}
@@ -321,15 +321,15 @@ export default function EditProfileScreen() {
               ) : (
                 <Text style={styles.saveBtnText}>Save Changes</Text>
               )}
-            </TouchableOpacity>
+            </AnimatedPressable>
 
-            <TouchableOpacity
+            <AnimatedPressable
               style={[styles.btn, styles.cancelBtn, { borderColor: colors.borderAlt }]}
               onPress={() => router.back()}
               disabled={saving}
             >
               <Text style={[styles.cancelBtnText, { color: colors.text }]}>Cancel</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
 
           {/* Spacer */}

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, FlatList, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,8 @@ import { useTransactionStore } from '@/stores/transactionStore';
 import { BudgetCard } from '@/components/cards/BudgetCard';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { useFabScroll } from '@/contexts/FabContext';
 
 /**
  * Budgets overview screen.
@@ -17,6 +19,7 @@ export default function BudgetsScreen() {
   const { transactions, fetchTransactions } = useTransactionStore();
   const budgetGroups = React.useMemo(() => computeBudgetGroups(budgets, transactions), [budgets, transactions]);
   const colors = useThemeColors();
+  const scrollHandler = useFabScroll();
 
   useEffect(() => { 
     fetchBudgets(); 
@@ -27,12 +30,12 @@ export default function BudgetsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Budgets</Text>
-        <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]} onPress={() => router.push('/budget/create')}>
+        <AnimatedPressable style={[styles.addBtn, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]} onPress={() => router.push('/budget/create')}>
           <Ionicons name="add" size={22} color={colors.primary} />
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
-      <FlatList
+      <Animated.FlatList
         data={budgetGroups}
         keyExtractor={(b) => b.name}
         renderItem={({ item, index }) => (
@@ -42,15 +45,17 @@ export default function BudgetsScreen() {
         )}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
         ListFooterComponent={<View style={{ height: 100 }} />}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>📊</Text>
             <Text style={[styles.emptyTitle, { color: colors.text }]}>No budgets yet</Text>
             <Text style={[styles.emptySubtitle, { color: colors.textMuted }]}>Create a budget to start tracking your spending goals.</Text>
-            <TouchableOpacity style={[styles.createBtn, { backgroundColor: colors.primary }]} onPress={() => router.push('/budget/create')}>
+            <AnimatedPressable style={[styles.createBtn, { backgroundColor: colors.primary }]} onPress={() => router.push('/budget/create')}>
               <Text style={styles.createBtnText}>Create Budget</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </View>
         }
       />

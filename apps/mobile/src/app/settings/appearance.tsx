@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettingsStore, ThemeMode } from '@/stores/settingsStore';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 export default function AppearanceSettingsScreen() {
   const router = useRouter();
@@ -21,16 +22,16 @@ export default function AppearanceSettingsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
       <View style={styles.header}>
         <Text style={[styles.headerTitle, { color: colors.text }]}>Appearance</Text>
-        <TouchableOpacity style={[styles.closeButton, { backgroundColor: colors.surface }]} onPress={() => router.back()}>
+        <AnimatedPressable style={[styles.closeButton, { backgroundColor: colors.surface }]} onPress={() => router.back()}>
           <Ionicons name="close" size={24} color={colors.text} />
-        </TouchableOpacity>
+        </AnimatedPressable>
       </View>
 
       <View style={[styles.listContainer, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
         {options.map((option, index) => {
           const isSelected = theme === option.value;
           return (
-            <TouchableOpacity
+            <AnimatedPressable
               key={option.value}
               style={[
                 styles.optionItem,
@@ -46,7 +47,7 @@ export default function AppearanceSettingsScreen() {
               {isSelected && (
                 <Ionicons name="checkmark-circle" size={24} color={colors.primary} />
               )}
-            </TouchableOpacity>
+            </AnimatedPressable>
           );
         })}
       </View>

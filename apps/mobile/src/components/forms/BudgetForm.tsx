@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, Modal, Pressable, KeyboardAvoidingView, Platform } from 'react-native';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+
 import { useBudgetStore } from '@/stores/budgetStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { CreateBudgetGroupDto } from '@/types/budget';
@@ -8,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
+import { OriginDialog, OriginCoordinate } from '@/components/ui/OriginDialog';
 
 interface Props {
   onSuccess: () => void;
@@ -75,16 +78,17 @@ export function BudgetForm({ onSuccess }: Props) {
   const [emoji, setEmoji] = useState(EMOJIS[0]);
   const [categories, setCategories] = useState<{categoryId: string, amount: number}[]>([]);
 
-  // Category Modal state
   const [isCatModalVisible, setIsCatModalVisible] = useState(false);
   const [activeCatId, setActiveCatId] = useState<string | null>(null);
   const [tempAmount, setTempAmount] = useState('');
+  const [catOrigin, setCatOrigin] = useState<OriginCoordinate | null>(null);
 
   // Calendar Modal state
   const [isCalVisible, setIsCalVisible] = useState(false);
   const [calTarget, setCalTarget] = useState<'start'|'end'>('start');
   const [calYear, setCalYear] = useState(new Date().getFullYear());
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
+  const [calOrigin, setCalOrigin] = useState<OriginCoordinate | null>(null);
 
   const [loading, setLoading] = useState(false);
 
@@ -96,8 +100,11 @@ export function BudgetForm({ onSuccess }: Props) {
 
   const totalAmount = categories.reduce((sum, c) => sum + c.amount, 0);
 
-  const openCatModal = (id: string) => {
+  const openCatModal = (id: string, e?: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (e && e.nativeEvent) {
+      setCatOrigin({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY });
+    }
     setActiveCatId(id);
     const existing = categories.find(c => c.categoryId === id);
     setTempAmount(existing && existing.amount > 0 ? existing.amount.toString() : '');
@@ -122,8 +129,11 @@ export function BudgetForm({ onSuccess }: Props) {
     setIsCatModalVisible(false);
   };
 
-  const openCalendar = (target: 'start'|'end' = 'start') => {
+  const openCalendar = (target: 'start'|'end' = 'start', e?: any) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    if (e && e.nativeEvent) {
+      setCalOrigin({ x: e.nativeEvent.pageX, y: e.nativeEvent.pageY });
+    }
     setCalTarget(target);
     const d = new Date(target === 'start' ? startDate : endDate);
     if (!isNaN(d.getTime())) {
@@ -185,8 +195,7 @@ export function BudgetForm({ onSuccess }: Props) {
     const startOfCurrentWeek = getStartOfCurrentWeek();
 
     return (
-      <Modal visible={isCalVisible} transparent animationType="fade">
-        <View style={styles.modalOverlay}>
+      <OriginDialog visible={isCalVisible} onClose={() => setIsCalVisible(false)} origin={calOrigin}>
           <View style={[styles.calModal, { backgroundColor: colors.surface }]}>
             {period === 'yearly' && (
               <View>
@@ -195,7 +204,7 @@ export function BudgetForm({ onSuccess }: Props) {
                   {Array.from({ length: 12 }, (_, i) => currentYear + i).map(year => {
                     const isSelected = startDate.startsWith(`${year}`);
                     return (
-                      <TouchableOpacity 
+                      <AnimatedPressable 
                         key={year} 
                         style={[styles.calGridCell, isSelected && { backgroundColor: colors.primary }]}
                         onPress={() => {
@@ -204,7 +213,7 @@ export function BudgetForm({ onSuccess }: Props) {
                         }}
                       >
                         <Text style={[styles.calGridText, { color: isSelected ? '#fff' : colors.text }]}>{year}</Text>
-                      </TouchableOpacity>
+                      </AnimatedPressable>
                     );
                   })}
                 </View>
@@ -214,24 +223,24 @@ export function BudgetForm({ onSuccess }: Props) {
             {period === 'monthly' && (
               <View>
                 <View style={styles.calHeader}>
-                  <TouchableOpacity 
+                  <AnimatedPressable 
                     onPress={() => setCalYear(y => y - 1)}
                     disabled={calYear <= currentYear}
                     style={{ opacity: calYear <= currentYear ? 0.3 : 1 }}
                   >
                     <Ionicons name="chevron-back" size={24} color={colors.text} />
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                   <Text style={[styles.calMonthText, { color: colors.text }]}>{calYear}</Text>
-                  <TouchableOpacity onPress={() => setCalYear(y => y + 1)}>
+                  <AnimatedPressable onPress={() => setCalYear(y => y + 1)}>
                     <Ionicons name="chevron-forward" size={24} color={colors.text} />
-                  </TouchableOpacity>
+                  </AnimatedPressable>
                 </View>
                 <View style={styles.calGrid}>
                   {["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"].map((monthStr, i) => {
                     const isDisabled = calYear === currentYear && i < currentMonth;
                     const isSelected = startDate === `${calYear}-${(i+1).toString().padStart(2, '0')}-01`;
                     return (
-                      <TouchableOpacity 
+                      <AnimatedPressable 
                         key={monthStr} 
                         style={[styles.calGridCell, isSelected && { backgroundColor: colors.primary }, isDisabled && { opacity: 0.3 }]}
                         disabled={isDisabled}
@@ -241,7 +250,7 @@ export function BudgetForm({ onSuccess }: Props) {
                         }}
                       >
                         <Text style={[styles.calGridText, { color: isSelected ? '#fff' : colors.text }]}>{monthStr}</Text>
-                      </TouchableOpacity>
+                      </AnimatedPressable>
                     );
                   })}
                 </View>
@@ -284,21 +293,21 @@ export function BudgetForm({ onSuccess }: Props) {
                     {calTarget === 'start' ? 'Select Start Date' : 'Select End Date'}
                   </Text>
                   <View style={styles.calHeader}>
-                    <TouchableOpacity 
+                    <AnimatedPressable 
                       onPress={() => {
                         if (calMonth === 0) { setCalMonth(11); setCalYear(y => y - 1); }
                         else setCalMonth(m => m - 1);
                       }}
                     >
                       <Ionicons name="chevron-back" size={24} color={colors.text} />
-                    </TouchableOpacity>
+                    </AnimatedPressable>
                     <Text style={[styles.calMonthText, { color: colors.text }]}>{monthNames[calMonth]} {calYear}</Text>
-                    <TouchableOpacity onPress={() => {
+                    <AnimatedPressable onPress={() => {
                       if (calMonth === 11) { setCalMonth(0); setCalYear(y => y + 1); }
                       else setCalMonth(m => m + 1);
                     }}>
                       <Ionicons name="chevron-forward" size={24} color={colors.text} />
-                    </TouchableOpacity>
+                    </AnimatedPressable>
                   </View>
                   <View style={styles.calWeekRow}>
                     {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
@@ -319,7 +328,7 @@ export function BudgetForm({ onSuccess }: Props) {
                       const isInRange = cellDate >= selStartObj && cellDate <= selEndObj;
 
                       return (
-                        <TouchableOpacity 
+                        <AnimatedPressable 
                           key={index} 
                           style={[
                             styles.calDayCell, 
@@ -342,7 +351,7 @@ export function BudgetForm({ onSuccess }: Props) {
                           }}
                         >
                           <Text style={[styles.calDayText, { color: (isExactStart || isExactEnd) ? '#fff' : colors.text }]}>{item.day}</Text>
-                        </TouchableOpacity>
+                        </AnimatedPressable>
                       );
                     })}
                   </View>
@@ -352,10 +361,10 @@ export function BudgetForm({ onSuccess }: Props) {
 
             {period === 'custom' ? (
               <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
-                <TouchableOpacity style={[styles.calCloseBtn, { flex: 1, backgroundColor: colors.background }]} onPress={() => setIsCalVisible(false)}>
+                <AnimatedPressable style={[styles.calCloseBtn, { flex: 1, backgroundColor: colors.background }]} onPress={() => setIsCalVisible(false)}>
                   <Text style={[styles.calCloseBtnText, { color: colors.text }]}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity 
+                </AnimatedPressable>
+                <AnimatedPressable 
                   style={[styles.calCloseBtn, { flex: 1, backgroundColor: color }]} 
                   onPress={() => {
                     if (calTarget === 'start') setCalTarget('end');
@@ -363,29 +372,24 @@ export function BudgetForm({ onSuccess }: Props) {
                   }}
                 >
                   <Text style={[styles.calCloseBtnText, { color: '#fff' }]}>{calTarget === 'start' ? 'Set Start Date' : 'Set Range'}</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
             ) : (
-              <TouchableOpacity style={[styles.calCloseBtn, { backgroundColor: colors.background, marginTop: 16 }]} onPress={() => setIsCalVisible(false)}>
+              <AnimatedPressable style={[styles.calCloseBtn, { backgroundColor: colors.background, marginTop: 16 }]} onPress={() => setIsCalVisible(false)}>
                 <Text style={[styles.calCloseBtnText, { color: colors.text }]}>Cancel</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             )}
           </View>
-        </View>
-      </Modal>
+      </OriginDialog>
     );
   };
 
   const renderCategoryModal = () => {
     const catInfo = EXPENSE_CATEGORIES.find(c => c.id === activeCatId);
     return (
-      <Modal visible={isCatModalVisible} transparent animationType="fade">
-        <KeyboardAvoidingView 
-          style={{ flex: 1 }} 
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={[styles.catModal, { backgroundColor: colors.surface }]}>
+      <OriginDialog visible={isCatModalVisible} onClose={() => setIsCatModalVisible(false)} origin={catOrigin}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{width: '100%'}}>
+          <View style={[styles.catModal, { backgroundColor: colors.surface }]}>
               <View style={styles.catModalHeader}>
                 <View style={[styles.catModalIcon, { backgroundColor: colors.background }]}>
                   <Text style={{ fontSize: 32 }}>{catInfo?.emoji}</Text>
@@ -403,17 +407,16 @@ export function BudgetForm({ onSuccess }: Props) {
                 autoFocus
               />
               <View style={styles.modalActions}>
-                <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.background }]} onPress={() => setIsCatModalVisible(false)}>
+                <AnimatedPressable style={[styles.modalActionBtn, { backgroundColor: colors.background }]} onPress={() => setIsCatModalVisible(false)}>
                   <Text style={[styles.modalActionText, { color: colors.text }]}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.primary }]} onPress={saveCategory}>
+                </AnimatedPressable>
+                <AnimatedPressable style={[styles.modalActionBtn, { backgroundColor: colors.primary }]} onPress={saveCategory}>
                   <Text style={[styles.modalActionText, { color: '#fff' }]}>Save</Text>
-                </TouchableOpacity>
+                </AnimatedPressable>
               </View>
             </View>
-          </View>
         </KeyboardAvoidingView>
-      </Modal>
+      </OriginDialog>
     );
   };
 
@@ -438,7 +441,7 @@ export function BudgetForm({ onSuccess }: Props) {
           <Text style={[styles.label, { color: colors.textMuted }]}>Pick a theme color</Text>
           <View style={styles.gridContainer}>
             {COLORS.map(c => (
-              <TouchableOpacity 
+              <AnimatedPressable 
                 key={c} 
                 style={[styles.colorDot, { backgroundColor: c }, color === c && styles.colorDotSelected]} 
                 onPress={() => { Haptics.selectionAsync(); setColor(c); }} 
@@ -451,7 +454,7 @@ export function BudgetForm({ onSuccess }: Props) {
           <Text style={[styles.label, { color: colors.textMuted }]}>Choose an icon</Text>
           <View style={styles.gridContainer}>
             {EMOJIS.map(e => (
-              <TouchableOpacity 
+              <AnimatedPressable 
                 key={e} 
                 style={[
                   styles.emojiBtn, 
@@ -461,7 +464,7 @@ export function BudgetForm({ onSuccess }: Props) {
                 onPress={() => { Haptics.selectionAsync(); setEmoji(e); }}
               >
                 <Text style={styles.emojiText}>{e}</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
         </View>
@@ -491,14 +494,14 @@ export function BudgetForm({ onSuccess }: Props) {
         const allocated = categories.find(cat => cat.categoryId === c.id);
         const hasAmount = allocated && allocated.amount > 0;
         return (
-          <TouchableOpacity 
+          <AnimatedPressable 
             key={c.id} 
             style={[
               styles.catItem, 
               { backgroundColor: colors.surface },
               hasAmount && { borderColor: color, borderWidth: 1 }
             ]}
-            onPress={() => openCatModal(c.id)}
+            onPress={(e) => openCatModal(c.id, e)}
           >
             <View style={[styles.catIconContainer, { backgroundColor: colors.background }]}>
               <Text style={styles.catEmoji}>{c.emoji}</Text>
@@ -512,7 +515,7 @@ export function BudgetForm({ onSuccess }: Props) {
               )}
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
-          </TouchableOpacity>
+          </AnimatedPressable>
         );
       })}
 
@@ -521,13 +524,13 @@ export function BudgetForm({ onSuccess }: Props) {
           <Text style={[styles.label, { color: colors.textMuted }]}>How often does this renew?</Text>
           <View style={[styles.segmentedControl, { backgroundColor: colors.background }]}>
             {PERIODS.map((p) => (
-              <TouchableOpacity 
+              <AnimatedPressable 
                 key={p.id} 
                 style={[styles.segmentBtn, period === p.id && { backgroundColor: color, shadowColor: color, shadowOpacity: 0.3, shadowRadius: 4, elevation: 4 }]} 
                 onPress={() => { Haptics.selectionAsync(); setPeriod(p.id); }}
               >
                 <Text style={[styles.segmentLabel, { color: colors.textMuted }, period === p.id && { color: '#fff' }]}>{p.label}</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             ))}
           </View>
         </View>
@@ -535,11 +538,11 @@ export function BudgetForm({ onSuccess }: Props) {
           <View style={[styles.row, { marginTop: 4, alignItems: 'flex-end' }]}>
             <View style={{ flex: 3 }}>
               <Text style={[styles.label, { color: colors.textMuted }]}>Select Date Range</Text>
-              <TouchableOpacity style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: 56 }]} onPress={() => openCalendar('start')}>
+              <AnimatedPressable style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: 56 }]} onPress={(e) => openCalendar('start', e)}>
                 <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-Medium', fontSize: 13 }} numberOfLines={1} adjustsFontSizeToFit>
                   {startDate && endDate ? `${startDate} to ${endDate}` : 'Select Range'}
                 </Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
             <View style={styles.flex1}>
               <View style={{ height: 76, justifyContent: 'space-between', alignItems: 'center' }}>
@@ -562,9 +565,9 @@ export function BudgetForm({ onSuccess }: Props) {
           <View style={[styles.row, { marginTop: 4, alignItems: 'flex-end' }]}>
             <View>
               <Text style={[styles.label, { color: colors.textMuted }]}>When does this start?</Text>
-              <TouchableOpacity style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: 56 }]} onPress={() => openCalendar('start')}>
+              <AnimatedPressable style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: 56 }]} onPress={(e) => openCalendar('start', e)}>
                 <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-Medium' }}>{startDate || 'Select Date'}</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
             <View style={styles.flex1}>
               <View>
@@ -637,19 +640,19 @@ export function BudgetForm({ onSuccess }: Props) {
 
       <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.borderAlt }]}>
         {step > 1 && (
-          <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderAlt }]} onPress={prevStep}>
+          <AnimatedPressable style={[styles.footerBtn, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.borderAlt }]} onPress={prevStep}>
             <Text style={[styles.footerBtnText, { color: colors.text }]}>Back</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         )}
         
         {step < 3 ? (
-          <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.primary }]} onPress={nextStep}>
+          <AnimatedPressable style={[styles.footerBtn, { backgroundColor: colors.primary }]} onPress={nextStep}>
             <Text style={[styles.footerBtnText, { color: '#fff' }]}>Continue</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         ) : (
-          <TouchableOpacity style={[styles.footerBtn, { backgroundColor: colors.primary }, loading && { opacity: 0.7 }]} onPress={handleSubmit} disabled={loading}>
+          <AnimatedPressable style={[styles.footerBtn, { backgroundColor: colors.primary }, loading && { opacity: 0.7 }]} onPress={handleSubmit} disabled={loading}>
             <Text style={[styles.footerBtnText, { color: '#fff' }]}>{loading ? 'Saving...' : 'Create Budget'}</Text>
-          </TouchableOpacity>
+          </AnimatedPressable>
         )}
       </View>
 

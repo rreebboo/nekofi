@@ -9,8 +9,8 @@ importers:
   .:
     devDependencies:
       typescript:
-        specifier: ^5.4.0
-        version: 5.9.3
+        specifier: ~5.3.3
+        version: 5.3.3
 
   apps/mobile:
     dependencies:
@@ -125,6 +125,9 @@ importers:
       react-native-url-polyfill:
         specifier: ^3.0.0
         version: 3.0.0(react-native@0.74.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))
+      react-native-webview:
+        specifier: 13.8.6
+        version: 13.8.6(react-native@0.74.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0)
       uuid:
         specifier: ^8.3.2
         version: 8.3.2
@@ -4229,6 +4232,12 @@ packages:
     peerDependencies:
       react-native: '*'
 
+  react-native-webview@13.8.6:
+    resolution: {integrity: sha512-jtZ9OgB2AN6rhDwto6dNL3PtOtl/SI4VN93pZEPbMLvRjqHfxiUrilGllL5fKAXq5Ry5FJyfUi82A4Ii8olZ7A==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+
   react-native@0.74.5:
     resolution: {integrity: sha512-Bgg2WvxaGODukJMTZFTZBNMKVaROHLwSb8VAGEdrlvKwfb1hHg/3aXTUICYk7dwgAnb+INbGMwnF8yeAgIUmqw==}
     engines: {node: '>=18'}
@@ -4850,11 +4859,6 @@ packages:
 
   typescript@5.3.3:
     resolution: {integrity: sha512-pXWcraxM0uxAS+tN0AG/BF2TyqmHO014Z070UsJ+pFvYuRSq8KH8DmWpnbXe0pEPDHXZV3FcAbJkijJ5oNEnWw==}
-    engines: {node: '>=14.17'}
-    hasBin: true
-
-  typescript@5.9.3:
-    resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
 
@@ -10292,6 +10296,13 @@ snapshots:
       react-native: 0.74.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0)
       whatwg-url-without-unicode: 8.0.0-3
 
+  react-native-webview@13.8.6(react-native@0.74.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0))(react@18.2.0):
+    dependencies:
+      escape-string-regexp: 2.0.0
+      invariant: 2.2.4
+      react: 18.2.0
+      react-native: 0.74.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0)
+
   react-native@0.74.5(@babel/core@7.29.7)(@babel/preset-env@7.29.7(@babel/core@7.29.7))(@types/react@18.2.79)(react@18.2.0):
     dependencies:
       '@jest/create-cache-key-function': 29.7.0
@@ -11025,8 +11036,6 @@ snapshots:
       typed-array-byte-offset: 1.0.4
 
   typescript@5.3.3: {}
-
-  typescript@5.9.3: {}
 
   ua-parser-js@1.0.41: {}
 

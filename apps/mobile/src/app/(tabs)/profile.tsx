@@ -1,10 +1,13 @@
 import React from 'react';
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Alert, Image } from 'react-native';
+import { View, Text, StyleSheet, Alert, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { useFabScroll } from '@/contexts/FabContext';
 
 /**
  * User profile & settings screen.
@@ -12,6 +15,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 export default function ProfileScreen() {
   const { user, signOut } = useAuthStore();
   const colors = useThemeColors();
+  const scrollHandler = useFabScroll();
 
   const handleSignOut = () => {
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -31,7 +35,11 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <Animated.ScrollView 
+        showsVerticalScrollIndicator={false}
+        onScroll={scrollHandler}
+        scrollEventThrottle={16}
+      >
         <Text style={[styles.title, { color: colors.text }]}>Profile</Text>
 
         {!user ? (
@@ -45,15 +53,15 @@ export default function ProfileScreen() {
             </Text>
 
             <View style={styles.guestActions}>
-              <TouchableOpacity style={[styles.guestBtnPrimary, { backgroundColor: colors.primary }]} onPress={() => router.push('/(auth)/sign-up')}>
+              <AnimatedPressable style={[styles.guestBtnPrimary, { backgroundColor: colors.primary }]} onPress={() => router.push('/(auth)/sign-up')}>
                 <Text style={styles.guestBtnPrimaryText}>Create Account</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={[styles.guestBtnSecondary, { borderColor: colors.borderAlt, borderWidth: 1 }]} onPress={() => router.push('/(auth)/sign-in')}>
+              </AnimatedPressable>
+              <AnimatedPressable style={[styles.guestBtnSecondary, { borderColor: colors.borderAlt, borderWidth: 1 }]} onPress={() => router.push('/(auth)/sign-in')}>
                 <Text style={[styles.guestBtnSecondaryText, { color: colors.text }]}>Sign In</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={{ marginTop: 8 }} onPress={() => router.replace('/(tabs)')}>
+              </AnimatedPressable>
+              <AnimatedPressable style={{ marginTop: 8 }} onPress={() => router.replace('/(tabs)')}>
                 <Text style={[styles.guestBtnLink, { color: colors.textMuted }]}>Continue as Guest</Text>
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
           </View>
         ) : (
@@ -74,33 +82,33 @@ export default function ProfileScreen() {
             {/* Menu */}
             <View style={[styles.menu, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
               {menuItems.map((item, idx) => (
-                <TouchableOpacity key={idx} style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={item.onPress}>
+                <AnimatedPressable key={idx} style={[styles.menuItem, { borderBottomColor: colors.border }]} onPress={item.onPress}>
                   <Ionicons name={item.icon as any} size={20} color={colors.textMuted} />
                   <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
                   <Ionicons name="chevron-forward" size={16} color={colors.textMuted} />
-                </TouchableOpacity>
+                </AnimatedPressable>
               ))}
             </View>
 
             {/* AI Chat shortcut */}
-            <TouchableOpacity style={[styles.aiCard, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]} onPress={() => router.push('/ai/chat')}>
+            <AnimatedPressable style={[styles.aiCard, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]} onPress={() => router.push('/ai/chat')}>
               <Ionicons name="sparkles" size={22} color={colors.primary} />
               <View style={{ flex: 1, marginLeft: 12 }}>
                 <Text style={[styles.aiCardTitle, { color: colors.text }]}>Ask Nekofi AI</Text>
                 <Text style={[styles.aiCardSubtitle, { color: colors.textMuted }]}>Get personalized financial insights</Text>
               </View>
               <Ionicons name="arrow-forward" size={18} color={colors.primary} />
-            </TouchableOpacity>
+            </AnimatedPressable>
 
-            <TouchableOpacity style={styles.signOutBtn} onPress={handleSignOut}>
+            <AnimatedPressable style={styles.signOutBtn} onPress={handleSignOut}>
               <Ionicons name="log-out-outline" size={20} color="#FF6B6B" />
               <Text style={styles.signOutText}>Sign Out</Text>
-            </TouchableOpacity>
+            </AnimatedPressable>
           </>
         )}
         
         <View style={{ height: 100 }} />
-      </ScrollView>
+      </Animated.ScrollView>
     </SafeAreaView>
   );
 }

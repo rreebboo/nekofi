@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Alert, KeyboardAvoidingView, Platform } from 'react-native';
 import { router } from 'expo-router';
+import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { checkAndHandleSyncConflict } from '@/services/syncService';
@@ -53,41 +55,43 @@ export default function SignInScreen() {
   };
 
   return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={[styles.container, { backgroundColor: colors.background }]}>
-      <Text style={[styles.title, { color: colors.text }]}>Welcome back 🐱</Text>
-      <Text style={[styles.subtitle, { color: colors.textMuted }]}>Sign in to your Nekofi account</Text>
+    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
+      <Animated.View entering={FadeInDown.duration(400).springify()} style={[styles.container, { backgroundColor: colors.background }]}>
+        <Text style={[styles.title, { color: colors.text }]}>Welcome back 🐱</Text>
+        <Text style={[styles.subtitle, { color: colors.textMuted }]}>Sign in to your Nekofi account</Text>
 
-      <View style={styles.form}>
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]}
-          placeholder="Email"
-          placeholderTextColor={colors.textMuted}
-          value={email}
-          onChangeText={setEmail}
-          autoCapitalize="none"
-          keyboardType="email-address"
-        />
-        <TextInput
-          style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]}
-          placeholder="Password"
-          placeholderTextColor={colors.textMuted}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry
-        />
+        <View style={styles.form}>
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]}
+            placeholder="Email"
+            placeholderTextColor={colors.textMuted}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+          />
+          <TextInput
+            style={[styles.input, { backgroundColor: colors.surface, borderColor: colors.borderAlt, color: colors.text }]}
+            placeholder="Password"
+            placeholderTextColor={colors.textMuted}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+          />
 
-        <TouchableOpacity onPress={() => router.push('/(auth)/forgot-password')}>
-          <Text style={[styles.forgotText, { color: colors.primary }]}>Forgot password?</Text>
-        </TouchableOpacity>
+          <AnimatedPressable onPress={() => router.push('/(auth)/forgot-password')}>
+            <Text style={[styles.forgotText, { color: colors.primary }]}>Forgot password?</Text>
+          </AnimatedPressable>
 
-        <TouchableOpacity style={[styles.btn, { backgroundColor: colors.primary }, loading && styles.btnDisabled]} onPress={handleSignIn} disabled={loading}>
-          <Text style={styles.btnText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
-        </TouchableOpacity>
-      </View>
+          <AnimatedPressable style={[styles.btn, { backgroundColor: colors.primary }, loading && styles.btnDisabled]} onPress={handleSignIn} disabled={loading}>
+            <Text style={styles.btnText}>{loading ? 'Signing in...' : 'Sign In'}</Text>
+          </AnimatedPressable>
+        </View>
 
-      <TouchableOpacity onPress={() => router.push('/(auth)/sign-up')}>
-        <Text style={[styles.switchText, { color: colors.textMuted }]}>Don't have an account? <Text style={[styles.switchLink, { color: colors.primary }]}>Sign up</Text></Text>
-      </TouchableOpacity>
+        <AnimatedPressable onPress={() => router.push('/(auth)/sign-up')}>
+          <Text style={[styles.switchText, { color: colors.textMuted }]}>Don't have an account? <Text style={[styles.switchLink, { color: colors.primary }]}>Sign up</Text></Text>
+        </AnimatedPressable>
+      </Animated.View>
     </KeyboardAvoidingView>
   );
 }

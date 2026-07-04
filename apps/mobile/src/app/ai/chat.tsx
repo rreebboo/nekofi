@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TextInput, StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -7,6 +7,7 @@ import { aiService } from '@/services/ai/LocalAIService';
 import { useAIStore } from '@/store/useAIStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 interface Message {
   id: string;
@@ -67,9 +68,9 @@ export default function AIChatScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={[styles.header, { borderBottomColor: colors.border }]}>
-        <TouchableOpacity onPress={() => router.back()}>
+        <AnimatedPressable onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        </AnimatedPressable>
         <View style={styles.headerCenter}>
           <Text style={[styles.headerTitle, { color: colors.text }]}>Nekofi AI</Text>
           <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
@@ -122,9 +123,9 @@ export default function AIChatScreen() {
                 onSubmitEditing={sendMessage}
                 editable={isReady}
               />
-              <TouchableOpacity style={[styles.sendBtn, { backgroundColor: colors.primary }, (!input.trim() || loading || !isReady) && styles.sendBtnDisabled]} onPress={sendMessage} disabled={!input.trim() || loading || !isReady}>
+              <AnimatedPressable style={[styles.sendBtn, { backgroundColor: colors.primary }, (!input.trim() || loading || !isReady) && styles.sendBtnDisabled]} onPress={sendMessage} disabled={!input.trim() || loading || !isReady}>
                 <Ionicons name="send" size={18} color="#fff" />
-              </TouchableOpacity>
+              </AnimatedPressable>
             </View>
           </KeyboardAvoidingView>
         </>

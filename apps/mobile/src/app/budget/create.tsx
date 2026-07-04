@@ -1,9 +1,10 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { BudgetForm } from '@/components/forms/BudgetForm';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 export default function CreateBudgetScreen() {
   const colors = useThemeColors();
@@ -12,9 +13,9 @@ export default function CreateBudgetScreen() {
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>
+        <AnimatedPressable onPress={() => router.back()} style={styles.backBtn}>
           <Ionicons name="arrow-back" size={24} color={colors.text} />
-        </TouchableOpacity>
+        </AnimatedPressable>
         <Text style={[styles.title, { color: colors.text }]}>New Budget</Text>
         <View style={{ width: 24 }} />
       </View>

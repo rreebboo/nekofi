@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, View, Text, StyleSheet, RefreshControl } from 'react-native';
+import { View, Text, StyleSheet, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/stores/authStore';
 import { useBudgetStore, computeBudgetGroups } from '@/stores/budgetStore';
@@ -12,6 +12,9 @@ import { BudgetProgressCard } from '@/components/cards/BudgetProgressCard';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { HomeCarousel } from '@/components/ui/HomeCarousel';
 import * as Haptics from 'expo-haptics';
+import Animated, { FadeInDown, useAnimatedRef } from 'react-native-reanimated';
+import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { useFabScrollOffset } from '@/contexts/FabContext';
 
 /**
  * Dashboard — main home screen with summary cards and charts.
@@ -23,6 +26,9 @@ export default function DashboardScreen() {
   const budgetGroups = React.useMemo(() => computeBudgetGroups(budgets, transactions), [budgets, transactions]);
   const [refreshing, setRefreshing] = React.useState(false);
   const colors = useThemeColors();
+  
+  const scrollRef = useAnimatedRef<Animated.FlatList<any>>();
+  useFabScrollOffset(scrollRef);
 
   const onRefresh = async () => {
     setRefreshing(true);
@@ -45,36 +51,43 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-      <ScrollView
+      <Animated.FlatList
+        ref={scrollRef}
+        data={[]}
+        renderItem={() => null}
         showsVerticalScrollIndicator={false}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
         contentContainerStyle={styles.scroll}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={[styles.greeting, { color: colors.textMuted }]}>{greeting()},</Text>
-          <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'User'} 🐱</Text>
-        </View>
+        scrollEventThrottle={16}
+        ListHeaderComponent={
+          <>
+            {/* Header */}
+            <View style={styles.header}>
+              <Text style={[styles.greeting, { color: colors.textMuted }]}>{greeting()},</Text>
+              <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'User'} 🐱</Text>
+            </View>
 
-        {/* Credit Card Carousel Section */}
-        <View style={styles.carouselWrapper}>
-          <BalanceCard />
-        </View>
+            {/* Credit Card Carousel Section */}
+            <View style={styles.carouselWrapper}>
+              <BalanceCard />
+            </View>
 
-        <View style={styles.contentPad}>
-          {/* Main Sections */}
-          <AIInsightCard />
-          <BudgetProgressCard budgetGroups={budgetGroups} />
-          {/* Spending Chart */}
-          <SpendingChart transactions={transactions} />
+            <View style={styles.contentPad}>
+              {/* Main Sections */}
+              <AIInsightCard />
+              <BudgetProgressCard budgetGroups={budgetGroups} />
+              {/* Spending Chart */}
+              <SpendingChart transactions={transactions} />
 
-          {/* Recent Transactions */}
-          <RecentTransactions transactions={transactions.slice(0, 5)} />
-          
-          {/* Spacer for Floating Nav Bar */}
-          <View style={{ height: 100 }} />
-        </View>
-      </ScrollView>
+              {/* Recent Transactions */}
+              <RecentTransactions transactions={transactions.slice(0, 5)} />
+              
+              {/* Spacer for Floating Nav Bar */}
+              <View style={{ height: 100 }} />
+            </View>
+          </>
+        }
+      />
     </SafeAreaView>
   );
 }
