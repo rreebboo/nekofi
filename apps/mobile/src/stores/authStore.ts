@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/services/supabase/client';
+import { signInWithFacebook as fbSignIn } from '@/services/auth/facebookAuth';
 import type { User } from '@/types/user';
 import type { Session } from '@supabase/supabase-js';
 
@@ -15,6 +16,11 @@ interface AuthState {
   initialize: () => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, name: string) => Promise<void>;
+  /**
+   * Sign in (or auto-create) a user via Facebook OAuth.
+   * Throws a user-friendly string message on failure.
+   */
+  signInWithFacebook: () => Promise<void>;
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
   setSyncConflict: (value: boolean) => void;
@@ -68,6 +74,19 @@ export const useAuthStore = create<AuthState>()(
           options: { data: { full_name: name } },
         });
         if (error) throw error;
+      },
+
+      signInWithFacebook: async () => {
+        const result = await fbSignIn();
+        if (!result.success) {
+          // Bubble up a clean error message for the UI to display
+          throw new Error(result.error.message);
+        }
+        set({
+          session: result.session,
+          user: mapUser(result.user),
+          isGuest: false,
+        });
       },
 
       signOut: async () => {

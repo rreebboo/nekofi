@@ -56,6 +56,8 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
         <Stack.Screen name="(tabs)" />
+        {/* OAuth callback — handles nekofi://auth/callback deep link from Facebook login */}
+        <Stack.Screen name="auth/callback" />
         <Stack.Screen name="transaction/[id]" />
         <Stack.Screen name="budget/[id]" />
         <Stack.Screen name="ai/chat" />
