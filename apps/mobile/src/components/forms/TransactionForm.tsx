@@ -7,6 +7,8 @@ import { useTransactionStore } from '@/stores/transactionStore';
 import { EXPENSE_CATEGORIES, INCOME_CATEGORIES } from '@/constants/categories';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import type { TransactionType, CreateTransactionDto } from '@/types/transaction';
+import { useNekofiStore } from '@/store/nekofiStore';
+import { useBudgetStore, computeBudgetGroups } from '@/stores/budgetStore';
 
 interface Props {
   type: TransactionType;
@@ -25,6 +27,7 @@ export function TransactionForm({ type, onSuccess }: Props) {
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [loading, setLoading] = useState(false);
   const colors = useThemeColors();
+  const triggerAnimation = useNekofiStore((state) => state.triggerAnimation);
 
   const categories = type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
 
@@ -44,6 +47,38 @@ export function TransactionForm({ type, onSuccess }: Props) {
       const finalCategory = category.startsWith('other') ? (customCategory.trim() || 'Others') : category;
       const dto: CreateTransactionDto = { type, amount: parsed, currency: 'PHP', category: finalCategory, description, date };
       await createTransaction(dto);
+      
+      if (type === 'income') {
+        const incomeEmotions = ['Add Income', 'Celebration', 'Happy', 'Excited', 'Proud'] as const;
+        const randomEmotion = incomeEmotions[Math.floor(Math.random() * incomeEmotions.length)];
+        triggerAnimation(randomEmotion, 'Awesome! Income added. Keep it up!', 4000);
+      } else {
+        // Budget checks for expenses
+        const budgets = useBudgetStore.getState().budgets;
+        // simulate the state after this transaction
+        const fakeTransactions = [{ ...dto, id: 'temp', userId: 'temp', createdAt: new Date().toISOString(), syncStatus: 'synced' }];
+        const groups = computeBudgetGroups(budgets, fakeTransactions as any);
+        
+        const relatedGroup = groups.find(g => g.categories.some(c => c.category === finalCategory));
+        
+        // Wait, computeBudgetGroups merges with existing spending if we don't pass all transactions.
+        // It's better to just check the specific budget category.
+        const budgetCategory = budgets.find(b => b.category === finalCategory);
+        
+        if (budgetCategory) {
+          const newSpent = budgetCategory.spent + parsed;
+          if (newSpent > budgetCategory.amount) {
+            triggerAnimation('Overspending', 'Careful! You overspent your budget.', 5000);
+          } else if (newSpent > budgetCategory.amount * 0.9) {
+            triggerAnimation('Concerned', 'You are very close to your budget limit!', 5000);
+          } else {
+            triggerAnimation('Add Expense', 'Got it. Expense recorded.', 4000);
+          }
+        } else {
+          triggerAnimation('Add Expense', 'Got it. Expense recorded.', 4000);
+        }
+      }
+      
       onSuccess();
     } catch (err: any) {
       Alert.alert('Error', err.message);

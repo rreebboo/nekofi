@@ -51,7 +51,14 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1, backgroundColor: colors.background }}>
+    <GestureHandlerRootView 
+      style={{ flex: 1, backgroundColor: colors.background }}
+      onTouchStart={(e: any) => {
+        const { pageX, pageY } = e.nativeEvent;
+        const { setLastTap } = require('@/store/nekofiStore').useNekofiStore.getState();
+        setLastTap(pageX, pageY);
+      }}
+    >
       <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(auth)" />
