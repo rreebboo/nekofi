@@ -64,6 +64,10 @@ export const useAuthStore = create<AuthState>()(
             set({ session: null, user: null });
           } else if (session) {
             set({ session, user: mapUser(session.user), isGuest: false });
+            
+            // Trigger welcome notification if it doesn't exist yet
+            const { triggerWelcomeNotification } = require('@/services/notificationService');
+            triggerWelcomeNotification();
           }
         });
       },
@@ -72,6 +76,10 @@ export const useAuthStore = create<AuthState>()(
         const { data, error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) throw error;
         set({ session: data.session, user: mapUser(data.user), isGuest: false });
+
+        // Trigger login notification
+        const { triggerLoginNotification } = require('@/services/notificationService');
+        triggerLoginNotification('email');
       },
 
       signUp: async (email, password, name) => {
@@ -94,6 +102,10 @@ export const useAuthStore = create<AuthState>()(
           user: mapUser(result.user),
           isGuest: false,
         });
+
+        // Trigger login notification
+        const { triggerLoginNotification } = require('@/services/notificationService');
+        triggerLoginNotification('facebook');
       },
 
       signInWithGoogle: async () => {
@@ -107,6 +119,10 @@ export const useAuthStore = create<AuthState>()(
           user: mapUser(result.user),
           isGuest: false,
         });
+
+        // Trigger login notification
+        const { triggerLoginNotification } = require('@/services/notificationService');
+        triggerLoginNotification('google');
       },
 
       signOut: async () => {

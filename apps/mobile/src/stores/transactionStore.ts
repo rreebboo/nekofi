@@ -73,6 +73,13 @@ export const useTransactionStore = create<TransactionState>()(
           transactions[index] = camelRecord;
         } else {
           transactions.push(camelRecord);
+          // Trigger notification for collaborator additions
+          supabase.auth.getUser().then(({ data }) => {
+            if (data.user && camelRecord.userId !== data.user.id) {
+              const { processTransactionNotification } = require('@/services/notificationService');
+              processTransactionNotification(camelRecord);
+            }
+          });
         }
         
         transactions.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -140,6 +147,11 @@ export const useTransactionStore = create<TransactionState>()(
 
         set((state) => ({ transactions: [newTx, ...state.transactions].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) }));
         syncEmitter.emit();
+        
+        // Trigger notification
+        const { processTransactionNotification } = require('@/services/notificationService');
+        processTransactionNotification(newTx);
+
         return newTx;
       },
 

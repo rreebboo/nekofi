@@ -18,6 +18,7 @@ import { useThemeColors, useResolvedTheme } from '@/hooks/useThemeColors';
 import { SyncConflictModal } from '@/components/SyncConflictModal';
 import { initSyncEngine } from '@/services/syncEngine';
 import { initRealtimeSync } from '@/services/realtimeService';
+import { initNotificationService } from '@/services/notificationService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -38,6 +39,11 @@ export default function RootLayout() {
     initialize();
     initSyncEngine();
     initRealtimeSync();
+    
+    const cleanupNotifications = initNotificationService();
+    return () => {
+      if (cleanupNotifications) cleanupNotifications();
+    };
   }, []);
 
   useEffect(() => {
@@ -64,6 +70,7 @@ export default function RootLayout() {
         <Stack.Screen name="account/add" options={{ presentation: 'modal' }} />
         <Stack.Screen name="account/list" options={{ presentation: 'modal' }} />
         <Stack.Screen name="settings/appearance" options={{ presentation: 'modal' }} />
+        <Stack.Screen name="notifications" options={{ presentation: 'modal' }} />
       </Stack>
       <SyncConflictModal />
     </GestureHandlerRootView>

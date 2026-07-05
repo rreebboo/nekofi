@@ -39,6 +39,14 @@ export function initRealtimeSync() {
         useBudgetStore.getState().handleMembersRealtimeChange();
       }
     )
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'notifications' },
+      (payload) => {
+        const { useNotificationStore } = require('@/stores/notificationStore');
+        useNotificationStore.getState().handleRealtimeChange(payload);
+      }
+    )
     .subscribe((status) => {
       console.log('Realtime sync status:', status);
     });

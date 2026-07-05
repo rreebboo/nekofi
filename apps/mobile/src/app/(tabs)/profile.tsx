@@ -23,7 +23,7 @@ export default function ProfileScreen() {
 
   const menuItems = [
     { icon: 'person-outline', label: 'Edit Profile', onPress: () => router.push('/settings/edit-profile' as any) },
-    { icon: 'notifications-outline', label: 'Notifications', onPress: () => {} },
+    { icon: 'notifications-outline', label: 'Notifications', onPress: () => router.push('/notifications') },
     { icon: 'color-palette-outline', label: 'Appearance', onPress: () => router.push('/settings/appearance' as any) },
     { icon: 'shield-checkmark-outline', label: 'Security', onPress: () => {} },
     { icon: 'help-circle-outline', label: 'Help & Support', onPress: () => {} },
