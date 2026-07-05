@@ -1,57 +1,68 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, Pressable, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+/**
+ * AIInsightCard
+ *
+ * Compact card displayed on the Dashboard that shows a dynamic,
+ * context-aware AI insight generated from the user's actual financial data.
+ * Tapping it opens the full AI chat.
+ */
+
+import React, { useEffect } from 'react';
+import { View, Text, StyleSheet, ActivityIndicator, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { aiService } from '@/services/ai/LocalAIService';
+import { Ionicons } from '@expo/vector-icons';
 import { useAIStore } from '@/store/useAIStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
-import Animated, { useSharedValue, useAnimatedStyle, withSpring, FadeInDown } from 'react-native-reanimated';
-import { moderateScale, scale, verticalScale } from '@/utils/responsive';
+import { moderateScale, verticalScale } from '@/utils/responsive';
+import Animated, { FadeInDown, useSharedValue, useAnimatedStyle, withSpring } from 'react-native-reanimated';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
-/**
- * AI insight card — shown on dashboard, fetches a quick tip from local LLM.
- */
 export function AIInsightCard() {
-  const [insight, setInsight] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  
-  // Connect to global AI state
-  const { isDownloading, downloadProgress, isReady } = useAIStore();
-  
   const colors = useThemeColors();
-  const scale = useSharedValue(1);
+  const { latestInsight, insightLoading, isReady, isDownloading, downloadProgress, refreshInsight } = useAIStore();
+  const scaleVal = useSharedValue(1);
 
+  // Refresh insight when the card mounts and AI is ready
   useEffect(() => {
-    (async () => {
-      try {
-        // This will trigger the download if not already downloaded
-        const res = await aiService.generateInsight();
-        setInsight(res);
-      } catch {
-        setInsight('Track your spending consistently to unlock AI-powered insights.');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
+    if (isReady) {
+      refreshInsight();
+    }
+  }, [isReady]);
+
+  const handlePress = () => {
+    router.push('/ai/chat');
+  };
+
+  const handleRefresh = () => {
+    if (!insightLoading && isReady) {
+      refreshInsight();
+    }
+  };
 
   const animatedStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
+    transform: [{ scale: scaleVal.value }],
   }));
 
   return (
     <Animated.View entering={FadeInDown.delay(100).springify()}>
-      <AnimatedPressable 
-        style={[styles.card, { backgroundColor: colors.surface, borderColor: `${colors.primary}30`, shadowColor: '#000' }, animatedStyle]} 
-        onPress={() => router.push('/ai/chat')} 
-        onPressIn={() => (scale.value = withSpring(0.98))}
-        onPressOut={() => (scale.value = withSpring(1))}
+      <AnimatedPressable
+        style={[styles.card, { backgroundColor: colors.surface, borderColor: `${colors.primary}30`, shadowColor: '#000' }, animatedStyle]}
+        onPress={handlePress}
+        onPressIn={() => (scaleVal.value = withSpring(0.98))}
+        onPressOut={() => (scaleVal.value = withSpring(1))}
       >
         <View style={styles.header}>
           <Ionicons name="sparkles" size={18} color={colors.primary} />
           <Text style={[styles.headerText, { color: colors.primary }]}>Nekofi AI Insight</Text>
+          {isReady && (
+            <Pressable onPress={handleRefresh} hitSlop={8}>
+              {insightLoading ? (
+                <ActivityIndicator size="small" color={colors.primary} />
+              ) : (
+                <Ionicons name="refresh-outline" size={16} color={colors.textMuted} />
+              )}
+            </Pressable>
+          )}
           {isReady && <Ionicons name="checkmark-circle" size={14} color={colors.primary} />}
           <Ionicons name="arrow-forward" size={14} color={colors.textMuted} />
         </View>
@@ -63,10 +74,17 @@ export function AIInsightCard() {
               Downloading AI Model ({(downloadProgress * 100).toFixed(0)}%)
             </Text>
           </View>
-        ) : loading ? (
-          <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: moderateScale(8) }} />
+        ) : insightLoading && !latestInsight ? (
+          <View style={styles.progressContainer}>
+            <ActivityIndicator size="small" color={colors.primary} />
+            <Text style={[styles.insight, { color: colors.textMuted }]}>
+              Analyzing your finances...
+            </Text>
+          </View>
         ) : (
-          <Text style={[styles.insight, { color: colors.text }]}>{insight}</Text>
+          <Text style={[styles.insight, { color: colors.text }]} numberOfLines={2}>
+            {latestInsight || 'Tap to chat with your AI financial assistant 🐱'}
+          </Text>
         )}
       </AnimatedPressable>
     </Animated.View>

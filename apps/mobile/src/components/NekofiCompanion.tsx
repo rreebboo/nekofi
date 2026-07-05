@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { View, Text, StyleSheet, Pressable, useColorScheme } from 'react-native';
 import { useNekofiStore, NekofiEmotion } from '../store/nekofiStore';
 import { useAuthStore } from '../stores/authStore';
+import { useAIStore } from '../store/useAIStore';
 import { NekofiSvgMascot } from './NekofiSvgMascot';
 import { Colors } from '../constants/Colors';
 import Animated, { 
@@ -92,8 +93,10 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
   }, [state, triggerRandomIdle]);
 
   const { user } = useAuthStore();
+  const { latestInsight, isReady: aiReady } = useAIStore();
   const hasGreeted = React.useRef(false);
   const hasInteracted = React.useRef(false);
+  const hasShownInsight = React.useRef(false);
 
   // Initial Greeting (waits for user to load)
   useEffect(() => {
@@ -113,6 +116,23 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
     // Duration 0 means it waits for user interaction
     triggerAnimation('Wave Hello', `${greeting}, ${firstName}! Ready to save today?`, 0);
   }, [user]);
+
+  // Show AI-powered contextual insight after initial greeting
+  useEffect(() => {
+    if (!aiReady || !latestInsight || hasShownInsight.current || !hasGreeted.current) return;
+    hasShownInsight.current = true;
+
+    // Show the insight after a brief delay so it doesn't overlap the greeting
+    const timer = setTimeout(() => {
+      const { state: currentState } = useNekofiStore.getState();
+      // Only show if user hasn't started interacting
+      if (currentState === 'IDLE' || !hasInteracted.current) {
+        triggerAnimation('Curious', latestInsight, 0);
+      }
+    }, 8000);
+
+    return () => clearTimeout(timer);
+  }, [aiReady, latestInsight]);
 
   // Continuous breathing and bobbing
   useEffect(() => {
