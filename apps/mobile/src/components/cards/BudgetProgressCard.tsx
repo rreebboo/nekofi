@@ -5,6 +5,7 @@ import { BudgetCard } from './BudgetCard';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 interface Props {
   budgetGroups: BudgetGroup[];
@@ -28,6 +29,6 @@ export function BudgetProgressCard({ budgetGroups }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: 12 },
-  title: { fontFamily: 'Inter-SemiBold', fontSize: 16, marginBottom: 16 },
+  container: { marginTop: moderateScale(12) },
+  title: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16), marginBottom: moderateScale(16) },
 });

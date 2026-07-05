@@ -9,8 +9,10 @@ import { EXPENSE_CATEGORIES } from '@/constants/categories';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 import { OriginDialog, OriginCoordinate } from '@/components/ui/OriginDialog';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 interface Props {
   onSuccess: () => void;
@@ -91,6 +93,7 @@ export function BudgetForm({ onSuccess }: Props) {
   const [calOrigin, setCalOrigin] = useState<OriginCoordinate | null>(null);
 
   const [loading, setLoading] = useState(false);
+  const [successCode, setSuccessCode] = useState<string | null>(null);
 
   useEffect(() => {
     const newStart = getStartOfPeriod(period);
@@ -176,9 +179,9 @@ export function BudgetForm({ onSuccess }: Props) {
         emoji,
         categories
       };
-      await createBudgetGroup(dto);
+      const newBudgets = await createBudgetGroup(dto);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onSuccess();
+      setSuccessCode(newBudgets[0].inviteCode || null);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     } finally {
@@ -199,7 +202,7 @@ export function BudgetForm({ onSuccess }: Props) {
           <View style={[styles.calModal, { backgroundColor: colors.surface }]}>
             {period === 'yearly' && (
               <View>
-                <Text style={[styles.calMonthText, { color: colors.text, marginBottom: 20, textAlign: 'center' }]}>Select Year</Text>
+                <Text style={[styles.calMonthText, { color: colors.text, marginBottom: moderateScale(20), textAlign: 'center' }]}>Select Year</Text>
                 <View style={styles.calGrid}>
                   {Array.from({ length: 12 }, (_, i) => currentYear + i).map(year => {
                     const isSelected = startDate.startsWith(`${year}`);
@@ -289,7 +292,7 @@ export function BudgetForm({ onSuccess }: Props) {
 
               return (
                 <View>
-                  <Text style={[styles.calMonthText, { color: colors.text, marginBottom: 12, textAlign: 'center' }]}>
+                  <Text style={[styles.calMonthText, { color: colors.text, marginBottom: moderateScale(12), textAlign: 'center' }]}>
                     {calTarget === 'start' ? 'Select Start Date' : 'Select End Date'}
                   </Text>
                   <View style={styles.calHeader}>
@@ -332,8 +335,8 @@ export function BudgetForm({ onSuccess }: Props) {
                           key={index} 
                           style={[
                             styles.calDayCell, 
-                            (isExactStart || isExactEnd) && { backgroundColor: color, borderRadius: 20 },
-                            isInRange && !(isExactStart || isExactEnd) && { backgroundColor: color + '30', borderRadius: 20 },
+                            (isExactStart || isExactEnd) && { backgroundColor: color, borderRadius: moderateScale(20) },
+                            isInRange && !(isExactStart || isExactEnd) && { backgroundColor: color + '30', borderRadius: moderateScale(20) },
                             isDisabled && { opacity: 0.3 },
                             !item.isCurrentMonth && !isDisabled && { opacity: 0.4 }
                           ]} 
@@ -360,7 +363,7 @@ export function BudgetForm({ onSuccess }: Props) {
             })()}
 
             {period === 'custom' ? (
-              <View style={{ flexDirection: 'row', gap: 12, marginTop: 16 }}>
+              <View style={{ flexDirection: 'row', gap: moderateScale(12), marginTop: moderateScale(16) }}>
                 <AnimatedPressable style={[styles.calCloseBtn, { flex: 1, backgroundColor: colors.background }]} onPress={() => setIsCalVisible(false)}>
                   <Text style={[styles.calCloseBtnText, { color: colors.text }]}>Cancel</Text>
                 </AnimatedPressable>
@@ -375,7 +378,7 @@ export function BudgetForm({ onSuccess }: Props) {
                 </AnimatedPressable>
               </View>
             ) : (
-              <AnimatedPressable style={[styles.calCloseBtn, { backgroundColor: colors.background, marginTop: 16 }]} onPress={() => setIsCalVisible(false)}>
+              <AnimatedPressable style={[styles.calCloseBtn, { backgroundColor: colors.background, marginTop: moderateScale(16) }]} onPress={() => setIsCalVisible(false)}>
                 <Text style={[styles.calCloseBtnText, { color: colors.text }]}>Cancel</Text>
               </AnimatedPressable>
             )}
@@ -392,7 +395,7 @@ export function BudgetForm({ onSuccess }: Props) {
           <View style={[styles.catModal, { backgroundColor: colors.surface }]}>
               <View style={styles.catModalHeader}>
                 <View style={[styles.catModalIcon, { backgroundColor: colors.background }]}>
-                  <Text style={{ fontSize: 32 }}>{catInfo?.emoji}</Text>
+                  <Text style={{ fontSize: moderateScale(32) }}>{catInfo?.emoji}</Text>
                 </View>
                 <Text style={[styles.catModalTitle, { color: colors.text }]}>{catInfo?.label}</Text>
                 <Text style={[styles.catModalSub, { color: colors.textMuted }]}>Set your spending limit</Text>
@@ -420,12 +423,51 @@ export function BudgetForm({ onSuccess }: Props) {
     );
   };
 
+  const renderSuccessModal = () => {
+    return (
+      <Modal visible={!!successCode} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.successModal, { backgroundColor: colors.surface }]}>
+            <View style={[styles.successIcon, { backgroundColor: color + '20' }]}>
+              <Text style={{ fontSize: moderateScale(48) }}>{emoji}</Text>
+              <View style={{ position: 'absolute', bottom: -4, right: -4, backgroundColor: colors.surface, borderRadius: moderateScale(16), padding: moderateScale(2) }}>
+                <Ionicons name="checkmark-circle" size={28} color={colors.primary} />
+              </View>
+            </View>
+            <Text style={[styles.successTitle, { color: colors.text }]}>Budget created!</Text>
+            <Text style={[styles.successSub, { color: colors.textMuted }]}>Share this invite code with others to collaborate:</Text>
+            
+            <View style={[styles.codeBox, { backgroundColor: colors.background, borderColor: colors.borderAlt }]}>
+              <Text style={[styles.codeText, { color: colors.text }]}>{successCode}</Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.background }]} onPress={() => {
+                setSuccessCode(null);
+                onSuccess();
+              }}>
+                <Text style={[styles.modalActionText, { color: colors.text }]}>Done</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.primary }]} onPress={async () => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                await Clipboard.setStringAsync(successCode || '');
+                Alert.alert('Copied!', 'Invite code copied to clipboard.');
+              }}>
+                <Text style={[styles.modalActionText, { color: '#fff' }]}>Copy Code</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   const renderStep1 = () => (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.stepContainer}>
       <Text style={[styles.stepTitle, { color: colors.text }]}>Budget Identity</Text>
       <Text style={[styles.stepSubtitle, { color: colors.textMuted }]}>What are you saving for?</Text>
       
-      <View style={{ gap: 24, marginTop: 32 }}>
+      <View style={{ gap: moderateScale(24), marginTop: moderateScale(32) }}>
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: colors.textMuted }]}>Name your budget</Text>
           <TextInput 
@@ -477,7 +519,7 @@ export function BudgetForm({ onSuccess }: Props) {
       <Text style={[styles.stepTitle, { color: colors.text }]}>Set Your Limits</Text>
       <Text style={[styles.stepSubtitle, { color: colors.textMuted }]}>How much are you planning to spend?</Text>
 
-      <View style={[styles.heroCardShadow, { backgroundColor: color, marginTop: 24 }]}>
+      <View style={[styles.heroCardShadow, { backgroundColor: color, marginTop: moderateScale(24) }]}>
         <LinearGradient colors={[color, color + '99']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.heroCard}>
           <Text style={styles.heroAmount}>
             {totalAmount > 0 ? `₱${totalAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : '₱0.00'}
@@ -488,7 +530,7 @@ export function BudgetForm({ onSuccess }: Props) {
         </LinearGradient>
       </View>
 
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 12, marginBottom: 16 }]}>Tap a category to set its limit</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: moderateScale(12), marginBottom: moderateScale(16) }]}>Tap a category to set its limit</Text>
       
       {EXPENSE_CATEGORIES.map((c, index) => {
         const allocated = categories.find(cat => cat.categoryId === c.id);
@@ -511,7 +553,7 @@ export function BudgetForm({ onSuccess }: Props) {
               {hasAmount ? (
                 <Text style={[styles.catAmount, { color: color }]}>₱{allocated.amount.toLocaleString()}</Text>
               ) : (
-                <Text style={[styles.catAmount, { color: colors.textMuted, fontFamily: 'Inter-Regular', fontSize: 13 }]}>Not Set</Text>
+                <Text style={[styles.catAmount, { color: colors.textMuted, fontFamily: 'Inter-Regular', fontSize: moderateScale(13) }]}>Not Set</Text>
               )}
             </View>
             <Ionicons name="chevron-forward" size={20} color={colors.textMuted} />
@@ -519,7 +561,7 @@ export function BudgetForm({ onSuccess }: Props) {
         );
       })}
 
-      <View style={[styles.card, { backgroundColor: colors.surface, marginTop: 24 }]}>
+      <View style={[styles.card, { backgroundColor: colors.surface, marginTop: moderateScale(24) }]}>
         <View style={styles.inputGroup}>
           <Text style={[styles.label, { color: colors.textMuted }]}>How often does this renew?</Text>
           <View style={[styles.segmentedControl, { backgroundColor: colors.background }]}>
@@ -535,20 +577,20 @@ export function BudgetForm({ onSuccess }: Props) {
           </View>
         </View>
         {period === 'custom' ? (
-          <View style={[styles.row, { marginTop: 4, alignItems: 'flex-end' }]}>
+          <View style={[styles.row, { marginTop: moderateScale(4), alignItems: 'flex-end' }]}>
             <View style={{ flex: 3 }}>
               <Text style={[styles.label, { color: colors.textMuted }]}>Select Date Range</Text>
-              <AnimatedPressable style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: 56 }]} onPress={(e) => openCalendar('start', e)}>
-                <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-Medium', fontSize: 13 }} numberOfLines={1} adjustsFontSizeToFit>
+              <AnimatedPressable style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: verticalScale(56) }]} onPress={(e) => openCalendar('start', e)}>
+                <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-Medium', fontSize: moderateScale(13) }} numberOfLines={1} adjustsFontSizeToFit>
                   {startDate && endDate ? `${startDate} to ${endDate}` : 'Select Range'}
                 </Text>
               </AnimatedPressable>
             </View>
             <View style={styles.flex1}>
-              <View style={{ height: 76, justifyContent: 'space-between', alignItems: 'center' }}>
+              <View style={{ height: verticalScale(76), justifyContent: 'space-between', alignItems: 'center' }}>
                 <Text style={[styles.label, { color: colors.textMuted }]}>Days</Text>
-                <View style={{ height: 56, justifyContent: 'center' }}>
-                  <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-SemiBold', fontSize: 20 }}>
+                <View style={{ height: verticalScale(56), justifyContent: 'center' }}>
+                  <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-SemiBold', fontSize: moderateScale(20) }}>
                     {(() => {
                       if (!startDate || !endDate) return '-';
                       const s = new Date(startDate);
@@ -562,10 +604,10 @@ export function BudgetForm({ onSuccess }: Props) {
             </View>
           </View>
         ) : (
-          <View style={[styles.row, { marginTop: 4, alignItems: 'flex-end' }]}>
+          <View style={[styles.row, { marginTop: moderateScale(4), alignItems: 'flex-end' }]}>
             <View>
               <Text style={[styles.label, { color: colors.textMuted }]}>When does this start?</Text>
-              <AnimatedPressable style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: 56 }]} onPress={(e) => openCalendar('start', e)}>
+              <AnimatedPressable style={[styles.input, { backgroundColor: colors.background, justifyContent: 'center', height: verticalScale(56) }]} onPress={(e) => openCalendar('start', e)}>
                 <Text style={{ color: colors.text, textAlign: 'center', fontFamily: 'Inter-Medium' }}>{startDate || 'Select Date'}</Text>
               </AnimatedPressable>
             </View>
@@ -573,7 +615,7 @@ export function BudgetForm({ onSuccess }: Props) {
               <View>
                 <Text style={[styles.label, { color: colors.textMuted }]}>Duration</Text>
                 <TextInput 
-                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, textAlign: 'center', height: 56 }]} 
+                  style={[styles.input, { backgroundColor: colors.background, color: colors.text, textAlign: 'center', height: verticalScale(56) }]} 
                   value={multiplier} 
                   onChangeText={setMultiplier} 
                   keyboardType="number-pad"
@@ -594,7 +636,7 @@ export function BudgetForm({ onSuccess }: Props) {
       <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: color, borderWidth: 2 }]}>
         <View style={styles.summaryTopRow}>
           <View style={[styles.summaryEmoji, { backgroundColor: color + '20' }]}>
-            <Text style={{ fontSize: 32 }}>{emoji}</Text>
+            <Text style={{ fontSize: moderateScale(32) }}>{emoji}</Text>
           </View>
           <View style={styles.summaryTitleCol}>
             <Text style={[styles.summaryName, { color: colors.text }]}>{name}</Text>
@@ -607,13 +649,13 @@ export function BudgetForm({ onSuccess }: Props) {
         </View>
       </View>
 
-      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 24, marginBottom: 12 }]}>Included Categories</Text>
+      <Text style={[styles.sectionTitle, { color: colors.text, marginTop: moderateScale(24), marginBottom: moderateScale(12) }]}>Included Categories</Text>
       <View style={[styles.card, { backgroundColor: colors.surface }]}>
         {categories.map((c, i) => {
           const catInfo = EXPENSE_CATEGORIES.find(e => e.id === c.categoryId);
           return (
             <View key={c.categoryId} style={[styles.summaryCatRow, i < categories.length - 1 && { borderBottomWidth: 1, borderBottomColor: colors.borderAlt }]}>
-              <Text style={{ fontSize: 20 }}>{catInfo?.emoji}</Text>
+              <Text style={{ fontSize: moderateScale(20) }}>{catInfo?.emoji}</Text>
               <Text style={[styles.summaryCatName, { color: colors.text }]}>{catInfo?.label}</Text>
               <Text style={[styles.summaryCatAmount, { color: colors.text }]}>₱{c.amount.toLocaleString()}</Text>
             </View>
@@ -658,94 +700,103 @@ export function BudgetForm({ onSuccess }: Props) {
 
       {renderCalendarModal()}
       {renderCategoryModal()}
+      {renderSuccessModal()}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrapper: { flex: 1 },
-  progressHeader: { flexDirection: 'row', justifyContent: 'center', gap: 8, paddingVertical: 12 },
-  progressDot: { height: 6, width: 24, borderRadius: 3 },
-  scrollContent: { paddingBottom: 24, paddingHorizontal: 4 },
-  stepContainer: { flex: 1, paddingTop: 16 },
-  stepTitle: { fontFamily: 'Inter-Bold', fontSize: 28, marginBottom: 4 },
-  stepSubtitle: { fontFamily: 'Inter-Regular', fontSize: 15 },
+  progressHeader: { flexDirection: 'row', justifyContent: 'center', gap: moderateScale(8), paddingVertical: moderateScale(12) },
+  progressDot: { height: verticalScale(6), width: scale(24), borderRadius: moderateScale(3) },
+  scrollContent: { paddingBottom: moderateScale(24), paddingHorizontal: moderateScale(4) },
+  stepContainer: { flex: 1, paddingTop: moderateScale(16) },
+  stepTitle: { fontFamily: 'Inter-Bold', fontSize: moderateScale(28), marginBottom: moderateScale(4) },
+  stepSubtitle: { fontFamily: 'Inter-Regular', fontSize: moderateScale(15) },
   
-  card: { padding: 24, borderRadius: 28, gap: 20 },
-  inputGroup: { gap: 8 },
-  label: { fontFamily: 'Inter-Medium', fontSize: 13, marginLeft: 4, textTransform: 'uppercase', letterSpacing: 0.5 },
-  input: { borderRadius: 16, paddingHorizontal: 16, paddingVertical: 16, fontFamily: 'Inter-Regular', fontSize: 16 },
+  card: { padding: moderateScale(24), borderRadius: moderateScale(28), gap: moderateScale(20) },
+  inputGroup: { gap: moderateScale(8) },
+  label: { fontFamily: 'Inter-Medium', fontSize: moderateScale(13), marginLeft: moderateScale(4), textTransform: 'uppercase', letterSpacing: 0.5 },
+  input: { borderRadius: moderateScale(16), paddingHorizontal: moderateScale(16), paddingVertical: moderateScale(16), fontFamily: 'Inter-Regular', fontSize: moderateScale(16) },
   
-  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16, paddingVertical: 4 },
-  colorDot: { width: '22%', height: 48, borderRadius: 12, elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
+  gridContainer: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', rowGap: 16, paddingVertical: moderateScale(4) },
+  colorDot: { width: '22%', height: verticalScale(48), borderRadius: moderateScale(12), elevation: 2, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4 },
   colorDotSelected: { borderWidth: 4, borderColor: '#fff' },
-  emojiBtn: { width: '22%', aspectRatio: 1, borderRadius: 999, alignItems: 'center', justifyContent: 'center', elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, borderWidth: 2, borderColor: 'transparent' },
-  emojiText: { fontSize: 36, includeFontPadding: false, textAlign: 'center', textAlignVertical: 'center' },
+  emojiBtn: { width: '22%', aspectRatio: 1, borderRadius: moderateScale(999), alignItems: 'center', justifyContent: 'center', elevation: 1, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 4, borderWidth: 2, borderColor: 'transparent' },
+  emojiText: { fontSize: moderateScale(36), includeFontPadding: false, textAlign: 'center', textAlignVertical: 'center' },
   
   // Step 2 styles
-  heroCardShadow: { marginHorizontal: 4, elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.15, shadowRadius: 8, borderRadius: 28, marginBottom: 20, marginTop: 4 },
-  heroCard: { paddingVertical: 32, paddingHorizontal: 20, borderRadius: 28, alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
-  heroAmount: { fontFamily: 'Inter-Bold', fontSize: 38, color: '#fff', marginBottom: 2 },
+  heroCardShadow: { marginHorizontal: moderateScale(4), elevation: 6, shadowColor: '#000', shadowOffset: { width: 0, height: verticalScale(3) }, shadowOpacity: 0.15, shadowRadius: 8, borderRadius: moderateScale(28), marginBottom: moderateScale(20), marginTop: moderateScale(4) },
+  heroCard: { paddingVertical: moderateScale(32), paddingHorizontal: moderateScale(20), borderRadius: moderateScale(28), alignItems: 'center', justifyContent: 'center', overflow: 'hidden' },
+  heroAmount: { fontFamily: 'Inter-Bold', fontSize: moderateScale(38), color: '#fff', marginBottom: moderateScale(2) },
   heroLabelContainer: { alignItems: 'center', justifyContent: 'center' },
-  heroLabel: { fontFamily: 'Inter-SemiBold', fontSize: 12, color: 'rgba(255,255,255,0.9)', letterSpacing: 1 },
+  heroLabel: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(12), color: 'rgba(255,255,255,0.9)', letterSpacing: 1 },
   
-  segmentedControl: { flexDirection: 'row', padding: 4, borderRadius: 16 },
-  segmentBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  segmentLabel: { fontFamily: 'Inter-Medium', fontSize: 14 },
-  row: { flexDirection: 'row', gap: 12 },
+  segmentedControl: { flexDirection: 'row', padding: moderateScale(4), borderRadius: moderateScale(16) },
+  segmentBtn: { flex: 1, paddingVertical: moderateScale(12), borderRadius: moderateScale(12), alignItems: 'center', justifyContent: 'center' },
+  segmentLabel: { fontFamily: 'Inter-Medium', fontSize: moderateScale(14) },
+  row: { flexDirection: 'row', gap: moderateScale(12) },
   flex1: { flex: 1 },
-  sectionTitle: { fontFamily: 'Inter-Bold', fontSize: 16 },
+  sectionTitle: { fontFamily: 'Inter-Bold', fontSize: moderateScale(16) },
   
-  catItem: { flexDirection: 'row', alignItems: 'center', padding: 16, borderRadius: 20, marginBottom: 8, borderWidth: 1, borderColor: 'transparent' },
-  catIconContainer: { width: 48, height: 48, borderRadius: 24, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
-  catEmoji: { fontSize: 24 },
-  catInfo: { flex: 1, gap: 2 },
-  catName: { fontFamily: 'Inter-Medium', fontSize: 16 },
-  catAmount: { fontFamily: 'Inter-Bold', fontSize: 15 },
+  catItem: { flexDirection: 'row', alignItems: 'center', padding: moderateScale(16), borderRadius: moderateScale(20), marginBottom: moderateScale(8), borderWidth: 1, borderColor: 'transparent' },
+  catIconContainer: { width: scale(48), height: verticalScale(48), borderRadius: moderateScale(24), alignItems: 'center', justifyContent: 'center', marginRight: moderateScale(16) },
+  catEmoji: { fontSize: moderateScale(24) },
+  catInfo: { flex: 1, gap: moderateScale(2) },
+  catName: { fontFamily: 'Inter-Medium', fontSize: moderateScale(16) },
+  catAmount: { fontFamily: 'Inter-Bold', fontSize: moderateScale(15) },
   
   // Step 3 styles
-  summaryCard: { borderRadius: 24, padding: 20, marginTop: 24 },
-  summaryTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 20 },
-  summaryEmoji: { width: 56, height: 56, borderRadius: 28, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
+  summaryCard: { borderRadius: moderateScale(24), padding: moderateScale(20), marginTop: moderateScale(24) },
+  summaryTopRow: { flexDirection: 'row', alignItems: 'center', marginBottom: moderateScale(20) },
+  summaryEmoji: { width: scale(56), height: verticalScale(56), borderRadius: moderateScale(28), alignItems: 'center', justifyContent: 'center', marginRight: moderateScale(16) },
   summaryTitleCol: { flex: 1 },
-  summaryName: { fontFamily: 'Inter-Bold', fontSize: 22, marginBottom: 4 },
-  summaryPeriod: { fontFamily: 'Inter-Medium', fontSize: 13, textTransform: 'capitalize' },
-  summaryTotalBox: { alignItems: 'center', paddingTop: 16, borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
-  summaryTotalLabel: { fontFamily: 'Inter-SemiBold', fontSize: 11, letterSpacing: 1, marginBottom: 4 },
-  summaryTotalVal: { fontFamily: 'Inter-Bold', fontSize: 32 },
+  summaryName: { fontFamily: 'Inter-Bold', fontSize: moderateScale(22), marginBottom: moderateScale(4) },
+  summaryPeriod: { fontFamily: 'Inter-Medium', fontSize: moderateScale(13), textTransform: 'capitalize' },
+  summaryTotalBox: { alignItems: 'center', paddingTop: moderateScale(16), borderTopWidth: 1, borderTopColor: 'rgba(0,0,0,0.05)' },
+  summaryTotalLabel: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(11), letterSpacing: 1, marginBottom: moderateScale(4) },
+  summaryTotalVal: { fontFamily: 'Inter-Bold', fontSize: moderateScale(32) },
   
-  summaryCatRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 12, gap: 12 },
-  summaryCatName: { flex: 1, fontFamily: 'Inter-Medium', fontSize: 16 },
-  summaryCatAmount: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  summaryCatRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: moderateScale(12), gap: moderateScale(12) },
+  summaryCatName: { flex: 1, fontFamily: 'Inter-Medium', fontSize: moderateScale(16) },
+  summaryCatAmount: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16) },
 
   // Footer
-  footer: { flexDirection: 'row', padding: 20, borderTopWidth: 1, gap: 16 },
-  footerBtn: { flex: 1, paddingVertical: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  footerBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  footer: { flexDirection: 'row', padding: moderateScale(20), borderTopWidth: 1, gap: moderateScale(16) },
+  footerBtn: { flex: 1, paddingVertical: moderateScale(16), borderRadius: moderateScale(16), alignItems: 'center', justifyContent: 'center' },
+  footerBtnText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16) },
 
   // Modals
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  catModal: { width: '100%', borderRadius: 28, padding: 24, alignItems: 'center' },
-  catModalHeader: { alignItems: 'center', marginBottom: 24 },
-  catModalIcon: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
-  catModalTitle: { fontFamily: 'Inter-Bold', fontSize: 22, marginBottom: 4 },
-  catModalSub: { fontFamily: 'Inter-Medium', fontSize: 14 },
-  catModalInput: { width: '100%', fontSize: 32, fontFamily: 'Inter-Bold', textAlign: 'center', paddingVertical: 20, borderRadius: 20, marginBottom: 24 },
-  modalActions: { flexDirection: 'row', gap: 12, width: '100%' },
-  modalActionBtn: { flex: 1, paddingVertical: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  modalActionText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: moderateScale(20) },
+  catModal: { width: '100%', borderRadius: moderateScale(28), padding: moderateScale(24), alignItems: 'center' },
+  catModalHeader: { alignItems: 'center', marginBottom: moderateScale(24) },
+  catModalIcon: { width: scale(72), height: verticalScale(72), borderRadius: moderateScale(36), alignItems: 'center', justifyContent: 'center', marginBottom: moderateScale(16) },
+  catModalTitle: { fontFamily: 'Inter-Bold', fontSize: moderateScale(22), marginBottom: moderateScale(4) },
+  catModalSub: { fontFamily: 'Inter-Medium', fontSize: moderateScale(14) },
+  catModalInput: { width: '100%', fontSize: moderateScale(32), fontFamily: 'Inter-Bold', textAlign: 'center', paddingVertical: moderateScale(20), borderRadius: moderateScale(20), marginBottom: moderateScale(24) },
+  modalActions: { flexDirection: 'row', gap: moderateScale(12), width: '100%' },
+  modalActionBtn: { flex: 1, paddingVertical: moderateScale(16), borderRadius: moderateScale(16), alignItems: 'center', justifyContent: 'center' },
+  modalActionText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16) },
 
-  calModal: { width: '100%', borderRadius: 28, padding: 20 },
-  calHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  calMonthText: { fontFamily: 'Inter-Bold', fontSize: 18 },
-  calWeekRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: 12 },
-  calWeekDay: { fontFamily: 'Inter-Medium', fontSize: 13, width: 32, textAlign: 'center' },
+  calModal: { width: '100%', borderRadius: moderateScale(28), padding: moderateScale(20) },
+  calHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: moderateScale(20) },
+  calMonthText: { fontFamily: 'Inter-Bold', fontSize: moderateScale(18) },
+  calWeekRow: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: moderateScale(12) },
+  calWeekDay: { fontFamily: 'Inter-Medium', fontSize: moderateScale(13), width: scale(32), textAlign: 'center' },
   calDaysGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'flex-start' },
-  calDayCell: { width: '14.28%', height: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
-  calDayText: { fontFamily: 'Inter-Medium', fontSize: 15 },
-  calGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: 12 },
-  calGridCell: { width: '30%', paddingVertical: 16, alignItems: 'center', borderRadius: 16 },
-  calGridText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
-  calCloseBtn: { marginTop: 12, paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
-  calCloseBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  calDayCell: { width: '14.28%', height: verticalScale(40), alignItems: 'center', justifyContent: 'center', marginBottom: moderateScale(8) },
+  calDayText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(15) },
+  calGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between', gap: moderateScale(12) },
+  calGridCell: { width: '30%', paddingVertical: moderateScale(16), alignItems: 'center', borderRadius: moderateScale(16) },
+  calGridText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16) },
+  calCloseBtn: { marginTop: moderateScale(12), paddingVertical: moderateScale(16), borderRadius: moderateScale(16), alignItems: 'center' },
+  calCloseBtnText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16) },
+  
+  successModal: { width: '100%', borderRadius: moderateScale(28), padding: moderateScale(24), alignItems: 'center' },
+  successIcon: { width: scale(80), height: verticalScale(80), borderRadius: moderateScale(40), alignItems: 'center', justifyContent: 'center', marginBottom: moderateScale(16) },
+  successTitle: { fontFamily: 'Inter-Bold', fontSize: moderateScale(22), textAlign: 'center', marginBottom: moderateScale(8) },
+  successSub: { fontFamily: 'Inter-Regular', fontSize: moderateScale(15), textAlign: 'center', marginBottom: moderateScale(24), paddingHorizontal: moderateScale(12) },
+  codeBox: { width: '100%', paddingVertical: moderateScale(20), borderRadius: moderateScale(16), borderWidth: 1, alignItems: 'center', marginBottom: moderateScale(24) },
+  codeText: { fontFamily: 'Inter-Bold', fontSize: moderateScale(32), letterSpacing: 4 },
+  successActions: { width: '100%', gap: moderateScale(12) },
 });

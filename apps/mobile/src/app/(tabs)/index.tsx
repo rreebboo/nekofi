@@ -16,6 +16,7 @@ import Animated, { FadeInDown, useAnimatedRef } from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useFabScrollOffset } from '@/contexts/FabContext';
 import { NekofiCompanion } from '@/components/NekofiCompanion';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 /**
  * Dashboard — main home screen with summary cards and charts.
@@ -83,7 +84,7 @@ export default function DashboardScreen() {
               <RecentTransactions transactions={transactions.slice(0, 5)} />
               
               {/* Spacer for Floating Nav Bar */}
-              <View style={{ height: 100 }} />
+              <View style={{ height: verticalScale(100) }} />
             </View>
           </>
         }
@@ -94,17 +95,17 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  scroll: { paddingBottom: 32 },
-  header: { paddingTop: 4, paddingBottom: 4, paddingHorizontal: 20, zIndex: 10 },
-  greeting: { fontFamily: 'Inter-Medium', fontSize: 14, marginBottom: 4 },
-  nameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  nameLogo: { width: 32, height: 32, borderRadius: 8 },
-  name: { fontFamily: 'Inter-Bold', fontSize: 28, letterSpacing: -0.5 },
+  scroll: { paddingBottom: moderateScale(32) },
+  header: { paddingTop: moderateScale(4), paddingBottom: moderateScale(4), paddingHorizontal: moderateScale(20), zIndex: 10 },
+  greeting: { fontFamily: 'Inter-Medium', fontSize: moderateScale(14), marginBottom: moderateScale(4) },
+  nameRow: { flexDirection: 'row', alignItems: 'center', gap: moderateScale(10) },
+  nameLogo: { width: moderateScale(32), height: moderateScale(32), borderRadius: moderateScale(8) },
+  name: { fontFamily: 'Inter-Bold', fontSize: moderateScale(28), letterSpacing: -0.5 },
   carouselWrapper: {
-    marginVertical: 8,
+    marginVertical: moderateScale(8),
   },
   contentPad: {
-    paddingHorizontal: 20,
-    gap: 16,
+    paddingHorizontal: moderateScale(20),
+    gap: moderateScale(16),
   },
 });

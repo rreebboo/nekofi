@@ -1,11 +1,13 @@
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 /**
  * SocialAuthButton — a reusable, branded button for social OAuth providers.
  *
- * Currently supports: 'facebook'
- * Easily extensible to 'google', 'apple', etc.
+ * Currently supports: 'facebook', 'google'
+ * Easily extensible to 'apple', etc.
  *
  * Usage:
  *   <SocialAuthButton provider="facebook" onPress={handleFacebook} loading={fbLoading} />
+ *   <SocialAuthButton provider="google" onPress={handleGoogle} loading={googleLoading} />
  */
 
 import React from 'react';
@@ -22,12 +24,20 @@ import {
 
 interface ProviderConfig {
   label: string;
-  /** Official brand color */
+  /** Official brand background color */
   backgroundColor: string;
-  /** Text / icon color — usually white */
+  /** Text / spinner color */
   textColor: string;
-  /** Unicode fallback icon; replace with a real SVG/icon library if desired */
+  /** Optional border color (e.g. Google's light grey border on white) */
+  borderColor?: string;
+  /** Unicode fallback icon character */
   icon: string;
+  /** Background color of the icon circle wrapper */
+  iconBg: string;
+  /** Color of the icon character */
+  iconColor: string;
+  /** Shadow color for elevation effect */
+  shadowColor: string;
 }
 
 const PROVIDERS: Record<string, ProviderConfig> = {
@@ -37,6 +47,20 @@ const PROVIDERS: Record<string, ProviderConfig> = {
     backgroundColor: '#1877F2',
     textColor: '#FFFFFF',
     icon: 'f', // Facebook 'f' — rendered in bold below
+    iconBg: '#FFFFFF',
+    iconColor: '#1877F2',
+    shadowColor: '#1877F2',
+  },
+  google: {
+    label: 'Continue with Google',
+    // Official Google brand colors (Google Brand Resource Center 2024)
+    backgroundColor: '#FFFFFF',
+    textColor: '#3C4043',
+    borderColor: '#DADCE0',
+    icon: 'G', // Google 'G' — rendered in Google blue below
+    iconBg: 'transparent',
+    iconColor: '#4285F4', // Google Blue
+    shadowColor: '#000000',
   },
 };
 
@@ -73,6 +97,7 @@ export function SocialAuthButton({
       style={[
         styles.button,
         { backgroundColor: config.backgroundColor },
+        config.borderColor ? { borderWidth: 1, borderColor: config.borderColor } : null,
         isDisabled && styles.disabled,
         style,
       ]}
@@ -83,12 +108,12 @@ export function SocialAuthButton({
       accessibilityRole="button"
     >
       {loading ? (
-        <ActivityIndicator color={config.textColor} size="small" />
+        <ActivityIndicator color={config.iconColor} size="small" />
       ) : (
         <View style={styles.inner}>
-          {/* Facebook 'f' logo rendered as bold text in a circle */}
-          <View style={styles.iconWrapper}>
-            <Text style={[styles.icon, { color: config.backgroundColor }]}>
+          {/* Provider icon in a circle */}
+          <View style={[styles.iconWrapper, { backgroundColor: config.iconBg }]}>
+            <Text style={[styles.icon, { color: config.iconColor }]}>
               {config.icon}
             </Text>
           </View>
@@ -105,18 +130,18 @@ export function SocialAuthButton({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    borderRadius: moderateScale(16),
+    paddingVertical: moderateScale(16),
+    paddingHorizontal: moderateScale(20),
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 56,
+    minHeight: verticalScale(56),
     // Subtle shadow for depth
-    shadowColor: '#1877F2',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: verticalScale(2) },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    elevation: 3,
   },
   disabled: {
     opacity: 0.6,
@@ -124,30 +149,29 @@ const styles = StyleSheet.create({
   inner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: moderateScale(12),
   },
   /**
-   * Small white circle containing the 'f' letter —
-   * mirrors the standard Facebook button design.
+   * Small circle containing the provider initial —
+   * mirrors standard social login button design.
    */
   iconWrapper: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: '#FFFFFF',
+    width: scale(24),
+    height: verticalScale(24),
+    borderRadius: moderateScale(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
   icon: {
     fontFamily: 'Inter-Bold',
-    fontSize: 14,
+    fontSize: moderateScale(14),
     lineHeight: 16,
     // Nudge the 'f' character to look visually centered
     marginTop: 1,
   },
   label: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+    fontSize: moderateScale(16),
     letterSpacing: 0.2,
   },
 });

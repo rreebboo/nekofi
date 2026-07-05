@@ -5,6 +5,7 @@ import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { supabase } from '@/services/supabase/client';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
@@ -44,12 +45,12 @@ export default function ForgotPasswordScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 80, gap: 16 },
-  title: { fontFamily: 'Inter-Bold', fontSize: 28 },
-  subtitle: { fontFamily: 'Inter-Regular', fontSize: 14, marginBottom: 8 },
-  input: { borderRadius: 14, paddingHorizontal: 18, paddingVertical: 16, fontFamily: 'Inter-Regular', fontSize: 15, borderWidth: 1 },
-  btn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
+  container: { flex: 1, paddingHorizontal: moderateScale(24), paddingTop: moderateScale(80), gap: moderateScale(16) },
+  title: { fontFamily: 'Inter-Bold', fontSize: moderateScale(28) },
+  subtitle: { fontFamily: 'Inter-Regular', fontSize: moderateScale(14), marginBottom: moderateScale(8) },
+  input: { borderRadius: moderateScale(14), paddingHorizontal: moderateScale(18), paddingVertical: moderateScale(16), fontFamily: 'Inter-Regular', fontSize: moderateScale(15), borderWidth: 1 },
+  btn: { borderRadius: moderateScale(16), paddingVertical: moderateScale(18), alignItems: 'center' },
   btnDisabled: { opacity: 0.6 },
-  btnText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
-  backText: { fontFamily: 'Inter-Medium', fontSize: 14, textAlign: 'center', marginTop: 8 },
+  btnText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16), color: '#fff' },
+  backText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(14), textAlign: 'center', marginTop: moderateScale(8) },
 });

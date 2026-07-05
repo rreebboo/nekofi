@@ -11,6 +11,7 @@ import { TransactionType } from '@/types/transaction';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useFabScroll } from '@/contexts/FabContext';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 const FILTERS: { label: string; value: TransactionType | 'all' }[] = [
   { label: 'All', value: 'all' },
@@ -44,7 +45,7 @@ export default function TransactionsScreen() {
       </View>
 
       <View style={[styles.searchBar, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
-        <Ionicons name="search" size={18} color={colors.textMuted} style={{ marginRight: 8 }} />
+        <Ionicons name="search" size={18} color={colors.textMuted} style={{ marginRight: moderateScale(8) }} />
         <TextInput style={[styles.searchInput, { color: colors.text }]} placeholder="Search transactions..." placeholderTextColor={colors.textMuted} value={search} onChangeText={setSearch} />
       </View>
 
@@ -67,7 +68,7 @@ export default function TransactionsScreen() {
         onScroll={scrollHandler}
         scrollEventThrottle={16}
         ListEmptyComponent={<Text style={[styles.empty, { color: colors.textMuted }]}>No transactions found.</Text>}
-        ListFooterComponent={<View style={{ height: 100 }} />}
+        ListFooterComponent={<View style={{ height: verticalScale(100) }} />}
       />
     </SafeAreaView>
   );
@@ -75,12 +76,12 @@ export default function TransactionsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  title: { fontFamily: 'Inter-Bold', fontSize: 28 },
-  aiBtn: { borderRadius: 16, padding: 10, borderWidth: 1 },
-  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: 16, marginHorizontal: 20, paddingHorizontal: 16, paddingVertical: 14, marginBottom: 16, borderWidth: 1 },
-  searchInput: { flex: 1, fontFamily: 'Inter-Regular', fontSize: 15 },
-  filters: { flexDirection: 'row', paddingHorizontal: 20, gap: 8, marginBottom: 12 },
-  list: { paddingHorizontal: 20, paddingBottom: 32 },
-  empty: { fontFamily: 'Inter-Regular', textAlign: 'center', marginTop: 60, fontSize: 15 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: moderateScale(20), paddingTop: moderateScale(16), paddingBottom: moderateScale(12) },
+  title: { fontFamily: 'Inter-Bold', fontSize: moderateScale(28) },
+  aiBtn: { borderRadius: moderateScale(16), padding: moderateScale(10), borderWidth: 1 },
+  searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: moderateScale(16), marginHorizontal: moderateScale(20), paddingHorizontal: moderateScale(16), paddingVertical: moderateScale(14), marginBottom: moderateScale(16), borderWidth: 1 },
+  searchInput: { flex: 1, fontFamily: 'Inter-Regular', fontSize: moderateScale(15) },
+  filters: { flexDirection: 'row', paddingHorizontal: moderateScale(20), gap: moderateScale(8), marginBottom: moderateScale(12) },
+  list: { paddingHorizontal: moderateScale(20), paddingBottom: moderateScale(32) },
+  empty: { fontFamily: 'Inter-Regular', textAlign: 'center', marginTop: moderateScale(60), fontSize: moderateScale(15) },
 });

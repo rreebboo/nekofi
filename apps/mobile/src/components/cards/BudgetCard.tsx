@@ -4,6 +4,7 @@ import type { BudgetGroup } from '@/types/budget';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { formatCurrency } from '@/utils/formatters';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, withTiming, Easing } from 'react-native-reanimated';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 interface Props {
   budget: BudgetGroup;
@@ -75,16 +76,16 @@ export function BudgetCard({ budget, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 20, padding: 16, borderWidth: 1, marginBottom: 12 },
-  header: { flexDirection: 'row', alignItems: 'center', marginBottom: 16, gap: 12 },
-  emojiContainer: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 24 },
+  card: { borderRadius: moderateScale(20), padding: moderateScale(16), borderWidth: 1, marginBottom: moderateScale(12) },
+  header: { flexDirection: 'row', alignItems: 'center', marginBottom: moderateScale(16), gap: moderateScale(12) },
+  emojiContainer: { width: scale(44), height: verticalScale(44), borderRadius: moderateScale(22), alignItems: 'center', justifyContent: 'center' },
+  emoji: { fontSize: moderateScale(24) },
   info: { flex: 1 },
-  name: { fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 },
-  period: { fontFamily: 'Inter-Medium', fontSize: 12, textTransform: 'capitalize' },
-  amount: { fontFamily: 'Inter-SemiBold', fontSize: 15, textAlign: 'right' },
-  limit: { fontFamily: 'Inter-Regular', fontSize: 12, textAlign: 'right' },
-  progressTrack: { height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 10 },
-  progressBar: { height: '100%', borderRadius: 4 },
-  remaining: { fontFamily: 'Inter-Medium', fontSize: 12 },
+  name: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(15), marginBottom: moderateScale(2) },
+  period: { fontFamily: 'Inter-Medium', fontSize: moderateScale(12), textTransform: 'capitalize' },
+  amount: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(15), textAlign: 'right' },
+  limit: { fontFamily: 'Inter-Regular', fontSize: moderateScale(12), textAlign: 'right' },
+  progressTrack: { height: verticalScale(8), borderRadius: moderateScale(4), overflow: 'hidden', marginBottom: moderateScale(10) },
+  progressBar: { height: '100%', borderRadius: moderateScale(4) },
+  remaining: { fontFamily: 'Inter-Medium', fontSize: moderateScale(12) },
 });

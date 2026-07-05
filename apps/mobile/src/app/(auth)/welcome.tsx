@@ -7,6 +7,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 
 import { useAuthStore } from '@/stores/authStore';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 /**
  * Welcome / onboarding screen.
@@ -46,14 +47,14 @@ export default function WelcomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'space-between', paddingVertical: 80, paddingHorizontal: 24 },
-  hero: { alignItems: 'center', gap: 12 },
-  logo: { width: 80, height: 80, borderRadius: 20 },
-  title: { fontFamily: 'Inter-Bold', fontSize: 48, letterSpacing: -1 },
-  subtitle: { fontFamily: 'Inter-Regular', fontSize: 18, textAlign: 'center', lineHeight: 28 },
-  actions: { gap: 12 },
-  primaryBtn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center' },
-  primaryBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
-  secondaryBtn: { paddingVertical: 16, alignItems: 'center' },
-  secondaryBtnText: { fontFamily: 'Inter-Medium', fontSize: 15 },
+  container: { flex: 1, justifyContent: 'space-between', paddingVertical: moderateScale(80), paddingHorizontal: moderateScale(24) },
+  hero: { alignItems: 'center', gap: moderateScale(12) },
+  logo: { width: moderateScale(80), height: moderateScale(80), borderRadius: moderateScale(20) },
+  title: { fontFamily: 'Inter-Bold', fontSize: moderateScale(48), letterSpacing: -1 },
+  subtitle: { fontFamily: 'Inter-Regular', fontSize: moderateScale(18), textAlign: 'center', lineHeight: 28 },
+  actions: { gap: moderateScale(12) },
+  primaryBtn: { borderRadius: moderateScale(16), paddingVertical: moderateScale(18), alignItems: 'center' },
+  primaryBtnText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16), color: '#fff' },
+  secondaryBtn: { paddingVertical: moderateScale(16), alignItems: 'center' },
+  secondaryBtnText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(15) },
 });

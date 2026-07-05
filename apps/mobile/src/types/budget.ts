@@ -16,6 +16,7 @@ export interface Budget {
   createdAt: string;
   updatedAt: string;
   syncStatus?: SyncStatus;
+  inviteCode?: string;
 }
 
 export interface CreateBudgetDto {
@@ -46,6 +47,7 @@ export interface BudgetGroup {
   totalAmount: number;
   totalSpent: number;
   categories: Budget[];
+  inviteCode?: string;
 }
 
 export interface CreateBudgetGroupDto {
@@ -60,6 +62,13 @@ export interface CreateBudgetGroupDto {
     categoryId: string;
     amount: number;
   }[];
+  inviteCode?: string;
+}
+
+export interface BudgetPreview {
+  budgetName: string;
+  ownerName: string;
+  ownerAvatarUrl: string | null;
 }
 
 export interface BudgetInvite {

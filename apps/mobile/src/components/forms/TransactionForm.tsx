@@ -9,6 +9,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import type { TransactionType, CreateTransactionDto } from '@/types/transaction';
 import { useNekofiStore } from '@/store/nekofiStore';
 import { useBudgetStore, computeBudgetGroups } from '@/stores/budgetStore';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 interface Props {
   type: TransactionType;
@@ -89,11 +90,13 @@ export function TransactionForm({ type, onSuccess }: Props) {
 
   return (
     <View style={styles.container}>
-      <Text style={[styles.label, { color: colors.textMuted, textAlign: 'center', marginTop: 16 }]}>Amount</Text>
+      <Text style={[styles.label, { color: colors.textMuted, textAlign: 'center', marginTop: moderateScale(16) }]}>Amount</Text>
       <View style={styles.amountContainer}>
-        <Text style={[styles.currencySymbol, { color: colors.text }]}>₱</Text>
+        <Text style={[styles.currencySymbol, { color: type === 'expense' ? colors.expense : colors.income }]}>
+          {type === 'expense' ? '-₱' : '+₱'}
+        </Text>
         <TextInput 
-          style={[styles.amountInput, { color: colors.text }]} 
+          style={[styles.amountInput, { color: type === 'expense' ? colors.expense : colors.income }]} 
           placeholder="0" 
           placeholderTextColor={colors.textMuted} 
           value={amount} 
@@ -146,18 +149,18 @@ export function TransactionForm({ type, onSuccess }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { gap: 8, paddingTop: 8 },
-  label: { fontFamily: 'Inter-Medium', fontSize: 13, marginTop: 8 },
-  amountContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: 16 },
-  currencySymbol: { fontFamily: 'Inter-Bold', fontSize: 40, marginRight: 8 },
-  amountInput: { fontFamily: 'Inter-Bold', fontSize: 48, padding: 0, margin: 0, minWidth: 60, textAlign: 'center' },
-  input: { borderRadius: 14, paddingHorizontal: 18, paddingVertical: 14, fontFamily: 'Inter-Regular', fontSize: 15, borderWidth: 1 },
-  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 14, paddingVertical: 10, borderRadius: 16, borderWidth: 1 },
-  categoryEmoji: { fontSize: 18 },
-  categoryLabel: { fontFamily: 'Inter-Medium', fontSize: 13 },
-  submitBtnContainer: { marginTop: 32, borderRadius: 16, overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
-  submitBtn: { paddingVertical: 18, alignItems: 'center', justifyContent: 'center' },
+  container: { gap: moderateScale(8), paddingTop: moderateScale(8) },
+  label: { fontFamily: 'Inter-Medium', fontSize: moderateScale(13), marginTop: moderateScale(8) },
+  amountContainer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginVertical: moderateScale(16) },
+  currencySymbol: { fontFamily: 'Inter-Bold', fontSize: moderateScale(40), marginRight: moderateScale(8) },
+  amountInput: { fontFamily: 'Inter-Bold', fontSize: moderateScale(48), padding: 0, margin: 0, minWidth: scale(60), textAlign: 'center' },
+  input: { borderRadius: moderateScale(14), paddingHorizontal: moderateScale(18), paddingVertical: moderateScale(14), fontFamily: 'Inter-Regular', fontSize: moderateScale(15), borderWidth: 1 },
+  categoryGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: moderateScale(8) },
+  categoryBtn: { flexDirection: 'row', alignItems: 'center', gap: moderateScale(6), paddingHorizontal: moderateScale(14), paddingVertical: moderateScale(10), borderRadius: moderateScale(16), borderWidth: 1 },
+  categoryEmoji: { fontSize: moderateScale(18) },
+  categoryLabel: { fontFamily: 'Inter-Medium', fontSize: moderateScale(13) },
+  submitBtnContainer: { marginTop: moderateScale(32), borderRadius: moderateScale(16), overflow: 'hidden', shadowColor: '#000', shadowOffset: { width: 0, height: verticalScale(6) }, shadowOpacity: 0.3, shadowRadius: 12, elevation: 8 },
+  submitBtn: { paddingVertical: moderateScale(18), alignItems: 'center', justifyContent: 'center' },
   submitBtnDisabled: { opacity: 0.6 },
-  submitBtnText: { fontFamily: 'Inter-Bold', fontSize: 16, color: '#fff' },
+  submitBtnText: { fontFamily: 'Inter-Bold', fontSize: moderateScale(16), color: '#fff' },
 });

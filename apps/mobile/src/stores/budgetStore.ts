@@ -33,6 +33,10 @@ interface BudgetState {
   declineInvite: (budgetName: string, ownerId: string) => Promise<void>;
   removeCollaborator: (budgetName: string, ownerId: string, userId: string) => Promise<void>;
   handleMembersRealtimeChange: () => void;
+
+  previewBudgetByCode: (code: string) => Promise<import('@/types/budget').BudgetPreview | null>;
+  joinBudgetByCode: (code: string) => Promise<void>;
+  regenerateInviteCode: (budgetName: string) => Promise<string>;
 }
 
 export const mapToCamel = (item: any): Budget => ({
@@ -51,6 +55,7 @@ export const mapToCamel = (item: any): Budget => ({
   createdAt: item.created_at,
   updatedAt: item.updated_at,
   syncStatus: 'synced',
+  inviteCode: item.invite_code,
 });
 
 export const mapToInviteCamel = (item: any): BudgetInvite => ({
@@ -225,6 +230,11 @@ export const useBudgetStore = create<BudgetState>()(
 
       createBudgetGroup: async (dto) => {
         const { data: userData } = await supabase.auth.getUser();
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let generatedCode = '';
+        for (let i = 0; i < 6; i++) {
+          generatedCode += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
 
         const newBudgets: Budget[] = dto.categories.map(cat => ({
           id: uuidv4(),
@@ -242,6 +252,7 @@ export const useBudgetStore = create<BudgetState>()(
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
           syncStatus: 'pending_insert',
+          inviteCode: generatedCode,
         }));
 
         set((state) => ({ budgets: [...newBudgets, ...state.budgets] }));
@@ -324,6 +335,36 @@ export const useBudgetStore = create<BudgetState>()(
         const { error } = await supabase.rpc('remove_budget_member', { p_budget_name: budgetName, p_owner_id: ownerId, p_user_id: userId });
         if (error) throw error;
         get().fetchCollaborators(budgetName);
+      },
+
+      previewBudgetByCode: async (code) => {
+        const { data, error } = await supabase.rpc('preview_budget_by_code', { p_invite_code: code });
+        if (error) throw error;
+        if (data && data.length > 0) {
+          return {
+            budgetName: data[0].budget_name,
+            ownerName: data[0].owner_name,
+            ownerAvatarUrl: data[0].owner_avatar_url,
+          };
+        }
+        return null;
+      },
+
+      joinBudgetByCode: async (code) => {
+        const { error } = await supabase.rpc('join_budget_by_code', { p_invite_code: code });
+        if (error) throw error;
+        get().fetchBudgets();
+      },
+
+      regenerateInviteCode: async (budgetName) => {
+        const { data, error } = await supabase.rpc('regenerate_budget_invite_code', { p_budget_name: budgetName });
+        if (error) throw error;
+        
+        // Update local state
+        set((state) => ({
+          budgets: state.budgets.map(b => b.name === budgetName ? { ...b, inviteCode: data } : b)
+        }));
+        return data as string;
       },
     }),
     {

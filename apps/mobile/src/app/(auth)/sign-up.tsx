@@ -6,6 +6,7 @@ import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { SocialAuthButton } from '@/components/ui/SocialAuthButton';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 /**
  * Sign-up screen - creates a new Supabase user.
@@ -16,8 +17,9 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [fbLoading, setFbLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
   const [isResolvingConflict, setIsResolvingConflict] = useState(false);
-  const { signUp, signInWithFacebook, syncConflict } = useAuthStore();
+  const { signUp, signInWithFacebook, signInWithGoogle, syncConflict } = useAuthStore();
   const colors = useThemeColors();
 
   React.useEffect(() => {
@@ -76,6 +78,26 @@ export default function SignUpScreen() {
     }
   };
 
+  /**
+   * Handles Google native sign-up / sign-in.
+   * If this is a brand-new Google account, Supabase creates the user automatically.
+   * Full name, email, and avatar_url are populated from the Google profile.
+   * If they already have a Supabase account linked to this Google ID, they are signed in.
+   */
+  const handleGoogleSignIn = async () => {
+    setGoogleLoading(true);
+    try {
+      await signInWithGoogle();
+      // Auth layout useEffect will navigate to /(tabs) once session is set in the store.
+    } catch (err: any) {
+      if (!err.message?.includes('cancelled')) {
+        Alert.alert('Google Sign Up Failed', err.message);
+      }
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1 }}>
       <Animated.View entering={FadeInDown.duration(400).springify()} style={[styles.container, { backgroundColor: colors.background }]}>
@@ -104,7 +126,16 @@ export default function SignUpScreen() {
           provider="facebook"
           onPress={handleFacebookSignIn}
           loading={fbLoading}
-          disabled={loading}
+          disabled={loading || googleLoading}
+          style={styles.socialBtn}
+        />
+
+        {/* ── Google Sign-Up Button ────────────────────── */}
+        <SocialAuthButton
+          provider="google"
+          onPress={handleGoogleSignIn}
+          loading={googleLoading}
+          disabled={loading || fbLoading}
           style={styles.socialBtn}
         />
 
@@ -117,18 +148,18 @@ export default function SignUpScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, paddingHorizontal: 24, paddingTop: 80 },
-  title: { fontFamily: 'Inter-Bold', fontSize: 32, marginBottom: 8 },
-  subtitle: { fontFamily: 'Inter-Regular', fontSize: 15, marginBottom: 40 },
-  form: { gap: 16 },
-  input: { borderRadius: 14, paddingHorizontal: 18, paddingVertical: 16, fontFamily: 'Inter-Regular', fontSize: 15, borderWidth: 1 },
-  btn: { borderRadius: 16, paddingVertical: 18, alignItems: 'center', marginTop: 8 },
+  container: { flex: 1, paddingHorizontal: moderateScale(24), paddingTop: moderateScale(80) },
+  title: { fontFamily: 'Inter-Bold', fontSize: moderateScale(32), marginBottom: moderateScale(8) },
+  subtitle: { fontFamily: 'Inter-Regular', fontSize: moderateScale(15), marginBottom: moderateScale(40) },
+  form: { gap: moderateScale(16) },
+  input: { borderRadius: moderateScale(14), paddingHorizontal: moderateScale(18), paddingVertical: moderateScale(16), fontFamily: 'Inter-Regular', fontSize: moderateScale(15), borderWidth: 1 },
+  btn: { borderRadius: moderateScale(16), paddingVertical: moderateScale(18), alignItems: 'center', marginTop: moderateScale(8) },
   btnDisabled: { opacity: 0.6 },
-  btnText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
-  dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: 28, marginBottom: 4 },
+  btnText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16), color: '#fff' },
+  dividerRow: { flexDirection: 'row', alignItems: 'center', marginTop: moderateScale(28), marginBottom: moderateScale(4) },
   dividerLine: { flex: 1, height: 1 },
-  dividerText: { fontFamily: 'Inter-Regular', fontSize: 12, marginHorizontal: 12 },
-  socialBtn: { marginTop: 16 },
-  switchText: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center', marginTop: 32 },
+  dividerText: { fontFamily: 'Inter-Regular', fontSize: moderateScale(12), marginHorizontal: moderateScale(12) },
+  socialBtn: { marginTop: moderateScale(16) },
+  switchText: { fontFamily: 'Inter-Regular', fontSize: moderateScale(14), textAlign: 'center', marginTop: moderateScale(32) },
   switchLink: { fontFamily: 'Inter-SemiBold' },
 });

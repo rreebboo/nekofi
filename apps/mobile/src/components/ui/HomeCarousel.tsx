@@ -1,3 +1,4 @@
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 import React from 'react';
 import { Dimensions, StyleSheet, View } from 'react-native';
 import Animated, { 
@@ -90,8 +91,8 @@ export function HomeCarousel({ children }: HomeCarouselProps) {
 
 const styles = StyleSheet.create({
   container: {
-    paddingLeft: 20,
-    paddingRight: 20 - SPACING,
-    paddingVertical: 16, // Extra padding for scale up/down shadow bounds
+    paddingLeft: moderateScale(20),
+    paddingRight: moderateScale(20) - SPACING,
+    paddingVertical: moderateScale(16), // Extra padding for scale up/down shadow bounds
   },
 });

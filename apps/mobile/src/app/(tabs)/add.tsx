@@ -5,6 +5,7 @@ import { router, useFocusEffect } from 'expo-router';
 import { TransactionForm } from '@/components/forms/TransactionForm';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { TransactionType } from '@/types/transaction';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 /**
  * Add transaction screen — floating action tab center button.
@@ -31,7 +32,7 @@ export default function AddTransactionScreen() {
           <Text style={[styles.cancel, { color: colors.primary }]}>Cancel</Text>
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Add Transaction</Text>
-        <View style={{ width: 60 }} />
+        <View style={{ width: scale(60) }} />
       </View>
 
       <View style={[styles.typePicker, { backgroundColor: colors.surface }]}>
@@ -50,7 +51,7 @@ export default function AddTransactionScreen() {
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
         <TransactionForm key={formKey} type={type} onSuccess={() => router.replace('/(tabs)')} />
-        <View style={{ height: 100 }} />
+        <View style={{ height: verticalScale(100) }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -58,12 +59,12 @@ export default function AddTransactionScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 16 },
-  cancel: { fontFamily: 'Inter-Medium', fontSize: 16 },
-  title: { fontFamily: 'Inter-SemiBold', fontSize: 18 },
-  typePicker: { flexDirection: 'row', marginHorizontal: 20, borderRadius: 16, padding: 4, marginBottom: 12 },
-  typeBtn: { flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
-  typeBtnText: { fontFamily: 'Inter-Medium', fontSize: 14 },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: moderateScale(20), paddingVertical: moderateScale(16) },
+  cancel: { fontFamily: 'Inter-Medium', fontSize: moderateScale(16) },
+  title: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(18) },
+  typePicker: { flexDirection: 'row', marginHorizontal: moderateScale(20), borderRadius: moderateScale(16), padding: moderateScale(4), marginBottom: moderateScale(12) },
+  typeBtn: { flex: 1, paddingVertical: moderateScale(12), borderRadius: moderateScale(12), alignItems: 'center', justifyContent: 'center' },
+  typeBtnText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(14) },
   typeBtnTextActive: { color: '#fff' },
-  scroll: { paddingHorizontal: 20, paddingBottom: 40 },
+  scroll: { paddingHorizontal: moderateScale(20), paddingBottom: moderateScale(40) },
 });

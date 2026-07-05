@@ -8,6 +8,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import { BlurView } from 'expo-blur';
 import Animated, { FadeIn, SlideInDown, FadeOut, SlideOutDown } from 'react-native-reanimated';
 import { OriginBottomSheet, OriginCoordinate } from '@/components/ui/OriginBottomSheet';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 const ACCOUNT_OPTIONS: { title: string, options: CreateAccountDto[] }[] = [
   {
@@ -119,7 +120,7 @@ export default function AddAccountScreen() {
           <Ionicons name="close" size={24} color={colors.text} />
         </Pressable>
         <Text style={[styles.title, { color: colors.text }]}>Add Account</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: scale(24) }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -234,18 +235,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: moderateScale(20),
+    paddingVertical: moderateScale(16),
     borderBottomWidth: 1,
   },
-  backButton: { padding: 4, marginLeft: -4 },
-  title: { fontFamily: 'Inter-SemiBold', fontSize: 18 },
-  scroll: { padding: 20, paddingBottom: 60 },
-  subtitle: { fontFamily: 'Inter-Regular', fontSize: 15, marginBottom: 24, lineHeight: 22 },
-  section: { marginBottom: 24 },
-  sectionTitle: { fontFamily: 'Inter-SemiBold', fontSize: 16, marginBottom: 12 },
+  backButton: { padding: moderateScale(4), marginLeft: moderateScale(-4) },
+  title: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(18) },
+  scroll: { padding: moderateScale(20), paddingBottom: moderateScale(60) },
+  subtitle: { fontFamily: 'Inter-Regular', fontSize: moderateScale(15), marginBottom: moderateScale(24), lineHeight: 22 },
+  section: { marginBottom: moderateScale(24) },
+  sectionTitle: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16), marginBottom: moderateScale(12) },
   cardGroup: {
-    borderRadius: 20,
+    borderRadius: moderateScale(20),
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -253,22 +254,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: moderateScale(16),
   },
   optionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: moderateScale(16),
   },
   iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: scale(40),
+    height: verticalScale(40),
+    borderRadius: moderateScale(12),
     justifyContent: 'center',
     alignItems: 'center',
   },
-  optionText: { fontFamily: 'Inter-Medium', fontSize: 15 },
-  divider: { height: 1, marginLeft: 72 },
+  optionText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(15) },
+  divider: { height: 1, marginLeft: moderateScale(72) },
   
   modalOverlay: {
     flex: 1,

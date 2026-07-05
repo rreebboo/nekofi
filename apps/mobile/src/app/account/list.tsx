@@ -8,6 +8,7 @@ import { useAccountStore } from '@/stores/accountStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { formatCurrency } from '@/utils/formatters';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 export default function AccountListScreen() {
   const router = useRouter();
@@ -51,7 +52,7 @@ export default function AccountListScreen() {
           <Ionicons name="close" size={24} color={colors.text} />
         </AnimatedPressable>
         <Text style={[styles.title, { color: colors.text }]}>All Accounts</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: scale(24) }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -111,15 +112,15 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: moderateScale(20),
+    paddingVertical: moderateScale(16),
     borderBottomWidth: 1,
   },
-  backButton: { padding: 4, marginLeft: -4 },
-  title: { fontFamily: 'Inter-SemiBold', fontSize: 18 },
-  scroll: { padding: 20, paddingBottom: 60 },
+  backButton: { padding: moderateScale(4), marginLeft: moderateScale(-4) },
+  title: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(18) },
+  scroll: { padding: moderateScale(20), paddingBottom: moderateScale(60) },
   cardGroup: {
-    borderRadius: 20,
+    borderRadius: moderateScale(20),
     borderWidth: 1,
     overflow: 'hidden',
   },
@@ -127,58 +128,58 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 16,
+    padding: moderateScale(16),
   },
   optionLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: moderateScale(16),
   },
   iconBox: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
+    width: scale(40),
+    height: verticalScale(40),
+    borderRadius: moderateScale(12),
     justifyContent: 'center',
     alignItems: 'center',
   },
-  optionText: { fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 2 },
-  accountType: { fontFamily: 'Inter-Regular', fontSize: 12 },
-  optionRight: { alignItems: 'flex-end', justifyContent: 'center', gap: 4 },
-  balance: { fontFamily: 'Inter-Bold', fontSize: 15 },
-  divider: { height: 1, marginLeft: 72 },
+  optionText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(15), marginBottom: moderateScale(2) },
+  accountType: { fontFamily: 'Inter-Regular', fontSize: moderateScale(12) },
+  optionRight: { alignItems: 'flex-end', justifyContent: 'center', gap: moderateScale(4) },
+  balance: { fontFamily: 'Inter-Bold', fontSize: moderateScale(15) },
+  divider: { height: 1, marginLeft: moderateScale(72) },
   deleteAction: {
     justifyContent: 'center',
     alignItems: 'center',
-    width: 80,
+    width: scale(80),
     height: '100%',
   },
   emptyState: {
-    marginVertical: 16,
-    borderRadius: 24,
+    marginVertical: moderateScale(16),
+    borderRadius: moderateScale(24),
     borderWidth: 2,
     borderStyle: 'dashed',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 24,
-    minHeight: 200,
+    padding: moderateScale(24),
+    minHeight: verticalScale(200),
   },
   emptyIconWrapper: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: scale(64),
+    height: verticalScale(64),
+    borderRadius: moderateScale(32),
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: moderateScale(16),
   },
-  emptyTitle: { fontFamily: 'Inter-SemiBold', fontSize: 16, marginBottom: 8 },
-  emptySub: { fontFamily: 'Inter-Regular', fontSize: 13, textAlign: 'center', marginBottom: 20 },
+  emptyTitle: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16), marginBottom: moderateScale(8) },
+  emptySub: { fontFamily: 'Inter-Regular', fontSize: moderateScale(13), textAlign: 'center', marginBottom: moderateScale(20) },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 20,
-    gap: 8,
+    paddingHorizontal: moderateScale(20),
+    paddingVertical: moderateScale(10),
+    borderRadius: moderateScale(20),
+    gap: moderateScale(8),
   },
-  addButtonText: { fontFamily: 'Inter-SemiBold', fontSize: 14, color: '#FFF' },
+  addButtonText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(14), color: '#FFF' },
 });

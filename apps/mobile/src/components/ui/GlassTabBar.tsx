@@ -14,6 +14,7 @@ import Animated, {
 import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useThemeColors, useResolvedTheme } from '@/hooks/useThemeColors';
 import * as Haptics from 'expo-haptics';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -277,21 +278,21 @@ const styles = StyleSheet.create({
     bottom: Platform.OS === 'ios' ? 24 : 16,
     left: 20,
     right: 20,
-    height: 70,
+    height: verticalScale(70),
     zIndex: 100,
   },
   shadowView: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 35,
+    borderRadius: moderateScale(35),
     backgroundColor: 'transparent',
-    shadowOffset: { width: 0, height: 12 },
+    shadowOffset: { width: 0, height: verticalScale(12) },
     shadowOpacity: 0.15,
     shadowRadius: 24,
     elevation: 10,
   },
   blurBackground: {
     ...StyleSheet.absoluteFillObject,
-    borderRadius: 35,
+    borderRadius: moderateScale(35),
     overflow: 'hidden',
     borderWidth: 1,
   },
@@ -304,7 +305,7 @@ const styles = StyleSheet.create({
   indicator: {
     width: '100%',
     height: '100%',
-    borderRadius: 100,
+    borderRadius: moderateScale(100),
   },
   tabBtn: {
     alignItems: 'center',
@@ -313,7 +314,7 @@ const styles = StyleSheet.create({
     zIndex: 2, 
   },
   iconWrapper: {
-    padding: 10,
-    borderRadius: 20,
+    padding: moderateScale(10),
+    borderRadius: moderateScale(20),
   },
 });

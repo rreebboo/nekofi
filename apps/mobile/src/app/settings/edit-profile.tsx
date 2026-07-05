@@ -21,6 +21,7 @@ import { useThemeColors } from '@/hooks/useThemeColors';
 import * as FileSystem from 'expo-file-system';
 import { decode } from 'base64-arraybuffer';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 
 export default function EditProfileScreen() {
@@ -333,7 +334,7 @@ export default function EditProfileScreen() {
           </View>
 
           {/* Spacer */}
-          <View style={{ height: 40 }} />
+          <View style={{ height: verticalScale(40) }} />
         </ScrollView>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -353,32 +354,32 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: moderateScale(20),
+    paddingVertical: moderateScale(16),
   },
   headerTitle: {
     fontFamily: 'Inter-Bold',
-    fontSize: 24,
+    fontSize: moderateScale(24),
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: scale(40),
+    height: verticalScale(40),
+    borderRadius: moderateScale(20),
     alignItems: 'center',
     justifyContent: 'center',
   },
   scrollContent: {
-    paddingHorizontal: 20,
+    paddingHorizontal: moderateScale(20),
   },
   avatarSection: {
     alignItems: 'center',
-    marginVertical: 24,
-    gap: 12,
+    marginVertical: moderateScale(24),
+    gap: moderateScale(12),
   },
   avatarContainer: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
+    width: scale(100),
+    height: verticalScale(100),
+    borderRadius: moderateScale(50),
     borderWidth: 1,
     overflow: 'hidden',
     position: 'relative',
@@ -395,7 +396,7 @@ const styles = StyleSheet.create({
   },
   avatarFallbackText: {
     fontFamily: 'Inter-Bold',
-    fontSize: 42,
+    fontSize: moderateScale(42),
     color: '#fff',
   },
   avatarLoadingOverlay: {
@@ -407,21 +408,21 @@ const styles = StyleSheet.create({
   changePhotoButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    borderRadius: 20,
+    paddingHorizontal: moderateScale(16),
+    paddingVertical: moderateScale(10),
+    borderRadius: moderateScale(20),
     borderWidth: 1,
-    gap: 6,
+    gap: moderateScale(6),
   },
   changePhotoText: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 13,
+    fontSize: moderateScale(13),
   },
   form: {
-    gap: 20,
+    gap: moderateScale(20),
   },
   inputGroup: {
-    gap: 8,
+    gap: moderateScale(8),
   },
   labelRow: {
     flexDirection: 'row',
@@ -430,35 +431,35 @@ const styles = StyleSheet.create({
   },
   label: {
     fontFamily: 'Inter-Medium',
-    fontSize: 13,
+    fontSize: moderateScale(13),
   },
   charCount: {
     fontFamily: 'Inter-Regular',
-    fontSize: 11,
+    fontSize: moderateScale(11),
   },
   input: {
-    borderRadius: 14,
-    paddingHorizontal: 18,
-    paddingVertical: 14,
+    borderRadius: moderateScale(14),
+    paddingHorizontal: moderateScale(18),
+    paddingVertical: moderateScale(14),
     fontFamily: 'Inter-Regular',
-    fontSize: 15,
+    fontSize: moderateScale(15),
     borderWidth: 1,
   },
   inputDisabled: {
     opacity: 0.6,
   },
   textArea: {
-    height: 90,
-    paddingTop: 14,
-    paddingBottom: 14,
+    height: verticalScale(90),
+    paddingTop: moderateScale(14),
+    paddingBottom: moderateScale(14),
   },
   actions: {
-    marginTop: 32,
-    gap: 12,
+    marginTop: moderateScale(32),
+    gap: moderateScale(12),
   },
   btn: {
-    borderRadius: 16,
-    paddingVertical: 18,
+    borderRadius: moderateScale(16),
+    paddingVertical: moderateScale(18),
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -468,7 +469,7 @@ const styles = StyleSheet.create({
   saveBtn: {},
   saveBtnText: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+    fontSize: moderateScale(16),
     color: '#fff',
   },
   cancelBtn: {
@@ -476,6 +477,6 @@ const styles = StyleSheet.create({
   },
   cancelBtnText: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+    fontSize: moderateScale(16),
   },
 });

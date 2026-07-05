@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/services/supabase/client';
 import { signInWithFacebook as fbSignIn } from '@/services/auth/facebookAuth';
+import { signInWithGoogle as googleSignIn, signOutFromGoogle } from '@/services/auth/googleAuth';
 import type { User } from '@/types/user';
 import type { Session } from '@supabase/supabase-js';
 
@@ -21,6 +22,12 @@ interface AuthState {
    * Throws a user-friendly string message on failure.
    */
   signInWithFacebook: () => Promise<void>;
+  /**
+   * Sign in (or auto-create) a user via Google native sign-in.
+   * Shows the native OS Google account picker — no browser opens.
+   * Throws a user-friendly string message on failure.
+   */
+  signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
   continueAsGuest: () => void;
   setSyncConflict: (value: boolean) => void;
@@ -89,8 +96,24 @@ export const useAuthStore = create<AuthState>()(
         });
       },
 
+      signInWithGoogle: async () => {
+        const result = await googleSignIn();
+        if (!result.success) {
+          // Bubble up a clean error message for the UI to display
+          throw new Error(result.error.message);
+        }
+        set({
+          session: result.session,
+          user: mapUser(result.user),
+          isGuest: false,
+        });
+      },
+
       signOut: async () => {
         await supabase.auth.signOut();
+        // Clear the native Google Sign-In state so the next sign-in shows
+        // the account picker instead of silently re-signing in.
+        await signOutFromGoogle();
         set({ session: null, user: null, isGuest: true });
         
         // Import dynamically or at top to avoid cycles, but since we are in a store, 

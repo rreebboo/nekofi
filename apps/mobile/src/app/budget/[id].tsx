@@ -11,6 +11,9 @@ import { BudgetSpendingChart } from '@/components/charts/BudgetSpendingChart';
 import { formatCurrency } from '@/utils/formatters';
 import { EXPENSE_CATEGORIES } from '@/constants/categories';
 import Animated, { FadeInDown, Layout } from 'react-native-reanimated';
+import * as Clipboard from 'expo-clipboard';
+import * as Haptics from 'expo-haptics';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 export default function BudgetDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -18,11 +21,14 @@ export default function BudgetDetailScreen() {
   const colors = useThemeColors();
 
   const name = decodeURIComponent(id as string);
-  const { budgets, deleteBudgetGroup, collaborators, fetchCollaborators, inviteUser, removeCollaborator } = useBudgetStore();
+  const { budgets, deleteBudgetGroup, collaborators, fetchCollaborators, inviteUser, removeCollaborator, regenerateInviteCode } = useBudgetStore();
   const transactions = useTransactionStore((state) => state.transactions);
   const budgetGroup = useMemo(() => computeBudgetGroups(budgets, transactions).find(bg => bg.name === name), [budgets, transactions, name]);
 
   const [inviteModalVisible, setInviteModalVisible] = React.useState(false);
+  const [codeModalVisible, setCodeModalVisible] = React.useState(false);
+  const [menuVisible, setMenuVisible] = React.useState(false);
+  const [isRegenerating, setIsRegenerating] = React.useState(false);
   const [inviteEmail, setInviteEmail] = React.useState('');
   const [myUserId, setMyUserId] = React.useState<string | null>(null);
 
@@ -60,7 +66,7 @@ export default function BudgetDetailScreen() {
     return (
       <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
         <Text style={{ color: colors.textMuted }}>Budget not found</Text>
-        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: 16 }}>
+        <TouchableOpacity onPress={() => router.back()} style={{ marginTop: moderateScale(16) }}>
           <Text style={{ color: colors.primary }}>Go Back</Text>
         </TouchableOpacity>
       </View>
@@ -111,13 +117,9 @@ export default function BudgetDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={[styles.title, { color: colors.text }]}>Budget Details</Text>
-        {isOwner ? (
-          <TouchableOpacity onPress={handleDelete} style={styles.headerBtn}>
-            <Ionicons name="trash-outline" size={24} color={colors.expense} />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.headerBtn} />
-        )}
+        <TouchableOpacity onPress={() => setMenuVisible(true)} style={styles.headerBtn}>
+          <Ionicons name="ellipsis-horizontal" size={24} color={colors.text} />
+        </TouchableOpacity>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -215,33 +217,38 @@ export default function BudgetDetailScreen() {
         <View style={[styles.sectionHeader, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }]}>
           <Text style={[styles.sectionTitle, { color: colors.text }]}>Collaborators</Text>
           {isOwner && (
-            <TouchableOpacity onPress={() => setInviteModalVisible(true)}>
-              <Text style={{ color: colors.primary, fontFamily: 'Inter-Medium' }}>+ Invite</Text>
-            </TouchableOpacity>
+            <View style={{ flexDirection: 'row', gap: moderateScale(16) }}>
+              <TouchableOpacity onPress={() => setCodeModalVisible(true)}>
+                <Text style={{ color: colors.primary, fontFamily: 'Inter-Medium' }}>Share Code</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={() => setInviteModalVisible(true)}>
+                <Text style={{ color: colors.primary, fontFamily: 'Inter-Medium' }}>+ Invite</Text>
+              </TouchableOpacity>
+            </View>
           )}
         </View>
 
         <View style={styles.categoriesList}>
           {/* Owner */}
-          <View style={[styles.catItem, { backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }]}>
-            <View style={[styles.catIconContainer, { backgroundColor: colors.primary, width: 36, height: 36, borderRadius: 18 }]}>
+          <View style={[styles.catItem, { backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', paddingVertical: moderateScale(12) }]}>
+            <View style={[styles.catIconContainer, { backgroundColor: colors.primary, width: scale(36), height: verticalScale(36), borderRadius: moderateScale(18) }]}>
               <Ionicons name="person" size={18} color="#fff" />
             </View>
             <View style={styles.catInfo}>
-              <Text style={[styles.catName, { color: colors.text, fontSize: 15 }]}>Owner</Text>
-              <Text style={{ color: colors.textMuted, fontSize: 12 }}>Creator</Text>
+              <Text style={[styles.catName, { color: colors.text, fontSize: moderateScale(15) }]}>Owner</Text>
+              <Text style={{ color: colors.textMuted, fontSize: moderateScale(12) }}>Creator</Text>
             </View>
           </View>
 
           {/* Collaborators */}
           {collaborators.filter(c => c.budgetName === budgetGroup.name).map((c) => (
-            <View key={c.collaboratorId} style={[styles.catItem, { backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', paddingVertical: 12 }]}>
-              <View style={[styles.catIconContainer, { backgroundColor: c.status === 'pending' ? colors.borderAlt : colors.primary, width: 36, height: 36, borderRadius: 18 }]}>
+            <View key={c.collaboratorId} style={[styles.catItem, { backgroundColor: colors.surface, flexDirection: 'row', alignItems: 'center', paddingVertical: moderateScale(12) }]}>
+              <View style={[styles.catIconContainer, { backgroundColor: c.status === 'pending' ? colors.borderAlt : colors.primary, width: scale(36), height: verticalScale(36), borderRadius: moderateScale(18) }]}>
                 <Ionicons name={c.status === 'pending' ? 'time' : 'person'} size={18} color="#fff" />
               </View>
               <View style={styles.catInfo}>
-                <Text style={[styles.catName, { color: colors.text, fontSize: 15 }]}>{c.collaboratorName}</Text>
-                <Text style={{ color: colors.textMuted, fontSize: 12 }}>{c.status === 'pending' ? 'Pending Invite' : 'Collaborator'}</Text>
+                <Text style={[styles.catName, { color: colors.text, fontSize: moderateScale(15) }]}>{c.collaboratorName}</Text>
+                <Text style={{ color: colors.textMuted, fontSize: moderateScale(12) }}>{c.status === 'pending' ? 'Pending Invite' : 'Collaborator'}</Text>
               </View>
               {(isOwner || c.collaboratorId === myUserId) && (
                 <TouchableOpacity onPress={() => removeCollaborator(budgetGroup.name, budgetGroup.categories[0].userId, c.collaboratorId)}>
@@ -264,7 +271,7 @@ export default function BudgetDetailScreen() {
 
         {budgetTransactions.length === 0 ? (
           <Animated.View entering={FadeInDown.delay(400)} style={[styles.emptyState, { backgroundColor: colors.surface }]}>
-            <Ionicons name="receipt-outline" size={32} color={colors.textMuted} style={{ opacity: 0.5, marginBottom: 8 }} />
+            <Ionicons name="receipt-outline" size={32} color={colors.textMuted} style={{ opacity: 0.5, marginBottom: moderateScale(8) }} />
             <Text style={[styles.emptyText, { color: colors.textMuted }]}>No transactions yet for this budget.</Text>
           </Animated.View>
         ) : (
@@ -306,6 +313,105 @@ export default function BudgetDetailScreen() {
         </View>
       </Modal>
 
+      {/* Code Modal */}
+      <Modal visible={codeModalVisible} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContent, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
+            <Text style={[styles.modalTitle, { color: colors.text }]}>Invite Code</Text>
+            <Text style={[styles.modalDesc, { color: colors.textMuted }]}>
+              Share this code with others to let them join your budget.
+            </Text>
+
+            <View style={{ paddingVertical: moderateScale(20), borderWidth: 1, borderColor: colors.borderAlt, borderRadius: moderateScale(16), backgroundColor: colors.background, alignItems: 'center', marginBottom: moderateScale(24) }}>
+              {isRegenerating ? (
+                <Text style={{ fontFamily: 'Inter-Bold', fontSize: moderateScale(32), color: colors.textMuted }}>...</Text>
+              ) : (
+                <Text style={{ fontFamily: 'Inter-Bold', fontSize: moderateScale(32), letterSpacing: 4, color: colors.text }}>
+                  {budgetGroup?.categories[0]?.inviteCode || 'NONE'}
+                </Text>
+              )}
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: moderateScale(12), marginBottom: moderateScale(16) }}>
+              <TouchableOpacity
+                style={{ flex: 1, paddingVertical: moderateScale(14), borderRadius: moderateScale(12), alignItems: 'center', backgroundColor: colors.primary }}
+                onPress={async () => {
+                  Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                  await Clipboard.setStringAsync(budgetGroup?.categories[0]?.inviteCode || '');
+                  Alert.alert('Copied!', 'Invite code copied to clipboard.');
+                }}
+              >
+                <Text style={{ color: '#fff', fontFamily: 'Inter-Medium' }}>Copy Code</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity style={{ alignItems: 'center', paddingVertical: moderateScale(8) }} onPress={() => setCodeModalVisible(false)}>
+              <Text style={{ color: colors.textMuted, fontFamily: 'Inter-Medium' }}>Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Options Menu Modal */}
+      <Modal visible={menuVisible} transparent animationType="fade">
+        <TouchableOpacity 
+          style={styles.menuOverlay} 
+          activeOpacity={1} 
+          onPress={() => setMenuVisible(false)}
+        >
+          <View style={[styles.menuContent, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setMenuVisible(false);
+                setCodeModalVisible(true);
+              }}
+            >
+              <Ionicons name="qr-code-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Share Code</Text>
+            </TouchableOpacity>
+            
+            <View style={[styles.menuDivider, { backgroundColor: colors.borderAlt }]} />
+
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setMenuVisible(false);
+                setInviteModalVisible(true);
+              }}
+            >
+              <Ionicons name="person-add-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Invite Collaborators</Text>
+            </TouchableOpacity>
+            
+            <View style={[styles.menuDivider, { backgroundColor: colors.borderAlt }]} />
+            
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setMenuVisible(false);
+                Alert.alert('Coming Soon', 'Edit budget functionality will be available soon.');
+              }}
+            >
+              <Ionicons name="pencil-outline" size={20} color={colors.text} style={styles.menuItemIcon} />
+              <Text style={[styles.menuItemText, { color: colors.text }]}>Edit Budget</Text>
+            </TouchableOpacity>
+            
+            <View style={[styles.menuDivider, { backgroundColor: colors.borderAlt }]} />
+            
+            <TouchableOpacity 
+              style={styles.menuItem} 
+              onPress={() => {
+                setMenuVisible(false);
+                handleDelete();
+              }}
+            >
+              <Ionicons name="trash-outline" size={20} color={colors.expense} style={styles.menuItemIcon} />
+              <Text style={[styles.menuItemText, { color: colors.expense }]}>Delete Budget</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
     </View>
   );
 }
@@ -316,64 +422,71 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 60,
-    paddingBottom: 16,
+    paddingHorizontal: moderateScale(20),
+    paddingTop: moderateScale(60),
+    paddingBottom: moderateScale(16),
   },
-  headerBtn: { padding: 4, width: 40, alignItems: 'center', justifyContent: 'center' },
-  title: { fontFamily: 'Inter-Bold', fontSize: 18 },
-  content: { padding: 16, paddingBottom: 60 },
+  headerBtn: { padding: moderateScale(4), width: scale(40), alignItems: 'center', justifyContent: 'center' },
+  title: { fontFamily: 'Inter-Bold', fontSize: moderateScale(18) },
+  content: { padding: moderateScale(16), paddingBottom: moderateScale(60) },
 
   heroCard: {
-    padding: 20,
-    borderRadius: 24,
-    marginBottom: 24,
+    padding: moderateScale(20),
+    borderRadius: moderateScale(24),
+    marginBottom: moderateScale(24),
     borderWidth: 1,
     elevation: 2,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: verticalScale(2) },
     shadowOpacity: 0.05,
     shadowRadius: 8,
   },
   heroTopRow: { flexDirection: 'row', alignItems: 'center' },
   heroTitleContainer: { flex: 1 },
-  heroBudgetName: { fontFamily: 'Inter-Bold', fontSize: 22, marginBottom: 2 },
-  heroBudgetPeriod: { fontFamily: 'Inter-Medium', fontSize: 12, textTransform: 'capitalize' },
-  heroDivider: { height: 1, marginVertical: 16 },
-  heroAmountsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 16 },
+  heroBudgetName: { fontFamily: 'Inter-Bold', fontSize: moderateScale(22), marginBottom: moderateScale(2) },
+  heroBudgetPeriod: { fontFamily: 'Inter-Medium', fontSize: moderateScale(12), textTransform: 'capitalize' },
+  heroDivider: { height: 1, marginVertical: moderateScale(16) },
+  heroAmountsRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: moderateScale(16) },
   heroAmountCol: { flex: 1 },
-  heroAmountLabel: { fontFamily: 'Inter-SemiBold', fontSize: 11, marginBottom: 4, letterSpacing: 0.5 },
-  heroAmountValue: { fontFamily: 'Inter-Bold', fontSize: 20 },
+  heroAmountLabel: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(11), marginBottom: moderateScale(4), letterSpacing: 0.5 },
+  heroAmountValue: { fontFamily: 'Inter-Bold', fontSize: moderateScale(20) },
 
-  progressContainer: { marginTop: 4 },
-  progressBarBg: { height: 8, borderRadius: 4, overflow: 'hidden', marginBottom: 8 },
-  progressBarFill: { height: '100%', borderRadius: 4 },
-  progressText: { fontFamily: 'Inter-Medium', fontSize: 12, color: 'rgba(255,255,255,0.8)', textAlign: 'right' },
+  progressContainer: { marginTop: moderateScale(4) },
+  progressBarBg: { height: verticalScale(8), borderRadius: moderateScale(4), overflow: 'hidden', marginBottom: moderateScale(8) },
+  progressBarFill: { height: '100%', borderRadius: moderateScale(4) },
+  progressText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(12), color: 'rgba(255,255,255,0.8)', textAlign: 'right' },
 
-  sectionHeader: { marginBottom: 16, marginTop: 8, paddingHorizontal: 4 },
-  sectionTitle: { fontFamily: 'Inter-Bold', fontSize: 20 },
+  sectionHeader: { marginBottom: moderateScale(16), marginTop: moderateScale(8), paddingHorizontal: moderateScale(4) },
+  sectionTitle: { fontFamily: 'Inter-Bold', fontSize: moderateScale(20) },
 
-  categoriesList: { marginBottom: 24, gap: 12 },
-  catItem: { padding: 16, borderRadius: 24, elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 4 },
-  catItemHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
-  catIconContainer: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center', marginRight: 12 },
-  catEmoji: { fontSize: 22 },
+  categoriesList: { marginBottom: moderateScale(24), gap: moderateScale(12) },
+  catItem: { padding: moderateScale(16), borderRadius: moderateScale(24), elevation: 2, shadowColor: '#000', shadowOffset: { width: 0, height: verticalScale(2) }, shadowOpacity: 0.05, shadowRadius: 4 },
+  catItemHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: moderateScale(16) },
+  catIconContainer: { width: scale(44), height: verticalScale(44), borderRadius: moderateScale(22), alignItems: 'center', justifyContent: 'center', marginRight: moderateScale(12) },
+  catEmoji: { fontSize: moderateScale(22) },
   catInfo: { flex: 1 },
-  catName: { fontFamily: 'Inter-Medium', fontSize: 16, marginBottom: 2 },
-  catAmount: { fontFamily: 'Inter-Bold', fontSize: 14 },
-  catProgressBarBg: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  catProgressBarFill: { height: '100%', borderRadius: 4 },
+  catName: { fontFamily: 'Inter-Medium', fontSize: moderateScale(16), marginBottom: moderateScale(2) },
+  catAmount: { fontFamily: 'Inter-Bold', fontSize: moderateScale(14) },
+  catProgressBarBg: { height: verticalScale(8), borderRadius: moderateScale(4), overflow: 'hidden' },
+  catProgressBarFill: { height: '100%', borderRadius: moderateScale(4) },
 
-  transactionsContainer: { gap: 8, marginTop: 4 },
-  emptyState: { padding: 32, borderRadius: 24, alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#333' },
-  emptyText: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center' },
+  transactionsContainer: { gap: moderateScale(8), marginTop: moderateScale(4) },
+  emptyState: { padding: moderateScale(32), borderRadius: moderateScale(24), alignItems: 'center', justifyContent: 'center', borderStyle: 'dashed', borderWidth: 1, borderColor: '#333' },
+  emptyText: { fontFamily: 'Inter-Regular', fontSize: moderateScale(14), textAlign: 'center' },
 
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContent: { width: '100%', padding: 24, borderRadius: 24, borderWidth: 1 },
-  modalTitle: { fontFamily: 'Inter-Bold', fontSize: 18, marginBottom: 8 },
-  modalDesc: { fontFamily: 'Inter-Regular', fontSize: 14, marginBottom: 20 },
-  modalInput: { height: 48, borderWidth: 1, borderRadius: 12, paddingHorizontal: 16, fontFamily: 'Inter-Regular', fontSize: 15, marginBottom: 24 },
-  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: 16 },
-  modalBtn: { paddingVertical: 8, paddingHorizontal: 16 },
-  modalBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 15 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: moderateScale(20) },
+  modalContent: { width: '100%', padding: moderateScale(24), borderRadius: moderateScale(24), borderWidth: 1 },
+  modalTitle: { fontFamily: 'Inter-Bold', fontSize: moderateScale(18), marginBottom: moderateScale(8) },
+  modalDesc: { fontFamily: 'Inter-Regular', fontSize: moderateScale(14), marginBottom: moderateScale(20) },
+  modalInput: { height: verticalScale(48), borderWidth: 1, borderRadius: moderateScale(12), paddingHorizontal: moderateScale(16), fontFamily: 'Inter-Regular', fontSize: moderateScale(15), marginBottom: moderateScale(24) },
+  modalActions: { flexDirection: 'row', justifyContent: 'flex-end', gap: moderateScale(16) },
+  modalBtn: { paddingVertical: moderateScale(8), paddingHorizontal: moderateScale(16) },
+  modalBtnText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(15) },
+  
+  menuOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.2)', justifyContent: 'flex-start', alignItems: 'flex-end', paddingTop: moderateScale(90), paddingRight: moderateScale(20) },
+  menuContent: { width: scale(220), borderRadius: moderateScale(16), borderWidth: 1, overflow: 'hidden', elevation: 5, shadowColor: '#000', shadowOffset: { width: 0, height: verticalScale(4) }, shadowOpacity: 0.1, shadowRadius: 12 },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingVertical: moderateScale(16), paddingHorizontal: moderateScale(16) },
+  menuItemIcon: { marginRight: moderateScale(12) },
+  menuItemText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(15) },
+  menuDivider: { height: 1 },
 });

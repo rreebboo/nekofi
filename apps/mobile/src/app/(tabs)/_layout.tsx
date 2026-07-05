@@ -4,6 +4,7 @@ import { GlassTabBar } from '@/components/ui/GlassTabBar';
 import { LiquidGlassFAB } from '@/components/ui/LiquidGlassFAB';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { FabProvider } from '@/contexts/FabContext';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 /**
  * Main bottom-tab navigation layout.
@@ -79,4 +80,5 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
+
 });
