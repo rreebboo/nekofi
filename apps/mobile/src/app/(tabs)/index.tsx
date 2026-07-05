@@ -15,6 +15,7 @@ import * as Haptics from 'expo-haptics';
 import Animated, { FadeInDown, useAnimatedRef } from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
 import { useFabScrollOffset } from '@/contexts/FabContext';
+import { NekofiCompanion } from '@/components/NekofiCompanion';
 
 /**
  * Dashboard — main home screen with summary cards and charts.
@@ -51,6 +52,11 @@ export default function DashboardScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      {/* Sticky Header / Companion */}
+      <View style={styles.header}>
+        <NekofiCompanion />
+      </View>
+
       <Animated.FlatList
         ref={scrollRef}
         data={[]}
@@ -61,15 +67,6 @@ export default function DashboardScreen() {
         scrollEventThrottle={16}
         ListHeaderComponent={
           <>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={[styles.greeting, { color: colors.textMuted }]}>{greeting()},</Text>
-              <View style={styles.nameRow}>
-                <Text style={[styles.name, { color: colors.text }]}>{user?.name ?? 'User'}</Text>
-                <Image source={require('../../../assets/images/icon.png')} style={styles.nameLogo} />
-              </View>
-            </View>
-
             {/* Credit Card Carousel Section */}
             <View style={styles.carouselWrapper}>
               <BalanceCard />
@@ -98,7 +95,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingBottom: 32 },
-  header: { paddingTop: 16, paddingBottom: 8, paddingHorizontal: 20 },
+  header: { paddingTop: 4, paddingBottom: 4, paddingHorizontal: 20, zIndex: 10 },
   greeting: { fontFamily: 'Inter-Medium', fontSize: 14, marginBottom: 4 },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   nameLogo: { width: 32, height: 32, borderRadius: 8 },

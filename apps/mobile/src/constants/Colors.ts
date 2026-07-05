@@ -39,6 +39,10 @@ export const Colors = {
     income: '#20A175',
     expense: '#D94141',
 
+    // Nekofi
+    nekofiGreen: '#CCFF00',
+    nekofiPink: '#FF6B8A',
+
     tint: tintColorLight,
     tabIconDefault: '#9CA3AF',
     tabIconSelected: tintColorLight,
@@ -51,8 +55,8 @@ export const Colors = {
     accent: '#2B9BCC',
 
     // Backgrounds
-    background: '#0B0C10',  // Deep clean black
-    surface: '#1A1D24',     // Clean dark surface
+    background: '#1A1A1A',  // Nekofi Dark
+    surface: '#2E2E2E',     // Nekofi Surface
     surfaceAlt: '#242830',
     cardSecondary: '#B89218',
     cardPrimary: '#91C435',
@@ -75,6 +79,10 @@ export const Colors = {
     // Finance-specific
     income: '#2CB888',
     expense: '#E85A5A',
+
+    // Nekofi
+    nekofiGreen: '#CCFF00',
+    nekofiPink: '#FF6B8A',
 
     tint: tintColorDark,
     tabIconDefault: '#6B7280',
