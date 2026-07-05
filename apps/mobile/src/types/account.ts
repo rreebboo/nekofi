@@ -17,6 +17,11 @@ export interface Account {
   numberMasked?: string;
   linkedAccountId?: string;
   isLinked?: boolean;
+  /**
+   * When true, this account was mock-connected and lives only in local storage.
+   * fetchAccounts will preserve it even though it doesn't exist in Supabase.
+   */
+  isLocal?: boolean;
   createdAt: string;
   syncStatus?: SyncStatus;
 }

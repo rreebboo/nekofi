@@ -58,15 +58,16 @@ export const useAccountStore = create<AccountState>()(
         let accounts = [...state.accounts];
         
         if (eventType === 'DELETE') {
-          return { accounts: accounts.filter(a => a.id !== oldRecord.id) };
+          // Never delete local-only mock accounts based on a server event
+          return { accounts: accounts.filter(a => a.isLocal || a.id !== oldRecord.id) };
         }
         
         const camelRecord = mapToCamelAccount(newRecord);
         const index = accounts.findIndex(a => a.id === camelRecord.id);
         
         if (index >= 0) {
-          // If we have local pending changes, don't overwrite them immediately
-          if (accounts[index].syncStatus && accounts[index].syncStatus !== 'synced') {
+          // Never overwrite local-only mock accounts or accounts with pending changes
+          if (accounts[index].isLocal || (accounts[index].syncStatus && accounts[index].syncStatus !== 'synced')) {
             return state;
           }
           accounts[index] = camelRecord;
@@ -90,12 +91,17 @@ export const useAccountStore = create<AccountState>()(
             if (data) {
               const serverAccounts = data.map(mapToCamelAccount);
               set((state) => {
-                // Keep pending accounts
+                // Keep accounts that haven't synced yet
                 const pending = state.accounts.filter(a => a.syncStatus && a.syncStatus !== 'synced');
-                // Merge
-                const pendingIds = pending.map(p => p.id);
-                const filteredServer = serverAccounts.filter(sa => !pendingIds.includes(sa.id));
-                return { accounts: [...pending, ...filteredServer] };
+                // Keep mock-connected (local-only) accounts — they don't exist in Supabase
+                // and must not be overwritten by a server fetch.
+                const localOnly = state.accounts.filter(a => a.isLocal === true);
+                const preservedIds = new Set([
+                  ...pending.map(p => p.id),
+                  ...localOnly.map(l => l.id),
+                ]);
+                const filteredServer = serverAccounts.filter(sa => !preservedIds.has(sa.id));
+                return { accounts: [...pending, ...localOnly, ...filteredServer] };
               });
             }
           }
