@@ -5,6 +5,8 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { aiService } from '@/services/ai/LocalAIService';
 import { useAIStore } from '@/store/useAIStore';
+import { useNekofiStore } from '@/store/nekofiStore';
+import { NekofiCompanion } from '@/components/NekofiCompanion';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
@@ -36,6 +38,7 @@ export default function AIChatScreen() {
   
   // Local AI State
   const { isDownloading, downloadProgress, isReady } = useAIStore();
+  const { triggerAnimation } = useNekofiStore();
 
   const sendMessage = async () => {
     if (!input.trim() || loading || !isReady) return;
@@ -44,6 +47,7 @@ export default function AIChatScreen() {
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setLoading(true);
+    triggerAnimation('AI Thinking', null, 0);
     
     setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
 
@@ -51,20 +55,50 @@ export default function AIChatScreen() {
       const reply = await aiService.chat(userMsg.content);
       const aiMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: reply, timestamp: new Date() };
       setMessages((prev) => [...prev, aiMsg]);
+      triggerAnimation('Happy', null, 4000);
     } catch {
       const errMsg: Message = { id: (Date.now() + 1).toString(), role: 'assistant', content: 'Sorry, I had trouble processing that locally.', timestamp: new Date() };
       setMessages((prev) => [...prev, errMsg]);
+      triggerAnimation('Sad', null, 4000);
     } finally {
       setLoading(false);
       setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
     }
   };
 
-  const renderItem = ({ item }: { item: Message }) => (
-    <Animated.View entering={FadeInDown.springify()} style={[styles.bubble, item.role === 'user' ? { backgroundColor: colors.primary, alignSelf: 'flex-end' } : { backgroundColor: colors.surface, borderColor: colors.borderAlt, borderWidth: 1, alignSelf: 'flex-start' }]}>
-      <Text style={[styles.bubbleText, item.role === 'user' ? styles.userText : { color: colors.text }]}>{item.content}</Text>
-    </Animated.View>
-  );
+  const renderItem = ({ item }: { item: Message }) => {
+    const isAssistant = item.role === 'assistant';
+    
+    if (isAssistant) {
+      return (
+        <Animated.View entering={FadeInDown.springify()} style={{ alignSelf: 'flex-start', maxWidth: '85%' }}>
+          <View style={{ alignItems: 'flex-start', marginBottom: -verticalScale(45), marginLeft: -scale(16), zIndex: 0 }}>
+            <NekofiCompanion size={scale(100)} hideBubble={true} inline={true} />
+          </View>
+          <View 
+            style={[
+              styles.bubble, 
+              { backgroundColor: colors.surface, borderColor: colors.borderAlt, borderWidth: 1, borderTopLeftRadius: 4, zIndex: 1, maxWidth: '100%' }
+            ]}
+          >
+            <Text style={[styles.bubbleText, { color: colors.text }]}>{item.content}</Text>
+          </View>
+        </Animated.View>
+      );
+    }
+
+    return (
+      <Animated.View 
+        entering={FadeInDown.springify()} 
+        style={[
+          styles.bubble, 
+          { backgroundColor: colors.primary, alignSelf: 'flex-end', borderBottomRightRadius: 4 }
+        ]}
+      >
+        <Text style={[styles.bubbleText, styles.userText]}>{item.content}</Text>
+      </Animated.View>
+    );
+  };
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>

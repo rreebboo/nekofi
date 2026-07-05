@@ -56,7 +56,17 @@ const EMOTION_MAP: Record<NekofiEmotion, { row: number, frames: number }> = {
   'Celebration': { row: 33, frames: 12 },
 };
 
-export const NekofiCompanion: React.FC = () => {
+export interface NekofiCompanionProps {
+  hideBubble?: boolean;
+  size?: number;
+  inline?: boolean;
+}
+
+export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({ 
+  hideBubble = false,
+  size = 180,
+  inline = false
+}) => {
   const { state, emotion, message, triggerAnimation, triggerRandomIdle, lastTap } = useNekofiStore();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -201,9 +211,9 @@ export const NekofiCompanion: React.FC = () => {
   }, [displayedText]);
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
-    position: 'absolute',
-    left: -25,
-    top: -30,
+    position: inline ? 'relative' : 'absolute',
+    left: inline ? 0 : -25,
+    top: inline ? 0 : -30,
     zIndex: 100,
     transform: [
       { scaleX: scaleX.value }, 
@@ -216,9 +226,9 @@ export const NekofiCompanion: React.FC = () => {
   }));
 
   return (
-    <View style={styles.container} ref={containerRef}>
+    <View style={[styles.container, !inline && { minHeight: 100 }]} ref={containerRef}>
       <Animated.View style={animatedContainerStyle}>
-        <Pressable onPress={handlePress} style={styles.mascotWrapper}>
+        <Pressable onPress={handlePress} style={[styles.mascotWrapper, { width: size, height: size }]}>
            <NekofiSvgMascot 
              lookX={lookX} 
              lookY={lookY} 
@@ -228,12 +238,14 @@ export const NekofiCompanion: React.FC = () => {
         </Pressable>
       </Animated.View>
 
-      <Animated.View style={[styles.bubble, { backgroundColor: colors.surface, borderColor: colors.border }, animatedBubbleStyle]}>
-        <View style={[styles.bubbleTail, { backgroundColor: colors.surface, borderLeftColor: colors.border, borderBottomColor: colors.border }]} />
-        <Text style={[styles.speechText, { color: colors.text }]}>
-          {typedText}
-        </Text>
-      </Animated.View>
+      {!hideBubble && (
+        <Animated.View style={[styles.bubble, { backgroundColor: colors.surface, borderColor: colors.border, marginLeft: size * 0.8 }, animatedBubbleStyle]}>
+          <View style={[styles.bubbleTail, { backgroundColor: colors.surface, borderLeftColor: colors.border, borderBottomColor: colors.border }]} />
+          <Text style={[styles.speechText, { color: colors.text }]}>
+            {typedText}
+          </Text>
+        </Animated.View>
+      )}
     </View>
   );
 };
@@ -243,16 +255,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
-    minHeight: 100,
   },
   mascotWrapper: {
-    width: 180,
-    height: 180,
     justifyContent: 'center',
     alignItems: 'center',
   },
   bubble: {
-    marginLeft: 140,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
