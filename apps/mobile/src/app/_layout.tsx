@@ -18,6 +18,7 @@ import { useThemeColors, useResolvedTheme } from '@/hooks/useThemeColors';
 import { SyncConflictModal } from '@/components/SyncConflictModal';
 import { initSyncEngine } from '@/services/syncEngine';
 import { initRealtimeSync } from '@/services/realtimeService';
+import { aiService } from '@/services/ai/LocalAIService';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -38,6 +39,7 @@ export default function RootLayout() {
     initialize();
     initSyncEngine();
     initRealtimeSync();
+    aiService.initialize();
   }, []);
 
   useEffect(() => {

@@ -54,9 +54,14 @@ class LocalAIService {
             let downloadResumable: FileSystem.DownloadResumable | null = null;
             const resumeString = await AsyncStorage.getItem(RESUME_KEY);
 
+            let lastProgressUpdate = 0;
             const progressCallback = (downloadProgress: FileSystem.DownloadProgressData) => {
-              const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
-              store.setDownloadProgress(progress);
+              const now = Date.now();
+              if (now - lastProgressUpdate > 200) {
+                const progress = downloadProgress.totalBytesWritten / downloadProgress.totalBytesExpectedToWrite;
+                store.setDownloadProgress(progress);
+                lastProgressUpdate = now;
+              }
             };
 
             try {

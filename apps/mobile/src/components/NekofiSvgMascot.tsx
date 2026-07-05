@@ -20,7 +20,7 @@ interface NekofiSvgMascotProps {
   breatheY: Animated.SharedValue<number>;
 }
 
-export const NekofiSvgMascot: React.FC<NekofiSvgMascotProps> = ({ 
+export const NekofiSvgMascot: React.FC<NekofiSvgMascotProps> = React.memo(({ 
   lookX, 
   lookY, 
   breatheScale, 
@@ -33,15 +33,16 @@ export const NekofiSvgMascot: React.FC<NekofiSvgMascotProps> = ({
 
   // Blinking loop
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
     const blinkLoop = () => {
       blinkScale.value = withSequence(
         withTiming(0.05, { duration: 100 }), // close eyes
         withTiming(1, { duration: 100 })  // open eyes
       );
-      setTimeout(blinkLoop, 2000 + Math.random() * 4000);
+      timeoutId = setTimeout(blinkLoop, 2000 + Math.random() * 4000);
     };
-    const timeout = setTimeout(blinkLoop, 2000);
-    return () => clearTimeout(timeout);
+    timeoutId = setTimeout(blinkLoop, 2000);
+    return () => clearTimeout(timeoutId);
   }, []);
 
   // Tail wagging loop
@@ -168,4 +169,4 @@ export const NekofiSvgMascot: React.FC<NekofiSvgMascotProps> = ({
       </AnimatedG>
     </Svg>
   );
-};
+});
