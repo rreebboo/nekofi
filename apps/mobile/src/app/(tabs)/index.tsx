@@ -96,7 +96,7 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scroll: { paddingBottom: moderateScale(32) },
-  header: { paddingTop: moderateScale(4), paddingBottom: moderateScale(4), paddingHorizontal: moderateScale(20), zIndex: 10 },
+  header: { paddingTop: moderateScale(8), paddingBottom: moderateScale(8), paddingHorizontal: moderateScale(20), zIndex: 10 },
   greeting: { fontFamily: 'Inter-Medium', fontSize: moderateScale(14), marginBottom: moderateScale(4) },
   nameRow: { flexDirection: 'row', alignItems: 'center', gap: moderateScale(10) },
   nameLogo: { width: moderateScale(32), height: moderateScale(32), borderRadius: moderateScale(8) },

@@ -201,6 +201,10 @@ export const NekofiCompanion: React.FC = () => {
   }, [displayedText]);
 
   const animatedContainerStyle = useAnimatedStyle(() => ({
+    position: 'absolute',
+    left: -25,
+    top: -30,
+    zIndex: 100,
     transform: [
       { scaleX: scaleX.value }, 
       { scaleY: scaleY.value }
@@ -239,16 +243,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 4,
+    minHeight: 100,
   },
   mascotWrapper: {
-    width: 90,
-    height: 90,
-    marginLeft: -12,
+    width: 180,
+    height: 180,
     justifyContent: 'center',
     alignItems: 'center',
   },
   bubble: {
-    marginLeft: 20,
+    marginLeft: 140,
     paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 20,
