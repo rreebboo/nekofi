@@ -21,6 +21,7 @@
 import React from 'react';
 import { View, ActivityIndicator, StyleSheet } from 'react-native';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 export default function OAuthCallbackScreen() {
   const colors = useThemeColors();

@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useSettingsStore, ThemeMode } from '@/stores/settingsStore';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 export default function AppearanceSettingsScreen() {
   const router = useRouter();
@@ -62,38 +63,38 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: moderateScale(20),
+    paddingVertical: moderateScale(16),
   },
   headerTitle: {
     fontFamily: 'Inter-Bold',
-    fontSize: 24,
+    fontSize: moderateScale(24),
   },
   closeButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: scale(40),
+    height: verticalScale(40),
+    borderRadius: moderateScale(20),
     alignItems: 'center',
     justifyContent: 'center',
   },
   listContainer: {
-    marginHorizontal: 20,
-    marginTop: 10,
-    borderRadius: 16,
+    marginHorizontal: moderateScale(20),
+    marginTop: moderateScale(10),
+    borderRadius: moderateScale(16),
     borderWidth: 1,
     overflow: 'hidden',
   },
   optionItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 18,
+    paddingHorizontal: moderateScale(16),
+    paddingVertical: moderateScale(18),
     borderBottomWidth: 1,
   },
   optionLabel: {
     flex: 1,
     fontFamily: 'Inter-Medium',
-    fontSize: 16,
-    marginLeft: 12,
+    fontSize: moderateScale(16),
+    marginLeft: moderateScale(12),
   },
 });

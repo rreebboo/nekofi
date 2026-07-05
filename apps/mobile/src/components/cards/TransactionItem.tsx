@@ -5,6 +5,7 @@ import Animated, { useSharedValue, useAnimatedStyle, withSpring } from 'react-na
 import type { Transaction } from '@/types/transaction';
 import { formatCurrency, formatDate } from '@/utils/formatters';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 interface Props {
   transaction: Transaction;
@@ -66,10 +67,10 @@ export function TransactionItem({ transaction, onPress }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', borderRadius: 20, padding: 16, marginBottom: 12, borderWidth: 1 },
-  iconContainer: { marginRight: 14, width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  container: { flexDirection: 'row', alignItems: 'center', borderRadius: moderateScale(20), padding: moderateScale(16), marginBottom: moderateScale(12), borderWidth: 1 },
+  iconContainer: { marginRight: moderateScale(14), width: scale(44), height: verticalScale(44), borderRadius: moderateScale(22), alignItems: 'center', justifyContent: 'center' },
   info: { flex: 1 },
-  description: { fontFamily: 'Inter-SemiBold', fontSize: 15, marginBottom: 4 },
-  category: { fontFamily: 'Inter-Medium', fontSize: 12 },
-  amount: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  description: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(15), marginBottom: moderateScale(4) },
+  category: { fontFamily: 'Inter-Medium', fontSize: moderateScale(12) },
+  amount: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16) },
 });

@@ -16,6 +16,7 @@ import { useAccountStore } from '@/stores/accountStore';
 import { formatCurrency } from '@/utils/formatters';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useRouter } from 'expo-router';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 const { width } = Dimensions.get('window');
 const CARD_WIDTH = width - 40;
@@ -237,7 +238,7 @@ export function BalanceCard() {
   return (
     <View style={styles.container}>
       {/* Section Header */}
-      <View style={[styles.sectionHeader, { paddingHorizontal: 20 }]}>
+      <View style={[styles.sectionHeader, { paddingHorizontal: moderateScale(20) }]}>
         <Text style={[styles.sectionTitle, { color: colors.text }]}>Accounts</Text>
         {displayCards.length > 0 && (
           <View style={styles.headerActions}>
@@ -272,7 +273,7 @@ export function BalanceCard() {
           </View>
         </GestureDetector>
       ) : (
-        <Animated.View style={[animatedEmptyStyle, { marginVertical: 16 }]}>
+        <Animated.View style={[animatedEmptyStyle, { marginVertical: moderateScale(16) }]}>
           <Pressable 
             onPressIn={handleEmptyPressIn}
             onPressOut={handleEmptyPressOut}
@@ -290,8 +291,8 @@ export function BalanceCard() {
 
               <View style={{ alignItems: 'center' }}>
                 <Ionicons name="add" size={56} color={colors.primary} style={{ opacity: 0.8 }} />
-                <Text style={{ marginTop: 8, fontFamily: 'Inter-SemiBold', color: colors.text, fontSize: 16 }}>Link Card or E-Wallet</Text>
-                <Text style={{ marginTop: 4, fontFamily: 'Inter-Regular', color: colors.textMuted, fontSize: 13 }}>Connect accounts to track balances</Text>
+                <Text style={{ marginTop: moderateScale(8), fontFamily: 'Inter-SemiBold', color: colors.text, fontSize: moderateScale(16) }}>Link Card or E-Wallet</Text>
+                <Text style={{ marginTop: moderateScale(4), fontFamily: 'Inter-Regular', color: colors.textMuted, fontSize: moderateScale(13) }}>Connect accounts to track balances</Text>
               </View>
             </LinearGradient>
           </Pressable>
@@ -299,7 +300,7 @@ export function BalanceCard() {
       )}
 
       {/* Financial Summary Below Card */}
-      <View style={[styles.summaryWrapper, { paddingHorizontal: 20 }]}>
+      <View style={[styles.summaryWrapper, { paddingHorizontal: moderateScale(20) }]}>
         <View style={[styles.summaryRow, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <View style={styles.stat}>
             <View style={[styles.iconCircle, { backgroundColor: `${colors.income}20` }]}>
@@ -326,35 +327,35 @@ export function BalanceCard() {
 }
 
 const styles = StyleSheet.create({
-  container: { marginTop: 8, marginBottom: 16 },
+  container: { marginTop: moderateScale(8), marginBottom: moderateScale(16) },
   sectionHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: moderateScale(8),
   },
-  sectionTitle: { fontFamily: 'Inter-SemiBold', fontSize: 18 },
-  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  sectionTitle: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(18) },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: moderateScale(8) },
   premiumAddBtn: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    gap: 4,
+    paddingHorizontal: moderateScale(12),
+    paddingVertical: moderateScale(6),
+    borderRadius: moderateScale(16),
+    gap: moderateScale(4),
   },
-  premiumAddText: { fontFamily: 'Inter-Medium', fontSize: 13, color: '#FFF' },
+  premiumAddText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(13), color: '#FFF' },
   viewAllBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    paddingHorizontal: moderateScale(12),
+    paddingVertical: moderateScale(6),
+    borderRadius: moderateScale(16),
   },
-  viewAllText: { fontFamily: 'Inter-Medium', fontSize: 13 },
+  viewAllText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(13) },
   deckContainer: {
     height: DECK_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
-    marginVertical: 16,
+    marginVertical: moderateScale(16),
   },
   cardWrapper: {
     position: 'absolute',
@@ -362,48 +363,48 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   frontCard: {
-    borderRadius: 24,
-    padding: 24,
+    borderRadius: moderateScale(24),
+    padding: moderateScale(24),
     justifyContent: 'space-between',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: verticalScale(8) },
     shadowOpacity: 0.3,
     shadowRadius: 12,
     elevation: 8,
   },
   frontHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardNumberLight: { fontFamily: 'Inter-Medium', fontSize: 13 },
+  cardNumberLight: { fontFamily: 'Inter-Medium', fontSize: moderateScale(13) },
   balanceSection: { },
-  label: { fontFamily: 'Inter-Medium', fontSize: 12, marginBottom: 4 },
+  label: { fontFamily: 'Inter-Medium', fontSize: moderateScale(12), marginBottom: moderateScale(4) },
   balanceRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-  balance: { fontFamily: 'Inter-Bold', fontSize: 32, letterSpacing: -1 },
+  balance: { fontFamily: 'Inter-Bold', fontSize: moderateScale(32), letterSpacing: -1 },
   expBox: { alignItems: 'flex-end' },
-  expLabel: { fontFamily: 'Inter-Regular', fontSize: 10 },
-  expValue: { fontFamily: 'Inter-Medium', fontSize: 14 },
+  expLabel: { fontFamily: 'Inter-Regular', fontSize: moderateScale(10) },
+  expValue: { fontFamily: 'Inter-Medium', fontSize: moderateScale(14) },
   footerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  nameLabel: { fontFamily: 'Inter-Regular', fontSize: 10 },
-  nameValue: { fontFamily: 'Inter-Medium', fontSize: 14 },
+  nameLabel: { fontFamily: 'Inter-Regular', fontSize: moderateScale(10) },
+  nameValue: { fontFamily: 'Inter-Medium', fontSize: moderateScale(14) },
   addButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 20,
-    gap: 4,
+    paddingHorizontal: moderateScale(12),
+    paddingVertical: moderateScale(8),
+    borderRadius: moderateScale(20),
+    gap: moderateScale(4),
   },
-  addText: { fontFamily: 'Inter-Medium', fontSize: 12 },
+  addText: { fontFamily: 'Inter-Medium', fontSize: moderateScale(12) },
   summaryWrapper: {
-    marginTop: 8,
+    marginTop: moderateScale(8),
   },
   summaryRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    padding: 16,
-    borderRadius: 20,
+    padding: moderateScale(16),
+    borderRadius: moderateScale(20),
     borderWidth: 1,
   },
-  stat: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  iconCircle: { width: 36, height: 36, borderRadius: 18, alignItems: 'center', justifyContent: 'center' },
-  statLabel: { fontFamily: 'Inter-Regular', fontSize: 12, marginBottom: 2 },
-  statValue: { fontFamily: 'Inter-SemiBold', fontSize: 14 },
+  stat: { flexDirection: 'row', alignItems: 'center', gap: moderateScale(12) },
+  iconCircle: { width: scale(36), height: verticalScale(36), borderRadius: moderateScale(18), alignItems: 'center', justifyContent: 'center' },
+  statLabel: { fontFamily: 'Inter-Regular', fontSize: moderateScale(12), marginBottom: moderateScale(2) },
+  statValue: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(14) },
 });

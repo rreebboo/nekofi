@@ -9,6 +9,7 @@ import { BudgetCard } from '@/components/cards/BudgetCard';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown } from 'react-native-reanimated';
 import type { BudgetPreview } from '@/types/budget';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 /**
  * Budgets overview screen.
@@ -34,7 +35,7 @@ export default function BudgetsScreen() {
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: colors.text }]}>Budgets</Text>
-        <View style={{ flexDirection: 'row', gap: 12 }}>
+        <View style={{ flexDirection: 'row', gap: moderateScale(12) }}>
           <TouchableOpacity style={[styles.addBtn, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]} onPress={() => setJoinModalVisible(true)}>
             <Ionicons name="enter-outline" size={22} color={colors.primary} />
           </TouchableOpacity>
@@ -81,7 +82,7 @@ export default function BudgetsScreen() {
         )}
         contentContainerStyle={styles.list}
         showsVerticalScrollIndicator={false}
-        ListFooterComponent={<View style={{ height: 100 }} />}
+        ListFooterComponent={<View style={{ height: verticalScale(100) }} />}
         ListEmptyComponent={
           <View style={styles.emptyState}>
             <Text style={styles.emptyEmoji}>📊</Text>
@@ -181,31 +182,31 @@ export default function BudgetsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingTop: 16, paddingBottom: 12 },
-  title: { fontFamily: 'Inter-Bold', fontSize: 28 },
-  addBtn: { borderRadius: 16, padding: 10, borderWidth: 1 },
-  list: { paddingHorizontal: 20, paddingBottom: 32, gap: 12 },
-  emptyState: { alignItems: 'center', paddingTop: 80, gap: 8 },
-  emptyEmoji: { fontSize: 56, marginBottom: 8 },
-  emptyTitle: { fontFamily: 'Inter-SemiBold', fontSize: 20 },
-  emptySubtitle: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center', paddingHorizontal: 40 },
-  createBtn: { marginTop: 16, borderRadius: 16, paddingVertical: 14, paddingHorizontal: 32 },
-  createBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#fff' },
-  invitesContainer: { paddingHorizontal: 20, marginBottom: 16, gap: 8 },
-  inviteCard: { padding: 16, borderRadius: 16, borderWidth: 1, gap: 12 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: moderateScale(20), paddingTop: moderateScale(16), paddingBottom: moderateScale(12) },
+  title: { fontFamily: 'Inter-Bold', fontSize: moderateScale(28) },
+  addBtn: { borderRadius: moderateScale(16), padding: moderateScale(10), borderWidth: 1 },
+  list: { paddingHorizontal: moderateScale(20), paddingBottom: moderateScale(32), gap: moderateScale(12) },
+  emptyState: { alignItems: 'center', paddingTop: moderateScale(80), gap: moderateScale(8) },
+  emptyEmoji: { fontSize: moderateScale(56), marginBottom: moderateScale(8) },
+  emptyTitle: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(20) },
+  emptySubtitle: { fontFamily: 'Inter-Regular', fontSize: moderateScale(14), textAlign: 'center', paddingHorizontal: moderateScale(40) },
+  createBtn: { marginTop: moderateScale(16), borderRadius: moderateScale(16), paddingVertical: moderateScale(14), paddingHorizontal: moderateScale(32) },
+  createBtnText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(15), color: '#fff' },
+  invitesContainer: { paddingHorizontal: moderateScale(20), marginBottom: moderateScale(16), gap: moderateScale(8) },
+  inviteCard: { padding: moderateScale(16), borderRadius: moderateScale(16), borderWidth: 1, gap: moderateScale(12) },
   inviteInfo: { flexDirection: 'row', alignItems: 'center' },
-  inviteText: { fontFamily: 'Inter-Regular', fontSize: 15, flex: 1 },
-  inviteActions: { flexDirection: 'row', gap: 8, justifyContent: 'flex-end' },
-  inviteBtn: { paddingVertical: 8, paddingHorizontal: 16, borderRadius: 8 },
-  inviteBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 14 },
+  inviteText: { fontFamily: 'Inter-Regular', fontSize: moderateScale(15), flex: 1 },
+  inviteActions: { flexDirection: 'row', gap: moderateScale(8), justifyContent: 'flex-end' },
+  inviteBtn: { paddingVertical: moderateScale(8), paddingHorizontal: moderateScale(16), borderRadius: moderateScale(8) },
+  inviteBtnText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(14) },
   
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  joinModal: { width: '100%', borderRadius: 28, padding: 24, alignItems: 'center' },
-  joinModalTitle: { fontFamily: 'Inter-Bold', fontSize: 22, textAlign: 'center', marginBottom: 8 },
-  joinModalSub: { fontFamily: 'Inter-Regular', fontSize: 15, textAlign: 'center', marginBottom: 24, paddingHorizontal: 12 },
-  codeInput: { width: '100%', borderWidth: 1, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 20, fontFamily: 'Inter-Bold', fontSize: 24, textAlign: 'center', letterSpacing: 4, marginBottom: 24 },
-  modalActions: { flexDirection: 'row', gap: 12, width: '100%' },
-  modalActionBtn: { flex: 1, paddingVertical: 16, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
-  modalActionText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
-  previewIcon: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: moderateScale(20) },
+  joinModal: { width: '100%', borderRadius: moderateScale(28), padding: moderateScale(24), alignItems: 'center' },
+  joinModalTitle: { fontFamily: 'Inter-Bold', fontSize: moderateScale(22), textAlign: 'center', marginBottom: moderateScale(8) },
+  joinModalSub: { fontFamily: 'Inter-Regular', fontSize: moderateScale(15), textAlign: 'center', marginBottom: moderateScale(24), paddingHorizontal: moderateScale(12) },
+  codeInput: { width: '100%', borderWidth: 1, borderRadius: moderateScale(16), paddingVertical: moderateScale(16), paddingHorizontal: moderateScale(20), fontFamily: 'Inter-Bold', fontSize: moderateScale(24), textAlign: 'center', letterSpacing: 4, marginBottom: moderateScale(24) },
+  modalActions: { flexDirection: 'row', gap: moderateScale(12), width: '100%' },
+  modalActionBtn: { flex: 1, paddingVertical: moderateScale(16), borderRadius: moderateScale(16), alignItems: 'center', justifyContent: 'center' },
+  modalActionText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16) },
+  previewIcon: { width: scale(72), height: verticalScale(72), borderRadius: moderateScale(36), alignItems: 'center', justifyContent: 'center', marginBottom: moderateScale(16) },
 });

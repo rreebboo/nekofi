@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 /**
  * User profile & settings screen.
@@ -39,8 +40,8 @@ export default function ProfileScreen() {
             <View style={[styles.avatar, { backgroundColor: colors.surface, borderColor: colors.borderAlt, borderWidth: 1 }]}>
               <Ionicons name="person-outline" size={36} color={colors.textMuted} />
             </View>
-            <Text style={[styles.name, { color: colors.text, marginTop: 12 }]}>Guest Mode</Text>
-            <Text style={[styles.email, { color: colors.textMuted, textAlign: 'center', marginHorizontal: 20, marginTop: 4 }]}>
+            <Text style={[styles.name, { color: colors.text, marginTop: moderateScale(12) }]}>Guest Mode</Text>
+            <Text style={[styles.email, { color: colors.textMuted, textAlign: 'center', marginHorizontal: moderateScale(20), marginTop: moderateScale(4) }]}>
               You are currently using the app as a guest. Sign in to sync your data across devices.
             </Text>
 
@@ -51,7 +52,7 @@ export default function ProfileScreen() {
               <TouchableOpacity style={[styles.guestBtnSecondary, { borderColor: colors.borderAlt, borderWidth: 1 }]} onPress={() => router.push('/(auth)/sign-in')}>
                 <Text style={[styles.guestBtnSecondaryText, { color: colors.text }]}>Sign In</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={{ marginTop: 8 }} onPress={() => router.replace('/(tabs)')}>
+              <TouchableOpacity style={{ marginTop: moderateScale(8) }} onPress={() => router.replace('/(tabs)')}>
                 <Text style={[styles.guestBtnLink, { color: colors.textMuted }]}>Continue as Guest</Text>
               </TouchableOpacity>
             </View>
@@ -85,7 +86,7 @@ export default function ProfileScreen() {
             {/* AI Chat shortcut */}
             <TouchableOpacity style={[styles.aiCard, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]} onPress={() => router.push('/ai/chat')}>
               <Ionicons name="sparkles" size={22} color={colors.primary} />
-              <View style={{ flex: 1, marginLeft: 12 }}>
+              <View style={{ flex: 1, marginLeft: moderateScale(12) }}>
                 <Text style={[styles.aiCardTitle, { color: colors.text }]}>Ask Nekofi AI</Text>
                 <Text style={[styles.aiCardSubtitle, { color: colors.textMuted }]}>Get personalized financial insights</Text>
               </View>
@@ -99,7 +100,7 @@ export default function ProfileScreen() {
           </>
         )}
         
-        <View style={{ height: 100 }} />
+        <View style={{ height: verticalScale(100) }} />
       </ScrollView>
     </SafeAreaView>
   );
@@ -107,25 +108,25 @@ export default function ProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  title: { fontFamily: 'Inter-Bold', fontSize: 28, paddingHorizontal: 20, paddingTop: 16, paddingBottom: 20 },
-  avatarSection: { alignItems: 'center', paddingBottom: 32, gap: 8 },
-  avatar: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center' },
-  avatarText: { fontFamily: 'Inter-Bold', fontSize: 36, color: '#fff' },
-  name: { fontFamily: 'Inter-SemiBold', fontSize: 20 },
-  email: { fontFamily: 'Inter-Regular', fontSize: 14, lineHeight: 22 },
-  menu: { marginHorizontal: 20, borderRadius: 20, borderWidth: 1, overflow: 'hidden', marginBottom: 20 },
-  menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 18, paddingVertical: 16, borderBottomWidth: 1, gap: 14 },
-  menuLabel: { flex: 1, fontFamily: 'Inter-Medium', fontSize: 15 },
-  aiCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: 20, borderRadius: 16, padding: 18, borderWidth: 1, marginBottom: 20 },
-  aiCardTitle: { fontFamily: 'Inter-SemiBold', fontSize: 15 },
-  aiCardSubtitle: { fontFamily: 'Inter-Regular', fontSize: 12 },
-  signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: 20, gap: 8, paddingVertical: 16, backgroundColor: '#FF6B6B20', borderRadius: 16, marginBottom: 40 },
-  signOutText: { fontFamily: 'Inter-SemiBold', fontSize: 15, color: '#FF6B6B' },
-  guestSection: { alignItems: 'center', paddingBottom: 32, gap: 8 },
-  guestActions: { width: '100%', paddingHorizontal: 20, marginTop: 24, gap: 12 },
-  guestBtnPrimary: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
-  guestBtnPrimaryText: { fontFamily: 'Inter-SemiBold', fontSize: 16, color: '#fff' },
-  guestBtnSecondary: { borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
-  guestBtnSecondaryText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
-  guestBtnLink: { fontFamily: 'Inter-Medium', fontSize: 14, textAlign: 'center', padding: 8 },
+  title: { fontFamily: 'Inter-Bold', fontSize: moderateScale(28), paddingHorizontal: moderateScale(20), paddingTop: moderateScale(16), paddingBottom: moderateScale(20) },
+  avatarSection: { alignItems: 'center', paddingBottom: moderateScale(32), gap: moderateScale(8) },
+  avatar: { width: scale(80), height: verticalScale(80), borderRadius: moderateScale(40), alignItems: 'center', justifyContent: 'center' },
+  avatarText: { fontFamily: 'Inter-Bold', fontSize: moderateScale(36), color: '#fff' },
+  name: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(20) },
+  email: { fontFamily: 'Inter-Regular', fontSize: moderateScale(14), lineHeight: 22 },
+  menu: { marginHorizontal: moderateScale(20), borderRadius: moderateScale(20), borderWidth: 1, overflow: 'hidden', marginBottom: moderateScale(20) },
+  menuItem: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: moderateScale(18), paddingVertical: moderateScale(16), borderBottomWidth: 1, gap: moderateScale(14) },
+  menuLabel: { flex: 1, fontFamily: 'Inter-Medium', fontSize: moderateScale(15) },
+  aiCard: { flexDirection: 'row', alignItems: 'center', marginHorizontal: moderateScale(20), borderRadius: moderateScale(16), padding: moderateScale(18), borderWidth: 1, marginBottom: moderateScale(20) },
+  aiCardTitle: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(15) },
+  aiCardSubtitle: { fontFamily: 'Inter-Regular', fontSize: moderateScale(12) },
+  signOutBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginHorizontal: moderateScale(20), gap: moderateScale(8), paddingVertical: moderateScale(16), backgroundColor: '#FF6B6B20', borderRadius: moderateScale(16), marginBottom: moderateScale(40) },
+  signOutText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(15), color: '#FF6B6B' },
+  guestSection: { alignItems: 'center', paddingBottom: moderateScale(32), gap: moderateScale(8) },
+  guestActions: { width: '100%', paddingHorizontal: moderateScale(20), marginTop: moderateScale(24), gap: moderateScale(12) },
+  guestBtnPrimary: { borderRadius: moderateScale(16), paddingVertical: moderateScale(16), alignItems: 'center' },
+  guestBtnPrimaryText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16), color: '#fff' },
+  guestBtnSecondary: { borderRadius: moderateScale(16), paddingVertical: moderateScale(16), alignItems: 'center' },
+  guestBtnSecondaryText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16) },
+  guestBtnLink: { fontFamily: 'Inter-Medium', fontSize: moderateScale(14), textAlign: 'center', padding: moderateScale(8) },
 });

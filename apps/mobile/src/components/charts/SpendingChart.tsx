@@ -5,6 +5,7 @@ import { Dimensions } from 'react-native';
 import type { Transaction } from '@/types/transaction';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInUp } from 'react-native-reanimated';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 const { width } = Dimensions.get('window');
 
@@ -47,6 +48,7 @@ export function SpendingChart({ transactions }: Props) {
         data={{ labels, datasets: [{ data: dailyTotals.length > 0 ? dailyTotals : [0] }] }}
         width={width - 40}
         height={180}
+        yAxisLabel="₱"
         chartConfig={{
           backgroundColor: colors.surface,
           backgroundGradientFrom: colors.surface,
@@ -54,12 +56,12 @@ export function SpendingChart({ transactions }: Props) {
           decimalPlaces: 0,
           color: (opacity = 1) => `rgba(${hexToRgb(colors.primary)}, ${opacity})`,
           labelColor: () => colors.textMuted,
-          propsForDots: { r: '4', strokeWidth: '2', stroke: colors.primary },
-          propsForBackgroundLines: { stroke: colors.border, strokeDasharray: '4' },
+          propsForDots: { r: '3' },
+          propsForBackgroundLines: { stroke: colors.borderAlt || 'rgba(0,0,0,0.05)', strokeDasharray: '4' },
         }}
         bezier
         style={styles.chart}
-        withInnerLines={true}
+        withInnerLines={false}
         withOuterLines={false}
       />
     </Animated.View>
@@ -67,7 +69,7 @@ export function SpendingChart({ transactions }: Props) {
 }
 
 const styles = StyleSheet.create({
-  container: { borderRadius: 20, padding: 16, borderWidth: 1, marginTop: 12 },
-  title: { fontFamily: 'Inter-SemiBold', fontSize: 14, marginBottom: 12 },
-  chart: { borderRadius: 12, marginLeft: -16 },
+  container: { borderRadius: moderateScale(20), padding: moderateScale(16), borderWidth: 1, marginTop: moderateScale(12) },
+  title: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(14), marginBottom: moderateScale(12) },
+  chart: { borderRadius: moderateScale(12), marginLeft: moderateScale(-16) },
 });

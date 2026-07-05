@@ -6,6 +6,7 @@ import { aiService } from '@/services/ai/LocalAIService';
 import { useAIStore } from '@/store/useAIStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { useSharedValue, useAnimatedStyle, withSpring, FadeInDown } from 'react-native-reanimated';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
@@ -63,7 +64,7 @@ export function AIInsightCard() {
             </Text>
           </View>
         ) : loading ? (
-          <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: 8 }} />
+          <ActivityIndicator size="small" color={colors.primary} style={{ marginTop: moderateScale(8) }} />
         ) : (
           <Text style={[styles.insight, { color: colors.text }]}>{insight}</Text>
         )}
@@ -73,9 +74,9 @@ export function AIInsightCard() {
 }
 
 const styles = StyleSheet.create({
-  card: { borderRadius: 16, padding: 16, borderWidth: 1, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 },
-  header: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
-  headerText: { flex: 1, fontFamily: 'Inter-SemiBold', fontSize: 13 },
-  insight: { fontFamily: 'Inter-Regular', fontSize: 14, lineHeight: 22 },
-  progressContainer: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
+  card: { borderRadius: moderateScale(16), padding: moderateScale(16), borderWidth: 1, shadowOffset: { width: 0, height: verticalScale(4) }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 2 },
+  header: { flexDirection: 'row', alignItems: 'center', gap: moderateScale(8), marginBottom: moderateScale(10) },
+  headerText: { flex: 1, fontFamily: 'Inter-SemiBold', fontSize: moderateScale(13) },
+  insight: { fontFamily: 'Inter-Regular', fontSize: moderateScale(14), lineHeight: 22 },
+  progressContainer: { flexDirection: 'row', alignItems: 'center', gap: moderateScale(10), marginTop: moderateScale(8) },
 });

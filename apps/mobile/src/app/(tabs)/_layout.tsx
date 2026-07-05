@@ -3,6 +3,7 @@ import { View, StyleSheet, TouchableOpacity } from 'react-native';
 import { GlassTabBar } from '@/components/ui/GlassTabBar';
 import { Ionicons } from '@expo/vector-icons';
 import { useThemeColors } from '@/hooks/useThemeColors';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 /**
  * Main bottom-tab navigation layout.
@@ -79,12 +80,12 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 110, // positioned above the nav bar
     right: 20,
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: scale(60),
+    height: verticalScale(60),
+    borderRadius: moderateScale(30),
     justifyContent: 'center',
     alignItems: 'center',
-    shadowOffset: { width: 0, height: 8 },
+    shadowOffset: { width: 0, height: verticalScale(8) },
     shadowOpacity: 0.4,
     shadowRadius: 12,
     elevation: 8,

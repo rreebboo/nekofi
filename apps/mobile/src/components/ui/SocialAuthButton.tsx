@@ -1,3 +1,4 @@
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 /**
  * SocialAuthButton — a reusable, branded button for social OAuth providers.
  *
@@ -129,15 +130,15 @@ export function SocialAuthButton({
 
 const styles = StyleSheet.create({
   button: {
-    borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 20,
+    borderRadius: moderateScale(16),
+    paddingVertical: moderateScale(16),
+    paddingHorizontal: moderateScale(20),
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: 56,
+    minHeight: verticalScale(56),
     // Subtle shadow for depth
     shadowColor: '#000000',
-    shadowOffset: { width: 0, height: 2 },
+    shadowOffset: { width: 0, height: verticalScale(2) },
     shadowOpacity: 0.12,
     shadowRadius: 6,
     elevation: 3,
@@ -148,29 +149,29 @@ const styles = StyleSheet.create({
   inner: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: moderateScale(12),
   },
   /**
    * Small circle containing the provider initial —
    * mirrors standard social login button design.
    */
   iconWrapper: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
+    width: scale(24),
+    height: verticalScale(24),
+    borderRadius: moderateScale(12),
     alignItems: 'center',
     justifyContent: 'center',
   },
   icon: {
     fontFamily: 'Inter-Bold',
-    fontSize: 14,
+    fontSize: moderateScale(14),
     lineHeight: 16,
     // Nudge the 'f' character to look visually centered
     marginTop: 1,
   },
   label: {
     fontFamily: 'Inter-SemiBold',
-    fontSize: 16,
+    fontSize: moderateScale(16),
     letterSpacing: 0.2,
   },
 });

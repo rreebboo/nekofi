@@ -7,6 +7,7 @@ import { aiService } from '@/services/ai/LocalAIService';
 import { useAIStore } from '@/store/useAIStore';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown } from 'react-native-reanimated';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
 
 interface Message {
   id: string;
@@ -135,22 +136,22 @@ export default function AIChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 14, borderBottomWidth: 1 },
+  header: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: moderateScale(20), paddingVertical: moderateScale(14), borderBottomWidth: 1 },
   headerCenter: { flex: 1, alignItems: 'center' },
-  headerTitle: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
-  headerSubtitle: { fontFamily: 'Inter-Regular', fontSize: 11 },
-  list: { paddingHorizontal: 16, paddingVertical: 16, gap: 12 },
-  bubble: { maxWidth: '80%', borderRadius: 18, paddingHorizontal: 16, paddingVertical: 12 },
-  bubbleText: { fontFamily: 'Inter-Regular', fontSize: 14, lineHeight: 21 },
+  headerTitle: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(16) },
+  headerSubtitle: { fontFamily: 'Inter-Regular', fontSize: moderateScale(11) },
+  list: { paddingHorizontal: moderateScale(16), paddingVertical: moderateScale(16), gap: moderateScale(12) },
+  bubble: { maxWidth: '80%', borderRadius: moderateScale(18), paddingHorizontal: moderateScale(16), paddingVertical: moderateScale(12) },
+  bubbleText: { fontFamily: 'Inter-Regular', fontSize: moderateScale(14), lineHeight: 21 },
   userText: { color: '#fff' },
-  typingIndicator: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 20, paddingBottom: 8, gap: 8 },
-  typingText: { fontFamily: 'Inter-Regular', fontSize: 13 },
-  inputBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: 16, paddingVertical: 12, borderTopWidth: 1, gap: 10 },
-  input: { flex: 1, borderRadius: 20, paddingHorizontal: 16, paddingVertical: 12, fontFamily: 'Inter-Regular', fontSize: 14, maxHeight: 120, borderWidth: 1 },
-  sendBtn: { width: 44, height: 44, borderRadius: 22, alignItems: 'center', justifyContent: 'center' },
+  typingIndicator: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: moderateScale(20), paddingBottom: moderateScale(8), gap: moderateScale(8) },
+  typingText: { fontFamily: 'Inter-Regular', fontSize: moderateScale(13) },
+  inputBar: { flexDirection: 'row', alignItems: 'flex-end', paddingHorizontal: moderateScale(16), paddingVertical: moderateScale(12), borderTopWidth: 1, gap: moderateScale(10) },
+  input: { flex: 1, borderRadius: moderateScale(20), paddingHorizontal: moderateScale(16), paddingVertical: moderateScale(12), fontFamily: 'Inter-Regular', fontSize: moderateScale(14), maxHeight: verticalScale(120), borderWidth: 1 },
+  sendBtn: { width: scale(44), height: verticalScale(44), borderRadius: moderateScale(22), alignItems: 'center', justifyContent: 'center' },
   sendBtnDisabled: { opacity: 0.4 },
-  downloadContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40, gap: 16 },
-  downloadText: { fontFamily: 'Inter-SemiBold', fontSize: 18 },
-  downloadProgress: { fontFamily: 'Inter-Regular', fontSize: 24 },
-  downloadInfo: { fontFamily: 'Inter-Regular', fontSize: 14, textAlign: 'center', marginTop: 10 },
+  downloadContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: moderateScale(40), gap: moderateScale(16) },
+  downloadText: { fontFamily: 'Inter-SemiBold', fontSize: moderateScale(18) },
+  downloadProgress: { fontFamily: 'Inter-Regular', fontSize: moderateScale(24) },
+  downloadInfo: { fontFamily: 'Inter-Regular', fontSize: moderateScale(14), textAlign: 'center', marginTop: moderateScale(10) },
 });

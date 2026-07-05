@@ -4,6 +4,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { PieChart, LineChart } from 'react-native-chart-kit';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import { useTransactionStore } from '@/stores/transactionStore';
+import { moderateScale, scale, verticalScale } from '@/utils/responsive';
+import { formatCurrency } from '@/utils/formatters';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -92,13 +94,17 @@ export default function StatsScreen() {
   const chartConfig = {
     backgroundGradientFrom: colors.surface,
     backgroundGradientTo: colors.surface,
-    color: (opacity = 1) => colors.text,
-    strokeWidth: 2,
+    color: (opacity = 1) => filterType === 'expense' ? `rgba(255, 107, 107, ${opacity})` : `rgba(32, 191, 107, ${opacity})`,
+    labelColor: () => colors.textMuted,
+    strokeWidth: 3,
     barPercentage: 0.5,
     useShadowColorFromDataset: false,
+    propsForDots: { r: '4', strokeWidth: '2' },
+    propsForBackgroundLines: { stroke: colors.borderAlt || 'rgba(0,0,0,0.05)', strokeDasharray: '4' },
     propsForLabels: {
       fontFamily: 'Inter-Medium',
-    }
+    },
+    decimalPlaces: 0,
   };
 
   return (
@@ -127,7 +133,7 @@ export default function StatsScreen() {
             Total {filterType === 'expense' ? 'Expenses' : 'Income'}
           </Text>
           <Text style={[styles.totalText, { color: filterType === 'expense' ? '#FF6B6B' : '#20BF6B' }]}>
-            ${totalAmount.toFixed(2)}
+            {formatCurrency(totalAmount, 'PHP')}
           </Text>
         </View>
 
@@ -154,17 +160,22 @@ export default function StatsScreen() {
           </View>
         )}
 
-        <View style={[styles.card, { backgroundColor: colors.surface, marginBottom: 120 }]}>
+        <View style={[styles.card, { backgroundColor: colors.surface, marginBottom: moderateScale(120) }]}>
           <Text style={[styles.cardTitle, { color: colors.text }]}>Last 7 Days</Text>
           <LineChart
             data={lineChartData}
-            width={screenWidth - 80}
+            width={screenWidth - 40}
             height={220}
+            yAxisLabel="₱"
+            yAxisSuffix=""
+            withInnerLines={false}
+            withOuterLines={false}
             chartConfig={chartConfig}
             bezier
             style={{
-              marginVertical: 8,
-              borderRadius: 16
+              marginVertical: moderateScale(8),
+              borderRadius: moderateScale(16),
+              marginLeft: -moderateScale(10)
             }}
           />
         </View>
@@ -178,68 +189,68 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
+    paddingHorizontal: moderateScale(20),
+    paddingVertical: moderateScale(16),
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: moderateScale(28),
     fontFamily: 'Inter-Bold',
   },
   typePicker: {
     flexDirection: 'row',
-    marginHorizontal: 20,
-    borderRadius: 16,
-    padding: 6,
-    marginBottom: 20,
+    marginHorizontal: moderateScale(20),
+    borderRadius: moderateScale(16),
+    padding: moderateScale(6),
+    marginBottom: moderateScale(20),
   },
   typeBtn: {
     flex: 1,
-    paddingVertical: 12,
-    borderRadius: 12,
+    paddingVertical: moderateScale(12),
+    borderRadius: moderateScale(12),
     alignItems: 'center',
   },
   typeBtnText: {
     fontFamily: 'Inter-Medium',
-    fontSize: 14,
+    fontSize: moderateScale(14),
   },
   typeBtnTextActive: {
     color: '#fff',
   },
   scrollContent: {
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    paddingHorizontal: moderateScale(20),
+    paddingBottom: moderateScale(40),
   },
   card: {
-    padding: 20,
-    borderRadius: 24,
-    marginBottom: 20,
+    padding: moderateScale(20),
+    borderRadius: moderateScale(24),
+    marginBottom: moderateScale(20),
     alignItems: 'center',
   },
   cardTitle: {
-    fontSize: 18,
+    fontSize: moderateScale(18),
     fontFamily: 'Inter-SemiBold',
-    marginBottom: 10,
+    marginBottom: moderateScale(10),
     alignSelf: 'flex-start',
   },
   totalText: {
-    fontSize: 32,
+    fontSize: moderateScale(32),
     fontFamily: 'Inter-Bold',
-    marginVertical: 10,
+    marginVertical: moderateScale(10),
   },
   emptyCard: {
-    padding: 40,
-    borderRadius: 24,
-    marginBottom: 20,
+    padding: moderateScale(40),
+    borderRadius: moderateScale(24),
+    marginBottom: moderateScale(20),
     alignItems: 'center',
     justifyContent: 'center',
   },
   emptyText: {
-    fontSize: 14,
+    fontSize: moderateScale(14),
     fontFamily: 'Inter-Medium',
   },
   pieChart3dContainer: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
+    shadowOffset: { width: 0, height: verticalScale(12) },
     shadowOpacity: 0.4,
     shadowRadius: 15,
     elevation: 12,
