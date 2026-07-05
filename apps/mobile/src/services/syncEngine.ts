@@ -94,6 +94,7 @@ export async function processSyncQueue() {
           start_date: b.startDate,
           color: b.color,
           emoji: b.emoji,
+          invite_code: b.inviteCode,
         };
         const { error } = await supabase.from('budgets').upsert(payload);
         if (!error) {
@@ -106,7 +107,7 @@ export async function processSyncQueue() {
       for (const b of updateBudgets) {
         const { error } = await supabase.from('budgets').update({
           name: b.name, category: b.category, amount: b.amount, currency: b.currency,
-          period: b.period, start_date: b.startDate, color: b.color, emoji: b.emoji
+          period: b.period, start_date: b.startDate, color: b.color, emoji: b.emoji, invite_code: b.inviteCode
         }).eq('id', b.id);
         if (!error) budgetStore.updateSyncStatus(b.id, 'synced');
       }

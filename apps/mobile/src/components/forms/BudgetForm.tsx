@@ -7,6 +7,7 @@ import { EXPENSE_CATEGORIES } from '@/constants/categories';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
+import * as Clipboard from 'expo-clipboard';
 import Animated, { FadeInRight, FadeOutLeft } from 'react-native-reanimated';
 
 interface Props {
@@ -87,6 +88,7 @@ export function BudgetForm({ onSuccess }: Props) {
   const [calMonth, setCalMonth] = useState(new Date().getMonth());
 
   const [loading, setLoading] = useState(false);
+  const [successCode, setSuccessCode] = useState<string | null>(null);
 
   useEffect(() => {
     const newStart = getStartOfPeriod(period);
@@ -166,9 +168,9 @@ export function BudgetForm({ onSuccess }: Props) {
         emoji,
         categories
       };
-      await createBudgetGroup(dto);
+      const newBudgets = await createBudgetGroup(dto);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-      onSuccess();
+      setSuccessCode(newBudgets[0].inviteCode || null);
     } catch (err: any) {
       Alert.alert('Error', err.message);
     } finally {
@@ -417,6 +419,45 @@ export function BudgetForm({ onSuccess }: Props) {
     );
   };
 
+  const renderSuccessModal = () => {
+    return (
+      <Modal visible={!!successCode} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <View style={[styles.successModal, { backgroundColor: colors.surface }]}>
+            <View style={[styles.successIcon, { backgroundColor: color + '20' }]}>
+              <Text style={{ fontSize: 48 }}>{emoji}</Text>
+              <View style={{ position: 'absolute', bottom: -4, right: -4, backgroundColor: colors.surface, borderRadius: 16, padding: 2 }}>
+                <Ionicons name="checkmark-circle" size={28} color={colors.primary} />
+              </View>
+            </View>
+            <Text style={[styles.successTitle, { color: colors.text }]}>Budget created!</Text>
+            <Text style={[styles.successSub, { color: colors.textMuted }]}>Share this invite code with others to collaborate:</Text>
+            
+            <View style={[styles.codeBox, { backgroundColor: colors.background, borderColor: colors.borderAlt }]}>
+              <Text style={[styles.codeText, { color: colors.text }]}>{successCode}</Text>
+            </View>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.background }]} onPress={() => {
+                setSuccessCode(null);
+                onSuccess();
+              }}>
+                <Text style={[styles.modalActionText, { color: colors.text }]}>Done</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.modalActionBtn, { backgroundColor: colors.primary }]} onPress={async () => {
+                Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                await Clipboard.setStringAsync(successCode || '');
+                Alert.alert('Copied!', 'Invite code copied to clipboard.');
+              }}>
+                <Text style={[styles.modalActionText, { color: '#fff' }]}>Copy Code</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
+
   const renderStep1 = () => (
     <Animated.View entering={FadeInRight} exiting={FadeOutLeft} style={styles.stepContainer}>
       <Text style={[styles.stepTitle, { color: colors.text }]}>Budget Identity</Text>
@@ -655,6 +696,7 @@ export function BudgetForm({ onSuccess }: Props) {
 
       {renderCalendarModal()}
       {renderCategoryModal()}
+      {renderSuccessModal()}
     </View>
   );
 }
@@ -745,4 +787,12 @@ const styles = StyleSheet.create({
   calGridText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
   calCloseBtn: { marginTop: 12, paddingVertical: 16, borderRadius: 16, alignItems: 'center' },
   calCloseBtnText: { fontFamily: 'Inter-SemiBold', fontSize: 16 },
+  
+  successModal: { width: '100%', borderRadius: 28, padding: 24, alignItems: 'center' },
+  successIcon: { width: 80, height: 80, borderRadius: 40, alignItems: 'center', justifyContent: 'center', marginBottom: 16 },
+  successTitle: { fontFamily: 'Inter-Bold', fontSize: 22, textAlign: 'center', marginBottom: 8 },
+  successSub: { fontFamily: 'Inter-Regular', fontSize: 15, textAlign: 'center', marginBottom: 24, paddingHorizontal: 12 },
+  codeBox: { width: '100%', paddingVertical: 20, borderRadius: 16, borderWidth: 1, alignItems: 'center', marginBottom: 24 },
+  codeText: { fontFamily: 'Inter-Bold', fontSize: 32, letterSpacing: 4 },
+  successActions: { width: '100%', gap: 12 },
 });
