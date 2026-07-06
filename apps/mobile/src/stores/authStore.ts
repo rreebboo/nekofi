@@ -3,7 +3,8 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { supabase } from '@/services/supabase/client';
 import { signInWithFacebook as fbSignIn } from '@/services/auth/facebookAuth';
-import { signInWithGoogle as googleSignIn, signOutFromGoogle } from '@/services/auth/googleAuth';
+import { signInWithGoogle as googleSignIn } from '@/services/auth/googleAuth';
+import { performSignOut } from '@/services/auth/signOutService';
 import type { User } from '@/types/user';
 import type { Session } from '@supabase/supabase-js';
 
@@ -110,21 +111,8 @@ export const useAuthStore = create<AuthState>()(
       },
 
       signOut: async () => {
-        await supabase.auth.signOut();
-        // Clear the native Google Sign-In state so the next sign-in shows
-        // the account picker instead of silently re-signing in.
-        await signOutFromGoogle();
+        await performSignOut();
         set({ session: null, user: null, isGuest: true });
-        
-        // Import dynamically or at top to avoid cycles, but since we are in a store, 
-        // we can just import the state directly.
-        const { useAccountStore } = require('./accountStore');
-        const { useBudgetStore } = require('./budgetStore');
-        const { useTransactionStore } = require('./transactionStore');
-        
-        useAccountStore.getState().clearAccounts();
-        useBudgetStore.getState().clearBudgets();
-        useTransactionStore.getState().clearTransactions();
       },
 
       continueAsGuest: () => {

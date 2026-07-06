@@ -20,7 +20,6 @@ export interface NekofiStore {
   state: NekofiState;
   emotion: NekofiEmotion;
   message: string | null;
-  lastTap: { x: number, y: number } | null;
   triggerAnimation: (
     type: NekofiEmotion,
     message?: string | null,
@@ -29,14 +28,12 @@ export interface NekofiStore {
   resetToIdle: () => void;
   setIdleMode: (isSleeping: boolean) => void;
   triggerRandomIdle: () => void;
-  setLastTap: (x: number, y: number) => void;
 }
 
 export const useNekofiStore = create<NekofiStore>((set, get) => ({
   state: 'IDLE',
   emotion: 'Blinking',
   message: null,
-  lastTap: null,
 
   triggerAnimation: (type, message = null, durationMs = 3000) => {
     set({ state: 'INTERACTION', emotion: type, message });
@@ -84,7 +81,4 @@ export const useNekofiStore = create<NekofiStore>((set, get) => ({
     }
   },
 
-  setLastTap: (x, y) => {
-    set({ lastTap: { x, y } });
-  }
 }));

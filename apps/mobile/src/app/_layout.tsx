@@ -17,8 +17,12 @@ import { useAuthStore } from '@/stores/authStore';
 import { useThemeColors, useResolvedTheme } from '@/hooks/useThemeColors';
 import { SyncConflictModal } from '@/components/SyncConflictModal';
 import { initSyncEngine } from '@/services/syncEngine';
+import { initAccountSyncModule } from '@/features/accounts/accountSyncModule';
+import { initBudgetSyncModule } from '@/features/budgets/budgetSyncModule';
+import { initTransactionSyncModule } from '@/features/transactions/transactionSyncModule';
 import { initRealtimeSync } from '@/services/realtimeService';
 import { aiService } from '@/services/ai/LocalAIService';
+import { TouchTrackerProvider } from '@/contexts/touchTracker';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -37,10 +41,17 @@ export default function RootLayout() {
 
   useEffect(() => {
     initialize();
+    
+    // Initialize feature sync modules
+    initAccountSyncModule();
+    initBudgetSyncModule();
+    initTransactionSyncModule();
+    
     initSyncEngine();
     initRealtimeSync();
     aiService.initialize();
   }, []);
+
 
   useEffect(() => {
     if (fontsLoaded || fontError) {
@@ -53,28 +64,25 @@ export default function RootLayout() {
   }
 
   return (
-    <GestureHandlerRootView 
+    <GestureHandlerRootView
       style={{ flex: 1, backgroundColor: colors.background }}
-      onTouchStart={(e: any) => {
-        const { pageX, pageY } = e.nativeEvent;
-        const { setLastTap } = require('@/store/nekofiStore').useNekofiStore.getState();
-        setLastTap(pageX, pageY);
-      }}
     >
-      <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(auth)" />
-        <Stack.Screen name="(tabs)" />
-        {/* OAuth callback — handles nekofi://auth/callback deep link from Facebook login */}
-        <Stack.Screen name="auth/callback" />
-        <Stack.Screen name="transaction/[id]" />
-        <Stack.Screen name="budget/[id]" />
-        <Stack.Screen name="ai/chat" />
-        <Stack.Screen name="account/add" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="account/list" options={{ presentation: 'modal' }} />
-        <Stack.Screen name="settings/appearance" options={{ presentation: 'modal' }} />
-      </Stack>
-      <SyncConflictModal />
+      <TouchTrackerProvider>
+        <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(auth)" />
+          <Stack.Screen name="(tabs)" />
+          {/* OAuth callback — handles nekofi://auth/callback deep link from Facebook login */}
+          <Stack.Screen name="auth/callback" />
+          <Stack.Screen name="transaction/[id]" />
+          <Stack.Screen name="budget/[id]" />
+          <Stack.Screen name="ai/chat" />
+          <Stack.Screen name="account/add" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="account/list" options={{ presentation: 'modal' }} />
+          <Stack.Screen name="settings/appearance" options={{ presentation: 'modal' }} />
+        </Stack>
+        <SyncConflictModal />
+      </TouchTrackerProvider>
     </GestureHandlerRootView>
   );
 }

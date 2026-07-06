@@ -1,9 +1,11 @@
-import { supabase } from './supabase/client';
 import { useAccountStore } from '@/stores/accountStore';
 import { useBudgetStore } from '@/stores/budgetStore';
 import { useTransactionStore } from '@/stores/transactionStore';
 import { useAuthStore } from '@/stores/authStore';
-import { syncEmitter } from './syncEmitter';
+import * as accountService from '@/services/accountService';
+import * as budgetService from '@/services/budgetService';
+import * as transactionService from '@/services/transactionService';
+import { supabase } from '@/services/supabase/client';
 
 export async function checkAndHandleSyncConflict(): Promise<boolean> {
   const { data: userData } = await supabase.auth.getUser();
@@ -16,15 +18,13 @@ export async function checkAndHandleSyncConflict(): Promise<boolean> {
   const hasLocalData = accounts.length > 0 || budgets.length > 0 || transactions.length > 0;
 
   // Check if cloud data exists
-  const [cloudAccounts, cloudBudgets, cloudTxs] = await Promise.all([
-    supabase.from('accounts').select('id').limit(1),
-    supabase.from('budgets').select('id').limit(1),
-    supabase.from('transactions').select('id').limit(1),
+  const [hasAccounts, hasBudgets, hasTxs] = await Promise.all([
+    accountService.hasCloudAccounts(),
+    budgetService.hasCloudBudgets(),
+    transactionService.hasCloudTransactions(),
   ]);
 
-  const hasCloudData = (cloudAccounts.data && cloudAccounts.data.length > 0) ||
-                       (cloudBudgets.data && cloudBudgets.data.length > 0) ||
-                       (cloudTxs.data && cloudTxs.data.length > 0);
+  const hasCloudData = hasAccounts || hasBudgets || hasTxs;
 
   if (hasLocalData && hasCloudData) {
     useAuthStore.getState().setSyncConflict(true);
@@ -43,6 +43,7 @@ export async function checkAndHandleSyncConflict(): Promise<boolean> {
 export async function resolveSyncChoice(choice: 'local' | 'cloud') {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) return;
+  const userId = userData.user.id;
 
   if (choice === 'cloud') {
     // Clear local data, fetch from cloud
@@ -57,10 +58,10 @@ export async function resolveSyncChoice(choice: 'local' | 'cloud') {
     ]);
   } else if (choice === 'local') {
     // 1. Fetch old cloud IDs
-    const [oldAccounts, oldBudgets, oldTxs] = await Promise.all([
-      supabase.from('accounts').select('id').eq('user_id', userData.user.id),
-      supabase.from('budgets').select('id').eq('user_id', userData.user.id),
-      supabase.from('transactions').select('id').eq('user_id', userData.user.id),
+    const [oldAccIds, oldBudIds, oldTxIds] = await Promise.all([
+      accountService.fetchAccountIdsByUser(userId),
+      budgetService.fetchBudgetIdsByUser(userId),
+      transactionService.fetchTransactionIdsByUser(userId),
     ]);
 
     // 2. Format local data for upsert
@@ -68,50 +69,18 @@ export async function resolveSyncChoice(choice: 'local' | 'cloud') {
     const budgets = useBudgetStore.getState().budgets;
     const transactions = useTransactionStore.getState().transactions;
 
-    const localAccounts = accounts.map(a => ({
-      id: a.id, user_id: userData.user.id, name: a.name, type: a.type,
-      brand_icon: a.brandIcon, balance: a.balance, currency: a.currency,
-      color: a.color, gradient_end: a.gradientEnd, text_color: a.textColor,
-      number_masked: a.numberMasked,
-    }));
-    
-    const localBudgets = budgets.map(b => ({
-      id: b.id, user_id: userData.user.id, name: b.name, category: b.category,
-      amount: b.amount, currency: b.currency, period: b.period,
-      start_date: b.startDate, color: b.color, emoji: b.emoji,
-    }));
-
-    const localTxs = transactions.map(t => {
-      const payload: any = {
-        id: t.id, user_id: userData.user.id, type: t.type, amount: t.amount,
-        currency: t.currency, category: t.category, description: t.description,
-        date: t.date, receipt_url: t.receiptUrl,
-      };
-      if (t.budgetId) payload.budget_id = t.budgetId;
-      return payload;
-    });
-
     // 3. Upsert
-    const [upAcc, upBud, upTx] = await Promise.all([
-      localAccounts.length ? supabase.from('accounts').upsert(localAccounts) : Promise.resolve({ error: null }),
-      localBudgets.length ? supabase.from('budgets').upsert(localBudgets) : Promise.resolve({ error: null }),
-      localTxs.length ? supabase.from('transactions').upsert(localTxs) : Promise.resolve({ error: null }),
+    await Promise.all([
+      accountService.batchUpsertAccounts(accounts, userId),
+      budgetService.batchUpsertBudgets(budgets, userId),
+      transactionService.batchUpsertTransactions(transactions, userId),
     ]);
 
-    if (upAcc.error || upBud.error || upTx.error) {
-      console.error('Failed to upload local data:', upAcc.error, upBud.error, upTx.error);
-      throw new Error('Failed to upload local data to the cloud.');
-    }
-
     // 4. Delete old cloud data
-    const oldAccIds = oldAccounts.data?.map(a => a.id) || [];
-    const oldBudIds = oldBudgets.data?.map(b => b.id) || [];
-    const oldTxIds = oldTxs.data?.map(t => t.id) || [];
-
     await Promise.all([
-      oldAccIds.length ? supabase.from('accounts').delete().in('id', oldAccIds) : Promise.resolve(),
-      oldBudIds.length ? supabase.from('budgets').delete().in('id', oldBudIds) : Promise.resolve(),
-      oldTxIds.length ? supabase.from('transactions').delete().in('id', oldTxIds) : Promise.resolve(),
+      accountService.deleteAccountsByIds(oldAccIds),
+      budgetService.deleteBudgetsByIds(oldBudIds),
+      transactionService.deleteTransactionsByIds(oldTxIds),
     ]);
 
     // 5. Update local store sync status directly to 'synced'

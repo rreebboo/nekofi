@@ -26,7 +26,9 @@ export const NekofiSvgMascot: React.FC<NekofiSvgMascotProps> = React.memo(({
   breatheScale, 
   breatheY 
 }) => {
-  const { emotion } = useNekofiStore();
+  // Granular selector — only re-renders when `emotion` changes,
+  // not on any other Zustand store update (e.g., message, state).
+  const emotion = useNekofiStore((s) => s.emotion);
   
   const blinkScale = useSharedValue(1);
   const tailRotate = useSharedValue(0);

@@ -1,17 +1,20 @@
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Pressable, useColorScheme } from 'react-native';
+import React, { useEffect, useCallback } from 'react';
+import { View, Text, StyleSheet, Pressable, useColorScheme, LayoutChangeEvent } from 'react-native';
 import { useNekofiStore, NekofiEmotion } from '../store/nekofiStore';
 import { useAuthStore } from '../stores/authStore';
 import { useAIStore } from '../store/useAIStore';
 import { NekofiSvgMascot } from './NekofiSvgMascot';
 import { Colors } from '../constants/Colors';
-import Animated, { 
-  useSharedValue, 
-  useAnimatedStyle, 
-  withSequence, 
-  withTiming, 
+import { useTouchTracker } from '../contexts/touchTracker';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  useAnimatedReaction,
+  runOnJS,
+  withSequence,
+  withTiming,
   Easing,
-  withRepeat
+  withRepeat,
 } from 'react-native-reanimated';
 
 // Placeholder mapping for all 34 states until the actual sprite sheet is provided.
@@ -63,42 +66,125 @@ export interface NekofiCompanionProps {
   inline?: boolean;
 }
 
-export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({ 
+export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
   hideBubble = false,
   size = 180,
   inline = false
 }) => {
-  const { state, emotion, message, triggerAnimation, triggerRandomIdle, lastTap } = useNekofiStore();
+  // ─── Granular Zustand selectors ───────────────────────────────────────────
+  // Each selector is independent — this component only re-renders when the
+  // specific slice it needs actually changes. Previously `useNekofiStore()`
+  // (no selector) caused a re-render on every single touch.
+  const nekoState = useNekofiStore((s) => s.state);
+  const emotion = useNekofiStore((s) => s.emotion);
+  const message = useNekofiStore((s) => s.message);
+  const triggerAnimation = useNekofiStore((s) => s.triggerAnimation);
+  const triggerRandomIdle = useNekofiStore((s) => s.triggerRandomIdle);
+
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  
+
+  // ─── Reanimated shared values ─────────────────────────────────────────────
   const scaleY = useSharedValue(1);
   const scaleX = useSharedValue(1);
-  
   const breatheScale = useSharedValue(1);
   const breatheY = useSharedValue(0);
   const lookX = useSharedValue(0);
   const lookY = useSharedValue(0);
-  const containerRef = React.useRef<View>(null);
 
-  // Advanced Idle Loop
+  // ─── Touch tracker (UI-thread SharedValues, zero re-renders) ─────────────
+  const { tapX, tapY } = useTouchTracker();
+
+  // ─── Cached layout (avoids measure() on every tap) ───────────────────────
+  // The companion's bounding box is stored as Reanimated SharedValues so that
+  // worklets on the UI thread can read them without crossing the JS bridge.
+  const containerRef = React.useRef<View>(null);
+  const layoutPageX = useSharedValue(0);
+  const layoutPageY = useSharedValue(0);
+  const layoutWidth = useSharedValue(0);
+  const layoutHeight = useSharedValue(0);
+
+  // Sync layout SharedValues when layout changes (only fires on actual layout events,
+  // not on every tap — measure() is called once per layout change)
+  const handleLayoutSync = useCallback((_e: LayoutChangeEvent) => {
+    requestAnimationFrame(() => {
+      containerRef.current?.measure((_x, _y, width, height, pageX, pageY) => {
+        layoutPageX.value = pageX;
+        layoutPageY.value = pageY;
+        layoutWidth.value = width;
+        layoutHeight.value = height;
+      });
+    });
+  }, [layoutPageX, layoutPageY, layoutWidth, layoutHeight]);
+
+  useAnimatedReaction(
+    () => ({ x: tapX.value, y: tapY.value }),
+    (current) => {
+      'worklet';
+      const centerX = layoutPageX.value + layoutWidth.value / 2;
+      const centerY = layoutPageY.value + layoutHeight.value / 2;
+      const dx = current.x - centerX;
+      const dy = current.y - centerY;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      const maxMove = 6; // max pixel pivot
+
+      if (distance > 0) {
+        lookX.value = withTiming((dx / distance) * maxMove, {
+          duration: 400,
+          easing: Easing.out(Easing.quad),
+        });
+        lookY.value = withTiming((dy / distance) * maxMove, {
+          duration: 400,
+          easing: Easing.out(Easing.quad),
+        });
+      }
+    }
+  );
+
+  // ─── Interaction tracking (first-tap greeting) ────────────────────────────
+  // We still need to know *if* the user has tapped to show a message,
+  // but we only need a one-time JS notification, not per-tap updates.
+  // useAnimatedReaction fires the JS callback only once via runOnJS.
+  const hasInteracted = React.useRef(false);
+
+  const notifyFirstInteraction = useCallback(() => {
+    if (!hasInteracted.current) {
+      hasInteracted.current = true;
+      triggerAnimation('Curious', "I'm tracking your every move... I mean, your finances!", 0);
+    }
+  }, [triggerAnimation]);
+
+  useAnimatedReaction(
+    () => tapX.value + tapY.value, // any non-zero value means a tap happened
+    (current, previous) => {
+      'worklet';
+      // Only the very first time a non-zero coordinate is received
+      if (current !== 0 && previous === 0) {
+        runOnJS(notifyFirstInteraction)();
+      }
+    }
+  );
+
+  // ─── Advanced Idle Loop ───────────────────────────────────────────────────
   useEffect(() => {
     let idleTimer: NodeJS.Timeout;
-    if (state === 'IDLE') {
+    if (nekoState === 'IDLE') {
       idleTimer = setInterval(() => {
         triggerRandomIdle();
-      }, 5000 + Math.random() * 5000); // Random interval between 5-10s
+      }, 5000 + Math.random() * 5000);
     }
     return () => clearInterval(idleTimer);
-  }, [state, triggerRandomIdle]);
+  }, [nekoState, triggerRandomIdle]);
 
-  const { user } = useAuthStore();
-  const { latestInsight, isReady: aiReady } = useAIStore();
+  // ─── Auth & AI stores (granular selectors) ────────────────────────────────
+  const user = useAuthStore((s) => s.user);
+  const latestInsight = useAIStore((s) => s.latestInsight);
+  const aiReady = useAIStore((s) => s.isReady);
+
   const hasGreeted = React.useRef(false);
-  const hasInteracted = React.useRef(false);
   const hasShownInsight = React.useRef(false);
 
-  // Initial Greeting (waits for user to load)
+  // Initial greeting (fires once after user loads)
   useEffect(() => {
     if (!user || hasGreeted.current) return;
     hasGreeted.current = true;
@@ -108,12 +194,10 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
     if (h < 12) greeting = 'Good morning';
     else if (h < 18) greeting = 'Good afternoon';
 
-    // Try to get first name
-    const firstName = user?.name?.split(' ')[0] 
-      || user?.email?.split('@')[0] 
+    const firstName = user?.name?.split(' ')[0]
+      || user?.email?.split('@')[0]
       || 'there';
 
-    // Duration 0 means it waits for user interaction
     triggerAnimation('Wave Hello', `${greeting}, ${firstName}! Ready to save today?`, 0);
   }, [user]);
 
@@ -122,10 +206,8 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
     if (!aiReady || !latestInsight || hasShownInsight.current || !hasGreeted.current) return;
     hasShownInsight.current = true;
 
-    // Show the insight after a brief delay so it doesn't overlap the greeting
     const timer = setTimeout(() => {
       const { state: currentState } = useNekofiStore.getState();
-      // Only show if user hasn't started interacting
       if (currentState === 'IDLE' || !hasInteracted.current) {
         triggerAnimation('Curious', latestInsight, 0);
       }
@@ -134,7 +216,7 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
     return () => clearTimeout(timer);
   }, [aiReady, latestInsight]);
 
-  // Continuous breathing and bobbing
+  // ─── Continuous breathing and bobbing ────────────────────────────────────
   useEffect(() => {
     breatheScale.value = withRepeat(
       withSequence(
@@ -154,39 +236,8 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
     );
   }, []);
 
-  // Eye tracking / Head tracking and first interaction
-  useEffect(() => {
-    if (lastTap) {
-      if (!hasInteracted.current) {
-        hasInteracted.current = true;
-        // Transition to the tracking speech when they first tap/scroll
-        triggerAnimation('Curious', "I'm tracking your every move... I mean, your finances!", 0);
-      }
-
-      if (containerRef.current) {
-        containerRef.current.measure((x, y, width, height, pageX, pageY) => {
-          const centerX = pageX + width / 2;
-          const centerY = pageY + height / 2;
-          const dx = lastTap.x - centerX;
-          const dy = lastTap.y - centerY;
-          
-          const distance = Math.sqrt(dx * dx + dy * dy);
-          const maxMove = 6; // Max pixels to pivot
-          
-          if (distance > 0) {
-            lookX.value = withTiming((dx / distance) * maxMove, { duration: 400, easing: Easing.out(Easing.quad) });
-            lookY.value = withTiming((dy / distance) * maxMove, { duration: 400, easing: Easing.out(Easing.quad) });
-          }
-        });
-      }
-    } else {
-      lookX.value = withTiming(0);
-      lookY.value = withTiming(0);
-    }
-  }, [lastTap]);
-
-  const handlePress = () => {
-    // Squash and stretch animation
+  // ─── Press handler ───────────────────────────────────────────────────────
+  const handlePress = useCallback(() => {
     scaleY.value = withSequence(
       withTiming(0.8, { duration: 100, easing: Easing.out(Easing.quad) }),
       withTiming(1.1, { duration: 150, easing: Easing.inOut(Easing.quad) }),
@@ -197,17 +248,14 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
       withTiming(0.9, { duration: 150, easing: Easing.inOut(Easing.quad) }),
       withTiming(1, { duration: 100, easing: Easing.in(Easing.quad) })
     );
-
     triggerAnimation('Excited', 'Purr-fect!', 3000);
-  };
+  }, [triggerAnimation, scaleX, scaleY]);
 
-  const animConfig = EMOTION_MAP[emotion] || { row: 0, frames: 4 };
-
+  // ─── Typewriter effect ───────────────────────────────────────────────────
   const displayedText = message || "I'm keeping an eye on your finances!";
   const [typedText, setTypedText] = React.useState('');
   const bubbleScale = useSharedValue(1);
 
-  // Pop animation and typewriter effect whenever text changes
   useEffect(() => {
     setTypedText('');
     let currentIndex = 0;
@@ -225,19 +273,20 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
       } else {
         clearInterval(interval);
       }
-    }, 30); // 30ms per character gives a smooth, fast typing feel
+    }, 30);
 
     return () => clearInterval(interval);
   }, [displayedText]);
 
+  // ─── Animated styles ─────────────────────────────────────────────────────
   const animatedContainerStyle = useAnimatedStyle(() => ({
     position: inline ? 'relative' : 'absolute',
     left: inline ? 0 : -25,
     top: inline ? 0 : -30,
     zIndex: 100,
     transform: [
-      { scaleX: scaleX.value }, 
-      { scaleY: scaleY.value }
+      { scaleX: scaleX.value },
+      { scaleY: scaleY.value },
     ],
   }));
 
@@ -246,14 +295,18 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
   }));
 
   return (
-    <View style={[styles.container, !inline && { minHeight: 100 }]} ref={containerRef}>
+    <View
+      style={[styles.container, !inline && { minHeight: 100 }]}
+      ref={containerRef}
+      onLayout={handleLayoutSync}
+    >
       <Animated.View style={animatedContainerStyle}>
         <Pressable onPress={handlePress} style={[styles.mascotWrapper, { width: size, height: size }]}>
-           <NekofiSvgMascot 
-             lookX={lookX} 
-             lookY={lookY} 
-             breatheScale={breatheScale} 
-             breatheY={breatheY} 
+           <NekofiSvgMascot
+             lookX={lookX}
+             lookY={lookY}
+             breatheScale={breatheScale}
+             breatheY={breatheY}
            />
         </Pressable>
       </Animated.View>
@@ -268,7 +321,7 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = ({
       )}
     </View>
   );
-};
+});
 
 const styles = StyleSheet.create({
   container: {
@@ -285,8 +338,8 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 20,
     borderWidth: 1,
-    flexShrink: 1, // Shrink to fit text naturally without stretching full width
-    alignSelf: 'center', // Center vertically alongside the mascot
+    flexShrink: 1,
+    alignSelf: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.05,
