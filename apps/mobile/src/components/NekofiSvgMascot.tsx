@@ -6,7 +6,8 @@ import Animated, {
   withRepeat, 
   withSequence, 
   withTiming, 
-  Easing
+  Easing,
+  cancelAnimation
 } from 'react-native-reanimated';
 import { useNekofiStore } from '../store/nekofiStore';
 
@@ -18,13 +19,15 @@ interface NekofiSvgMascotProps {
   lookY: Animated.SharedValue<number>;
   breatheScale: Animated.SharedValue<number>;
   breatheY: Animated.SharedValue<number>;
+  isFocused: boolean;
 }
 
 export const NekofiSvgMascot: React.FC<NekofiSvgMascotProps> = React.memo(({ 
   lookX, 
   lookY, 
   breatheScale, 
-  breatheY 
+  breatheY,
+  isFocused
 }) => {
   // Granular selector — only re-renders when `emotion` changes,
   // not on any other Zustand store update (e.g., message, state).
@@ -35,6 +38,7 @@ export const NekofiSvgMascot: React.FC<NekofiSvgMascotProps> = React.memo(({
 
   // Blinking loop
   useEffect(() => {
+    if (!isFocused) return;
     let timeoutId: NodeJS.Timeout;
     const blinkLoop = () => {
       blinkScale.value = withSequence(
@@ -45,10 +49,14 @@ export const NekofiSvgMascot: React.FC<NekofiSvgMascotProps> = React.memo(({
     };
     timeoutId = setTimeout(blinkLoop, 2000);
     return () => clearTimeout(timeoutId);
-  }, []);
+  }, [isFocused]);
 
   // Tail wagging loop
   useEffect(() => {
+    if (!isFocused) {
+      cancelAnimation(tailRotate);
+      return;
+    }
     tailRotate.value = withRepeat(
       withSequence(
         withTiming(15, { duration: 1000, easing: Easing.inOut(Easing.ease) }),
@@ -57,7 +65,7 @@ export const NekofiSvgMascot: React.FC<NekofiSvgMascotProps> = React.memo(({
       -1,
       true
     );
-  }, []);
+  }, [isFocused]);
 
   // Animate the eye radii directly to avoid transform origin bugs
   const greenEyeProps = useAnimatedProps(() => {

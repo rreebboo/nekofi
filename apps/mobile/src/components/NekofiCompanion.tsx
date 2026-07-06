@@ -15,7 +15,9 @@ import Animated, {
   withTiming,
   Easing,
   withRepeat,
+  cancelAnimation,
 } from 'react-native-reanimated';
+import { useIsFocused } from '@react-navigation/native';
 
 // Placeholder mapping for all 34 states until the actual sprite sheet is provided.
 const EMOTION_MAP: Record<NekofiEmotion, { row: number, frames: number }> = {
@@ -83,6 +85,13 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
 
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  
+  const isFocused = useIsFocused();
+  const isFocusedSV = useSharedValue(true);
+
+  useEffect(() => {
+    isFocusedSV.value = isFocused;
+  }, [isFocused]);
 
   // ─── Reanimated shared values ─────────────────────────────────────────────
   const scaleY = useSharedValue(1);
@@ -118,9 +127,10 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
   }, [layoutPageX, layoutPageY, layoutWidth, layoutHeight]);
 
   useAnimatedReaction(
-    () => ({ x: tapX.value, y: tapY.value }),
+    () => ({ x: tapX.value, y: tapY.value, focused: isFocusedSV.value }),
     (current) => {
       'worklet';
+      if (!current.focused) return;
       const centerX = layoutPageX.value + layoutWidth.value / 2;
       const centerY = layoutPageY.value + layoutHeight.value / 2;
       const dx = current.x - centerX;
@@ -167,6 +177,7 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
 
   // ─── Advanced Idle Loop ───────────────────────────────────────────────────
   useEffect(() => {
+    if (!isFocused) return;
     let idleTimer: NodeJS.Timeout;
     if (nekoState === 'IDLE') {
       idleTimer = setInterval(() => {
@@ -174,7 +185,7 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
       }, 5000 + Math.random() * 5000);
     }
     return () => clearInterval(idleTimer);
-  }, [nekoState, triggerRandomIdle]);
+  }, [nekoState, triggerRandomIdle, isFocused]);
 
   // ─── Auth & AI stores (granular selectors) ────────────────────────────────
   const user = useAuthStore((s) => s.user);
@@ -218,6 +229,11 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
 
   // ─── Continuous breathing and bobbing ────────────────────────────────────
   useEffect(() => {
+    if (!isFocused) {
+      cancelAnimation(breatheScale);
+      cancelAnimation(breatheY);
+      return;
+    }
     breatheScale.value = withRepeat(
       withSequence(
         withTiming(1.02, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
@@ -234,7 +250,7 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
       -1,
       true
     );
-  }, []);
+  }, [isFocused]);
 
   // ─── Press handler ───────────────────────────────────────────────────────
   const handlePress = useCallback(() => {
@@ -257,6 +273,7 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
   const bubbleScale = useSharedValue(1);
 
   useEffect(() => {
+    if (!isFocused) return;
     setTypedText('');
     let currentIndex = 0;
 
@@ -276,7 +293,7 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
     }, 30);
 
     return () => clearInterval(interval);
-  }, [displayedText]);
+  }, [displayedText, isFocused]);
 
   // ─── Animated styles ─────────────────────────────────────────────────────
   const animatedContainerStyle = useAnimatedStyle(() => ({
@@ -307,6 +324,7 @@ export const NekofiCompanion: React.FC<NekofiCompanionProps> = React.memo(({
              lookY={lookY}
              breatheScale={breatheScale}
              breatheY={breatheY}
+             isFocused={isFocused}
            />
         </Pressable>
       </Animated.View>
