@@ -32,26 +32,22 @@ export const TouchTrackerProvider: React.FC<{ children: React.ReactNode }> = ({
   const tapX = useSharedValue(0);
   const tapY = useSharedValue(0);
 
-  /**
-   * Pan gesture in tracking-only mode:
-   *   - onBegin fires once on first finger contact (gives us the tap position).
-   *   - onChange fires as the finger moves (keeps tracking smooth).
-   * Both callbacks are worklets — they run on the UI thread, never on JS.
-   */
   const gesture = useMemo(
     () =>
-      Gesture.Pan()
-        .minDistance(0)           // activate immediately on any touch
-        .maxPointers(1)
-        .onBegin((e) => {
+      Gesture.Manual()
+        .onTouchesDown((e) => {
           'worklet';
-          tapX.value = e.absoluteX;
-          tapY.value = e.absoluteY;
+          if (e.allTouches.length > 0) {
+            tapX.value = e.allTouches[0].absoluteX;
+            tapY.value = e.allTouches[0].absoluteY;
+          }
         })
-        .onChange((e) => {
+        .onTouchesMove((e) => {
           'worklet';
-          tapX.value = e.absoluteX;
-          tapY.value = e.absoluteY;
+          if (e.allTouches.length > 0) {
+            tapX.value = e.allTouches[0].absoluteX;
+            tapY.value = e.allTouches[0].absoluteY;
+          }
         }),
     // SharedValues are stable refs; no dependencies needed
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -66,7 +62,7 @@ export const TouchTrackerProvider: React.FC<{ children: React.ReactNode }> = ({
         {/* Animated.View fills its parent so it captures touches app-wide.
             pointerEvents="box-none" means the overlay itself doesn't consume
             touches — child elements still receive their events normally. */}
-        <Animated.View style={StyleSheet.absoluteFill} pointerEvents="box-none">
+        <Animated.View style={{ flex: 1 }} pointerEvents="box-none">
           {children}
         </Animated.View>
       </GestureDetector>

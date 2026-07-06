@@ -33,11 +33,7 @@ export function AIInsightCard() {
     router.push('/ai/chat');
   };
 
-  const handleRefresh = () => {
-    if (!insightLoading && isReady) {
-      refreshInsight();
-    }
-  };
+
 
   const animatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: scaleVal.value }],
@@ -54,15 +50,7 @@ export function AIInsightCard() {
         <View style={styles.header}>
           <Ionicons name="sparkles" size={18} color={colors.primary} />
           <Text style={[styles.headerText, { color: colors.primary }]}>Nekofi AI Insight</Text>
-          {isReady && (
-            <Pressable onPress={handleRefresh} hitSlop={8}>
-              {insightLoading ? (
-                <ActivityIndicator size="small" color={colors.primary} />
-              ) : (
-                <Ionicons name="refresh-outline" size={16} color={colors.textMuted} />
-              )}
-            </Pressable>
-          )}
+
           {isReady && <Ionicons name="checkmark-circle" size={14} color={colors.primary} />}
           <Ionicons name="arrow-forward" size={14} color={colors.textMuted} />
         </View>

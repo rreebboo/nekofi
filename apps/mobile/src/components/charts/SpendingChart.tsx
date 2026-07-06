@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
+import { router } from 'expo-router';
 import { LineChart } from 'react-native-chart-kit';
 import { Dimensions } from 'react-native';
 import type { Transaction } from '@/types/transaction';
@@ -103,8 +104,12 @@ export function SpendingChart({ transactions }: Props) {
   const finalExpense = hasExpense ? expenseData : expenseData.map(() => 0.01);
 
   return (
-    <Animated.View entering={FadeInUp.delay(200).springify()} style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}>
-      <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
+    <Animated.View entering={FadeInUp.delay(200).springify()}>
+      <Pressable 
+        style={[styles.container, { backgroundColor: colors.surface, borderColor: colors.borderAlt }]}
+        onPress={() => router.push('/stats')}
+      >
+        <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
       <LineChart
         data={{ 
           labels, 
@@ -134,6 +139,7 @@ export function SpendingChart({ transactions }: Props) {
         withInnerLines={false}
         withOuterLines={false}
       />
+      </Pressable>
     </Animated.View>
   );
 }

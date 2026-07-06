@@ -221,11 +221,7 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
     <GestureHandlerRootView style={styles.container}>
       <View style={[styles.shadowView, { shadowColor: isDark ? '#000' : 'rgba(0,0,0,0.3)' }]} />
       
-      <BlurView 
-        intensity={Platform.OS === 'ios' ? 20 : 35}
-
-        tint={isDark ? 'dark' : 'light'} 
-        experimentalBlurMethod="dimezisBlurView"
+      <View 
         style={[
           styles.blurBackground,
           {
@@ -233,7 +229,14 @@ export function GlassTabBar({ state, descriptors, navigation }: BottomTabBarProp
             borderColor: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(255, 255, 255, 0.5)',
           }
         ]}
-      />
+      >
+        <BlurView 
+          intensity={Platform.OS === 'ios' ? 20 : 25}
+          tint={isDark ? 'dark' : 'light'} 
+          experimentalBlurMethod="dimezisBlurView"
+          style={StyleSheet.absoluteFillObject}
+        />
+      </View>
 
       <GestureDetector gesture={panGesture}>
         <View 

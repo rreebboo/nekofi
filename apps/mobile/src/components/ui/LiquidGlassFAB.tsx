@@ -37,7 +37,7 @@ export function LiquidGlassFAB() {
         {({ pressed }) => (
           <Animated.View style={[styles.fab, pressed && { transform: [{ scale: 0.92 }] }]}>
             <BlurView 
-              intensity={Platform.OS === 'ios' ? 80 : 100} 
+              intensity={Platform.OS === 'ios' ? 80 : 35} 
               tint={isDark ? 'dark' : 'light'} 
               style={StyleSheet.absoluteFillObject} 
             />

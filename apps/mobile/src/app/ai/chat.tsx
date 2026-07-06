@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useAIStore, UIMessage } from '@/store/useAIStore';
 import { useNekofiStore } from '@/store/nekofiStore';
 import { NekofiCompanion } from '@/components/NekofiCompanion';
+import { NekofiStaticAvatar } from '@/components/NekofiStaticAvatar';
 import { useThemeColors } from '@/hooks/useThemeColors';
 import Animated, { FadeInDown, FadeIn } from 'react-native-reanimated';
 import { AnimatedPressable } from '@/components/ui/AnimatedPressable';
@@ -20,82 +21,7 @@ const QUICK_ACTIONS = [
   'Show my accounts',
 ];
 
-/**
- * AI Chat screen — full-featured chat with tool calling, confirmations,
- * and rich result rendering, powered by the local LLM.
- */
-export default function AIChatScreen() {
-  const [input, setInput] = useState('');
-  const listRef = useRef<FlatList>(null);
-  const colors = useThemeColors();
-  
-  // AI State
-  const {
-    isDownloading,
-    downloadProgress,
-    isReady,
-    messages,
-    isProcessing,
-    activeToolName,
-    pendingConfirmation,
-    sendMessage,
-    confirmAction,
-    rejectAction,
-    clearConversation,
-  } = useAIStore();
-
-  const { triggerAnimation } = useNekofiStore();
-
-  const handleSend = useCallback(async () => {
-    if (!input.trim() || isProcessing || !isReady) return;
-    
-    const text = input.trim();
-    setInput('');
-    triggerAnimation('AI Thinking', null, 0);
-    
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
-
-    await sendMessage(text);
-
-    // React to the result
-    const state = useAIStore.getState();
-    if (state.pendingConfirmation) {
-      triggerAnimation('Concerned', null, 0);
-    } else {
-      triggerAnimation('Happy', null, 4000);
-    }
-
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 200);
-  }, [input, isProcessing, isReady, sendMessage, triggerAnimation]);
-
-  const handleQuickAction = useCallback((text: string) => {
-    setInput(text);
-    // Auto-send after a tiny delay so the UI updates
-    setTimeout(() => {
-      useAIStore.getState().sendMessage(text);
-      triggerAnimation('AI Thinking', null, 0);
-      setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
-    }, 50);
-  }, [triggerAnimation]);
-
-  const handleConfirm = useCallback(async () => {
-    triggerAnimation('AI Thinking', 'Processing...', 0);
-    await confirmAction();
-    triggerAnimation('Celebration', 'Done!', 4000);
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 200);
-  }, [confirmAction, triggerAnimation]);
-
-  const handleReject = useCallback(() => {
-    rejectAction();
-    triggerAnimation('Happy', null, 3000);
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 200);
-  }, [rejectAction, triggerAnimation]);
-
-  // Scroll to bottom when messages change
-  useEffect(() => {
-    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 150);
-  }, [messages.length]);
-
+const ChatMessage = React.memo(({ item, colors, pendingConfirmation, onReject, onConfirm }: any) => {
   const renderToolBadge = (toolName: string, success: boolean) => {
     const TOOL_LABELS: Record<string, { icon: string; label: string }> = {
       get_transactions: { icon: '📋', label: 'Transactions' },
@@ -148,13 +74,13 @@ export default function AIChatScreen() {
         <View style={styles.confirmButtons}>
           <AnimatedPressable
             style={[styles.confirmBtn, styles.confirmBtnCancel, { borderColor: colors.border }]}
-            onPress={handleReject}
+            onPress={onReject}
           >
             <Text style={[styles.confirmBtnText, { color: colors.textMuted }]}>Cancel</Text>
           </AnimatedPressable>
           <AnimatedPressable
             style={[styles.confirmBtn, styles.confirmBtnConfirm, { backgroundColor: colors.error }]}
-            onPress={handleConfirm}
+            onPress={onConfirm}
           >
             <Text style={[styles.confirmBtnText, { color: '#fff' }]}>Confirm</Text>
           </AnimatedPressable>
@@ -163,48 +89,130 @@ export default function AIChatScreen() {
     );
   };
 
-  const renderItem = ({ item }: { item: UIMessage }) => {
-    const isAssistant = item.role === 'assistant';
-    
-    if (isAssistant) {
-      return (
-        <Animated.View entering={FadeInDown.springify()} style={{ alignSelf: 'flex-start', maxWidth: '85%' }}>
-          <View style={{ alignItems: 'flex-start', marginBottom: -verticalScale(45), marginLeft: -scale(16), zIndex: 0 }}>
-            <NekofiCompanion size={scale(100)} hideBubble={true} inline={true} />
-          </View>
-          <View 
-            style={[
-              styles.bubble, 
-              { backgroundColor: colors.surface, borderColor: colors.borderAlt, borderWidth: 1, borderTopLeftRadius: 4, zIndex: 1, maxWidth: '100%' }
-            ]}
-          >
-            {/* Tool badges */}
-            {item.toolsUsed && item.toolsUsed.length > 0 && (
-              <View style={styles.toolBadgeRow}>
-                {item.toolsUsed.map(t => renderToolBadge(t.tool, t.success))}
-              </View>
-            )}
-            <Text style={[styles.bubbleText, { color: colors.text }]}>{item.content}</Text>
-          </View>
+  const isAssistant = item.role === 'assistant';
+  
+  if (isAssistant) {
+    return (
+      <View style={{ alignSelf: 'flex-start', maxWidth: '85%' }}>
+        <View style={{ alignItems: 'flex-start', marginBottom: -verticalScale(45), marginLeft: -scale(16), zIndex: 0 }}>
+          <NekofiStaticAvatar size={scale(100)} />
+        </View>
+        <View 
+          style={[
+            styles.bubble, 
+            { backgroundColor: colors.surface, borderColor: colors.borderAlt, borderWidth: 1, borderTopLeftRadius: 4, zIndex: 1, maxWidth: '100%' }
+          ]}
+        >
+          {item.toolsUsed && item.toolsUsed.length > 0 && (
+            <View style={styles.toolBadgeRow}>
+              {item.toolsUsed.map((t: any) => renderToolBadge(t.tool, t.success))}
+            </View>
+          )}
+          <Text style={[styles.bubbleText, { color: colors.text }]}>{item.content}</Text>
+        </View>
 
-          {/* Confirmation card attached to the message */}
-          {item.isConfirmation && pendingConfirmation && renderConfirmationCard()}
-        </Animated.View>
-      );
+        {item.isConfirmation && pendingConfirmation && renderConfirmationCard()}
+      </View>
+    );
+  }
+
+  return (
+    <View 
+      style={[
+        styles.bubble, 
+        { backgroundColor: colors.primary, alignSelf: 'flex-end', borderBottomRightRadius: 4 }
+      ]}
+    >
+      <Text style={[styles.bubbleText, styles.userText]}>{item.content}</Text>
+    </View>
+  );
+}, (prevProps, nextProps) => {
+  return prevProps.item === nextProps.item && prevProps.pendingConfirmation === nextProps.pendingConfirmation;
+});
+
+/**
+ * AI Chat screen — full-featured chat with tool calling, confirmations,
+ * and rich result rendering, powered by the local LLM.
+ */
+export default function AIChatScreen() {
+  const [input, setInput] = useState('');
+  const listRef = useRef<FlatList>(null);
+  const colors = useThemeColors();
+  
+  // AI State
+  const {
+    isDownloading,
+    downloadProgress,
+    isReady,
+    messages,
+    isProcessing,
+    activeToolName,
+    pendingConfirmation,
+    sendMessage,
+    confirmAction,
+    rejectAction,
+    clearConversation,
+  } = useAIStore();
+
+  const { triggerAnimation } = useNekofiStore();
+
+  const handleSend = useCallback(async () => {
+    if (!input.trim() || isProcessing || !isReady) return;
+    
+    const text = input.trim();
+    setInput('');
+    triggerAnimation('AI Thinking', null, 0);
+    
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+
+    await sendMessage(text);
+
+    // React to the result
+    const state = useAIStore.getState();
+    if (state.pendingConfirmation) {
+      triggerAnimation('Concerned', null, 0);
+    } else {
+      triggerAnimation('Happy', null, 4000);
     }
 
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 200);
+  }, [input, isProcessing, isReady, sendMessage, triggerAnimation]);
+
+  const handleQuickAction = useCallback((text: string) => {
+    useAIStore.getState().sendMessage(text);
+    triggerAnimation('AI Thinking', null, 0);
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 100);
+  }, [triggerAnimation]);
+
+  const handleConfirm = useCallback(async () => {
+    triggerAnimation('AI Thinking', 'Processing...', 0);
+    await confirmAction();
+    triggerAnimation('Celebration', 'Done!', 4000);
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 200);
+  }, [confirmAction, triggerAnimation]);
+
+  const handleReject = useCallback(() => {
+    rejectAction();
+    triggerAnimation('Happy', null, 3000);
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 200);
+  }, [rejectAction, triggerAnimation]);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 150);
+  }, [messages.length]);
+
+  const renderItem = useCallback(({ item }: { item: UIMessage }) => {
     return (
-      <Animated.View 
-        entering={FadeInDown.springify()} 
-        style={[
-          styles.bubble, 
-          { backgroundColor: colors.primary, alignSelf: 'flex-end', borderBottomRightRadius: 4 }
-        ]}
-      >
-        <Text style={[styles.bubbleText, styles.userText]}>{item.content}</Text>
-      </Animated.View>
+      <ChatMessage 
+        item={item} 
+        colors={colors} 
+        pendingConfirmation={pendingConfirmation} 
+        onReject={handleReject} 
+        onConfirm={handleConfirm} 
+      />
     );
-  };
+  }, [colors, pendingConfirmation, handleReject, handleConfirm]);
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -218,18 +226,8 @@ export default function AIChatScreen() {
             <Image source={require('../../../assets/images/icon.png')} style={styles.headerLogo} />
             <Text style={[styles.headerTitle, { color: colors.text }]}>Nekofi AI</Text>
           </View>
-          <Text style={[styles.headerSubtitle, { color: colors.textMuted }]}>
-            {isReady ? '100% On-Device AI • Full System Access' : 'Initializing AI...'}
-          </Text>
         </View>
-        <View style={styles.headerActions}>
-          {isReady && (
-            <AnimatedPressable onPress={clearConversation} style={styles.headerBtn}>
-              <Ionicons name="refresh" size={20} color={colors.textMuted} />
-            </AnimatedPressable>
-          )}
-          <Ionicons name={isReady ? "hardware-chip" : "cloud-download"} size={22} color={colors.primary} />
-        </View>
+        <View style={{ width: 24 }} />
       </View>
 
       {isDownloading ? (
@@ -252,7 +250,11 @@ export default function AIChatScreen() {
             renderItem={renderItem}
             contentContainerStyle={styles.list}
             showsVerticalScrollIndicator={false}
-            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+            removeClippedSubviews={true}
+            initialNumToRender={15}
+            maxToRenderPerBatch={10}
+            windowSize={5}
+            onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: false })}
             ListHeaderComponent={
               messages.length <= 1 ? (
                 <Animated.View entering={FadeIn.delay(300)} style={styles.quickActionsContainer}>
